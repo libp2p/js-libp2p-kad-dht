@@ -56,7 +56,7 @@ module.exports = (dht) => {
       })
 
       if (has) {
-        providers.push(dht.self)
+        providers.push(dht.peerInfo)
       }
 
       const response = new Message(msg.type, msg.key, msg.clusterLevel)

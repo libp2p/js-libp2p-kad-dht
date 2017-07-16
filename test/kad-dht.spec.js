@@ -229,9 +229,8 @@ describe('KadDHT', () => {
             const out = res[0]
             const actualClosest = res[1]
 
-            expect(
-              out.filter((p) => !rtableSet[p.toB58String()])
-            ).to.not.be.empty()
+            expect(out.filter((p) => !rtableSet[p.toB58String()]))
+              .to.not.be.empty()
 
             expect(out).to.have.length(20)
             const exp = actualClosest.slice(0, 20)
@@ -273,7 +272,7 @@ describe('KadDHT', () => {
         dhts[0].peerBook.put(dhts[1].peerInfo)
         dhts[0].getPublicKey(ids[1], (err, key) => {
           expect(err).to.not.exist()
-          expect(key).to.be.eql(dhts[1].self.id.pubKey)
+          expect(key).to.be.eql(dhts[1].peerInfo.id.pubKey)
           done()
         })
       })

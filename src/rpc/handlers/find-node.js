@@ -22,8 +22,8 @@ module.exports = (dht) => {
 
     waterfall([
       (cb) => {
-        if (msg.key.equals(dht.self.id.id)) {
-          return cb(null, [dht.self])
+        if (msg.key.equals(dht.peerInfo.id.id)) {
+          return cb(null, [dht.peerInfo])
         }
 
         dht._betterPeersToQuery(msg, peer, cb)

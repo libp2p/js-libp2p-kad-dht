@@ -34,14 +34,14 @@ module.exports = (dht) => {
       let info
 
       if (dht._isSelf(id)) {
-        info = dht.self
+        info = dht.peerInfo
       } else if (dht.peerBook.has(id)) {
         info = dht.peerBook.get(id)
       }
 
       if (info && info.id.pubKey) {
         log('returning found public key')
-        response.record = new Record(key, info.id.pubKey.bytes, dht.self.id)
+        response.record = new Record(key, info.id.pubKey.bytes, dht.peerInfo.id)
         return callback(null, response)
       }
     }

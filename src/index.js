@@ -336,7 +336,7 @@ class KadDHT {
     // local check
     let info
     if (this.peerBook.has(peer)) {
-      info = this.libp2p.peerBook.get(peer)
+      info = this.peerBook.get(peer)
 
       if (info && info.id.pubKey) {
         this._log('getPublicKey: found local copy')
@@ -349,7 +349,7 @@ class KadDHT {
     this._getPublicKeyFromNode(peer, (err, pk) => {
       if (!err) {
         info.id = new PeerId(peer.id, null, pk)
-        this.libp2p.peerBook.put(info)
+        this.peerBook.put(info)
 
         return callback(null, pk)
       }
@@ -363,7 +363,7 @@ class KadDHT {
 
         const pk = crypto.unmarshalPublicKey(value)
         info.id = new PeerId(peer, null, pk)
-        this.libp2p.peerBook.put(info)
+        this.peerBook.put(info)
 
         callback(null, pk)
       })
