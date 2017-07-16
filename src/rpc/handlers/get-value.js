@@ -7,7 +7,7 @@ const Message = require('../../message')
 const utils = require('../../utils')
 
 module.exports = (dht) => {
-  const log = utils.logger(dht.self.id, 'rpc:get-value')
+  const log = utils.logger(dht.peerInfo.id, 'rpc:get-value')
 
   /**
    * Process `GetValue` DHT messages.

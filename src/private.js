@@ -226,7 +226,7 @@ module.exports = (dht) => ({
    * @private
    */
   _isSelf (other) {
-    return other && dht.self.id.id.equals(other.id)
+    return other && dht.peerInfo.id.id.equals(other.id)
   },
   /**
    * Ask peer `peer` if they know where the peer with id `target` is.

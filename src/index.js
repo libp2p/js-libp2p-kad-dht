@@ -18,6 +18,7 @@ const errors = require('./errors')
 const privateApi = require('./private')
 const Providers = require('./providers')
 const Message = require('./message')
+const assert = require('assert')
 
 /**
  * A DHT implementation modeled after Kademlia with Coral and S/Kademlia modifications.
@@ -32,66 +33,71 @@ class KadDHT {
    * @param {number} [kBucketSize=20]
    * @param {Datastore} [datastore=MemoryDatastore]
    */
-  constructor (libp2p, kBucketSize, datastore) {
+  constructor (swarm, options) {
+    assert(swarm, 'libp2p-kad-dht requires a instance of kad-dht')
+    options = options || {}
+
     /**
-     * Local reference to libp2p.
+     * Local reference to libp2p-swarm.
      *
-     * @type {Libp2p}
+     * @type {Swarm}
      */
-    this.libp2p = libp2p
+    this.swarm = swarm
 
     /**
      * k-bucket size, defaults to 20.
      *
      * @type {number}
      */
-    this.kBucketSize = kBucketSize || 20
+    this.kBucketSize = options.kBucketSize || 20
 
     /**
-     * Number of closest peers to return on kBucket search
+     * Number of closest peers to return on kBucket search, default 20
      *
      * @type {number}
      */
-    this.ncp = 6
+    this.ncp = options.ncp || 6
 
     /**
      * The routing table.
      *
      * @type {RoutingTable}
      */
-    this.routingTable = new RoutingTable(this.self.id, this.kBucketSize)
+    this.routingTable = new RoutingTable(this.peerInfo.id, this.kBucketSize)
 
     /**
      * Reference to the datastore, uses an in-memory store if none given.
      *
      * @type {Datastore}
      */
-    this.datastore = datastore || new MemoryStore()
+    this.datastore = options.datastore || new MemoryStore()
 
     /**
      * Provider management
      *
      * @type {Providers}
      */
-    this.providers = new Providers(this.datastore, this.self.id)
+    this.providers = new Providers(this.datastore, this.peerInfo.id)
 
-    this.validators = {
-      pk: libp2pRecord.validator.validators.pk
-    }
+    this.validators = { pk: libp2pRecord.validator.validators.pk }
+    this.selectors = { pk: libp2pRecord.selection.selectors.pk }
 
-    this.selectors = {
-      pk: libp2pRecord.selection.selectors.pk
-    }
+    this.network = new Network(this)
 
-    this.network = new Network(this, this.libp2p)
-
-    this._log = utils.logger(this.self.id)
+    this._log = utils.logger(this.peerInfo.id)
 
     // Inject private apis so we don't clutter up this file
     const pa = privateApi(this)
-    Object.keys(pa).forEach((name) => {
-      this[name] = pa[name]
-    })
+    Object.keys(pa).forEach((name) => { this[name] = pa[name] })
+  }
+
+  /**
+   * Is this DHT running.
+   *
+   * @type {bool}
+   */
+  get isStarted () {
+    return this._running
   }
 
   /**
@@ -119,28 +125,16 @@ class KadDHT {
   }
 
   /**
-   * Alias to the peerbook from libp2p
-   */
-  get peerBook () {
-    return this.libp2p.peerBook
-  }
-
-  /**
-   *  Is this DHT running.
-   *
-   * @type {bool}
-   */
-  get isRunning () {
-    return this._running
-  }
-
-  /**
    * Local peer (yourself)
    *
    * @type {PeerInfo}
    */
-  get self () {
-    return this.libp2p.peerInfo
+  get peerInfo () {
+    return this.swarm._peerInfo
+  }
+
+  get peerBook () {
+    return this.swarm._peerBook
   }
 
   /**
@@ -205,7 +199,7 @@ class KadDHT {
     }
 
     waterfall([
-      (cb) => utils.createPutRecord(key, value, this.self.id, sign, cb),
+      (cb) => utils.createPutRecord(key, value, this.peerInfo.id, sign, cb),
       (rec, cb) => waterfall([
         (cb) => this._putLocal(key, rec, cb),
         (cb) => this.getClosestPeers(key, cb),
@@ -266,7 +260,7 @@ class KadDHT {
       if (err == null) {
         vals.push({
           val: localRec.value,
-          from: this.self.id
+          from: this.peerInfo.id
         })
       }
 
@@ -389,7 +383,7 @@ class KadDHT {
     this._log('provide: %s', key.toBaseEncodedString())
 
     waterfall([
-      (cb) => this.providers.addProvider(key, this.self.id, cb),
+      (cb) => this.providers.addProvider(key, this.peerInfo.id, cb),
       (cb) => this.getClosestPeers(key.buffer, cb),
       (peers, cb) => {
         const msg = new Message(Message.TYPES.ADD_PROVIDER, key.buffer, 0)
