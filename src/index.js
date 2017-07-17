@@ -29,8 +29,8 @@ class KadDHT {
   /**
    * Create a new KadDHT.
    *
-   * @param {number} [kBucketSize=20]
-   * @param {Datastore} [datastore=MemoryDatastore]
+   * @param {swarm} Swarm
+   * @param {options} {kBucketSize=20, datastore=MemoryDatastore}
    */
   constructor (swarm, options) {
     assert(swarm, 'libp2p-kad-dht requires a instance of kad-dht')
