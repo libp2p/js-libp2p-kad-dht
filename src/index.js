@@ -29,7 +29,6 @@ class KadDHT {
   /**
    * Create a new KadDHT.
    *
-   * @param {Libp2p} libp2p
    * @param {number} [kBucketSize=20]
    * @param {Datastore} [datastore=MemoryDatastore]
    */
@@ -52,7 +51,7 @@ class KadDHT {
     this.kBucketSize = options.kBucketSize || 20
 
     /**
-     * Number of closest peers to return on kBucket search, default 20
+     * Number of closest peers to return on kBucket search, default 6
      *
      * @type {number}
      */
