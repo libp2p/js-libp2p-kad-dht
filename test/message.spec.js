@@ -97,7 +97,7 @@ describe('Message', () => {
 
       done()
     })
-  })
+  }).timeout(10 * 1000)
 
   it('clusterlevel', () => {
     const msg = new Message(Message.TYPES.PING, new Buffer('hello'), 0)

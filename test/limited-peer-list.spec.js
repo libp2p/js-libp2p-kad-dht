@@ -12,7 +12,8 @@ const makePeers = require('./utils').makePeers
 describe('LimitedPeerList', () => {
   let peers
 
-  before((done) => {
+  before(function (done) {
+    this.timeout(5 * 1000)
     makePeers(5, (err, p) => {
       if (err) {
         return done(err)

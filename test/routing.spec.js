@@ -17,7 +17,8 @@ const utils = require('../src/utils')
 describe('RoutingTable', () => {
   let table
 
-  beforeEach((done) => {
+  beforeEach(function (done) {
+    this.timeout(20 * 1000)
     PeerId.create((err, id) => {
       if (err) {
         done(err)
@@ -30,7 +31,7 @@ describe('RoutingTable', () => {
   })
 
   it('add', (done) => {
-    createPeers(20, (err, peers) => {
+    createPeers(10, (err, peers) => {
       expect(err).to.not.exist()
       waterfall([
         (cb) => each(range(1000), (n, cb) => {
@@ -48,7 +49,7 @@ describe('RoutingTable', () => {
         }, cb)
       ], done)
     })
-  })
+  }).timeout(10 * 1000)
 
   it('remove', (done) => {
     createPeers(10, (err, peers) => {
@@ -80,10 +81,10 @@ describe('RoutingTable', () => {
         }
       ], done)
     })
-  })
+  }).timeout(10 * 1000)
 
   it('closestPeer', (done) => {
-    createPeers(10, (err, peers) => {
+    createPeers(4, (err, peers) => {
       expect(err).to.not.exist()
       waterfall([
         (cb) => each(peers, (peer, cb) => {
@@ -101,7 +102,7 @@ describe('RoutingTable', () => {
         }
       ], done)
     })
-  })
+  }).timeout(5 * 1000)
 
   it('closestPeers', (done) => {
     createPeers(18, (err, peers) => {
@@ -122,7 +123,7 @@ describe('RoutingTable', () => {
         }
       ], done)
     })
-  })
+  }).timeout(20 * 1000)
 })
 
 function createPeers (n, callback) {
