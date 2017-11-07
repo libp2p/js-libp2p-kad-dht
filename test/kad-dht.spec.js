@@ -128,7 +128,7 @@ describe('KadDHT', () => {
         (cb) => {
           bootstrap(dhts)
           // TODO: causing timeouts
-          //waitForWellFormedTables(dhts, 7, 0, 20 * 1000, cb)
+          // waitForWellFormedTables(dhts, 7, 0, 20 * 1000, cb)
           cb()
         }
       ], done)
@@ -475,6 +475,7 @@ function bootstrap (dhts) {
   })
 }
 
+/* TODO: causes timeouts
 function waitForWellFormedTables (dhts, minPeers, avgPeers, maxTimeout, callback) {
   timeout((cb) => {
     retry({ times: 50, interval: 200 }, (cb) => {
@@ -498,6 +499,7 @@ function waitForWellFormedTables (dhts, minPeers, avgPeers, maxTimeout, callback
     }, cb)
   }, maxTimeout)(callback)
 }
+*/
 
 function countDiffPeers (a, b) {
   const s = new Set()

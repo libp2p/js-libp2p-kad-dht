@@ -17,11 +17,11 @@ const Message = require('../src/message')
 
 describe('Message', () => {
   it('create', () => {
-    const k = new Buffer('hello')
+    const k = Buffer.from('hello')
     const msg = new Message(Message.TYPES.PING, k, 5)
 
     expect(msg).to.have.property('type', 5)
-    expect(msg).to.have.property('key').eql(new Buffer('hello'))
+    expect(msg).to.have.property('key').eql(Buffer.from('hello'))
     // TODO: confirm this works as expected
     expect(msg).to.have.property('_clusterLevelRaw', 5)
     expect(msg).to.have.property('clusterLevel', 4)
@@ -49,8 +49,8 @@ describe('Message', () => {
         return info
       })
 
-      const msg = new Message(Message.TYPES.GET_VALUE, new Buffer('hello'), 5)
-      const record = new Record(new Buffer('hello'), new Buffer('world'), peers[0])
+      const msg = new Message(Message.TYPES.GET_VALUE, Buffer.from('hello'), 5)
+      const record = new Record(Buffer.from('hello'), Buffer.from('world'), peers[0])
 
       msg.closerPeers = closer
       msg.providerPeers = provider
@@ -63,7 +63,7 @@ describe('Message', () => {
       expect(dec.key).to.be.eql(msg.key)
       expect(dec.clusterLevel).to.be.eql(msg.clusterLevel)
       expect(dec.record.serialize()).to.be.eql(record.serialize())
-      expect(dec.record.key).to.be.eql(new Buffer('hello'))
+      expect(dec.record.key).to.be.eql(Buffer.from('hello'))
 
       expect(dec.closerPeers).to.have.length(5)
       dec.closerPeers.forEach((peer, i) => {
@@ -100,7 +100,7 @@ describe('Message', () => {
   }).timeout(10 * 1000)
 
   it('clusterlevel', () => {
-    const msg = new Message(Message.TYPES.PING, new Buffer('hello'), 0)
+    const msg = new Message(Message.TYPES.PING, Buffer.from('hello'), 0)
 
     msg.clusterLevel = 10
     expect(msg.clusterLevel).to.eql(9)
