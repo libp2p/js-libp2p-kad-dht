@@ -19,6 +19,7 @@ describe('RoutingTable', () => {
 
   beforeEach(function (done) {
     this.timeout(20 * 1000)
+
     PeerId.create((err, id) => {
       if (err) {
         done(err)
@@ -30,8 +31,9 @@ describe('RoutingTable', () => {
     })
   })
 
-  it('add', (done) => {
-    createPeers(10, (err, peers) => {
+  it('add', function (done) {
+    this.timeout(20 * 1000)
+    createPeers(20, (err, peers) => {
       expect(err).to.not.exist()
       waterfall([
         (cb) => each(range(1000), (n, cb) => {
@@ -49,9 +51,11 @@ describe('RoutingTable', () => {
         }, cb)
       ], done)
     })
-  }).timeout(10 * 1000)
+  })
 
   it('remove', (done) => {
+    this.timeout(10 * 1000)
+
     createPeers(10, (err, peers) => {
       let k
       expect(err).to.not.exist()
@@ -64,53 +68,47 @@ describe('RoutingTable', () => {
           utils.convertPeerId(id, (err, key) => {
             expect(err).to.not.exist()
             k = key
-            expect(
-              table.closestPeers(key, 10)
-            ).to.have.length(10)
+            expect(table.closestPeers(key, 10)).to.have.length(10)
             cb()
           })
         },
         (cb) => table.remove(peers[5], cb),
         (cb) => {
-          expect(
-            table.closestPeers(k, 10)
-          ).to.have.length(9)
+          expect(table.closestPeers(k, 10)).to.have.length(9)
 
           expect(table.size).to.be.eql(9)
           cb()
         }
       ], done)
     })
-  }).timeout(10 * 1000)
+  })
 
-  it('closestPeer', (done) => {
+  it('closestPeer', function (done) {
+    this.timeout(10 * 1000)
+
     createPeers(4, (err, peers) => {
       expect(err).to.not.exist()
       waterfall([
-        (cb) => each(peers, (peer, cb) => {
-          table.add(peer, cb)
-        }, cb),
+        (cb) => each(peers, (peer, cb) => table.add(peer, cb), cb),
         (cb) => {
           const id = peers[2]
           utils.convertPeerId(id, (err, key) => {
             expect(err).to.not.exist()
-            expect(
-              table.closestPeer(key)
-            ).to.be.eql(id)
+            expect(table.closestPeer(key)).to.eql(id)
             cb()
           })
         }
       ], done)
     })
-  }).timeout(5 * 1000)
+  })
 
-  it('closestPeers', (done) => {
+  it('closestPeers', function (done) {
+    this.timeout(20 * 1000)
+
     createPeers(18, (err, peers) => {
       expect(err).to.not.exist()
       waterfall([
-        (cb) => each(peers, (peer, cb) => {
-          table.add(peer, cb)
-        }, cb),
+        (cb) => each(peers, (peer, cb) => table.add(peer, cb), cb),
         (cb) => {
           const id = peers[2]
           utils.convertPeerId(id, (err, key) => {
@@ -123,7 +121,7 @@ describe('RoutingTable', () => {
         }
       ], done)
     })
-  }).timeout(20 * 1000)
+  })
 })
 
 function createPeers (n, callback) {

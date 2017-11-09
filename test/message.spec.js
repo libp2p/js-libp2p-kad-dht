@@ -27,7 +27,8 @@ describe('Message', () => {
     expect(msg).to.have.property('clusterLevel', 4)
   })
 
-  it('serialize & deserialize', (done) => {
+  it('serialize & deserialize', function (done) {
+    this.timeout(10 * 1000)
     map(range(5), (n, cb) => PeerId.create({bits: 1024}, cb), (err, peers) => {
       expect(err).to.not.exist()
 
@@ -67,37 +68,23 @@ describe('Message', () => {
 
       expect(dec.closerPeers).to.have.length(5)
       dec.closerPeers.forEach((peer, i) => {
-        expect(
-          peer.id.isEqual(msg.closerPeers[i].id)
-        ).to.be.eql(true)
-        expect(
-          peer.multiaddrs.toArray()
-        ).to.be.eql(
-          msg.closerPeers[i].multiaddrs.toArray()
-        )
+        expect(peer.id.isEqual(msg.closerPeers[i].id)).to.eql(true)
+        expect(peer.multiaddrs.toArray())
+          .to.eql(msg.closerPeers[i].multiaddrs.toArray())
 
-        expect(
-          peer.isConnected()
-        ).to.be.eql(
-          peer.multiaddrs.toArray()[0]
-        )
+        expect(peer.isConnected()).to.eql(peer.multiaddrs.toArray()[0])
       })
 
       expect(dec.providerPeers).to.have.length(5)
       dec.providerPeers.forEach((peer, i) => {
-        expect(
-          peer.id.isEqual(msg.providerPeers[i].id)
-        ).to.be.eql(true)
-        expect(
-          peer.multiaddrs.toArray()
-        ).to.be.eql(
-          msg.providerPeers[i].multiaddrs.toArray()
-        )
+        expect(peer.id.isEqual(msg.providerPeers[i].id)).to.equal(true)
+        expect(peer.multiaddrs.toArray())
+          .to.eql(msg.providerPeers[i].multiaddrs.toArray())
       })
 
       done()
     })
-  }).timeout(10 * 1000)
+  })
 
   it('clusterlevel', () => {
     const msg = new Message(Message.TYPES.PING, Buffer.from('hello'), 0)

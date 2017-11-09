@@ -271,7 +271,7 @@ describe('KadDHT', () => {
   it('getClosestPeers', function (done) {
     this.timeout(40 * 1000)
 
-    const nDHTs = 3
+    const nDHTs = 30
     setupDHTs(nDHTs, (err, dhts) => {
       expect(err).to.not.exist()
 

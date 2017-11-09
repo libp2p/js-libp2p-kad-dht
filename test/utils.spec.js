@@ -109,8 +109,10 @@ describe('utils', () => {
   })
 
   describe('fromPublicKeyKey', () => {
-    it('round trips', (done) => {
-      makePeers(10, (err, peers) => {
+    it('round trips', function (done) {
+      this.timeout(40 * 1000)
+
+      makePeers(50, (err, peers) => {
         expect(err).to.not.exist()
 
         peers.forEach((p, i) => {
@@ -121,6 +123,6 @@ describe('utils', () => {
         })
         done()
       })
-    }).timeout(10 * 1000)
+    })
   })
 })

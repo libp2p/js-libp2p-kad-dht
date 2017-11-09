@@ -13,7 +13,8 @@ describe('LimitedPeerList', () => {
   let peers
 
   before(function (done) {
-    this.timeout(5 * 1000)
+    this.timeout(10 * 1000)
+
     makePeers(5, (err, p) => {
       if (err) {
         return done(err)
