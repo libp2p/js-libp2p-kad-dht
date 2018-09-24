@@ -69,7 +69,7 @@ function connect (a, b, callback) {
 
 function bootstrap (dhts) {
   dhts.forEach((dht) => {
-    dht.randomWalk._walk(3, 10000)
+    dht.randomWalk._walk(3, 10000, () => {}) // don't need to know when it finishes
   })
 }
 
@@ -217,7 +217,6 @@ describe('KadDHT', () => {
         (cb) => {
           bootstrap(dhts)
           waitForWellFormedTables(dhts, 7, 0, 20 * 1000, cb)
-          cb()
         }
       ], (err) => {
         expect(err).to.not.exist()

@@ -115,7 +115,14 @@ class KadDHT {
    */
   start (callback) {
     this._running = true
-    this.network.start(callback)
+    this.network.start((err) => {
+      if (err) {
+        return callback(err)
+      }
+      this.randomWalk.start()
+
+      callback()
+    })
   }
 
   /**
@@ -127,9 +134,10 @@ class KadDHT {
    */
   stop (callback) {
     this._running = false
-    this.randomWalk.stop()
-    this.providers.stop()
-    this.network.stop(callback)
+    this.randomWalk.stop(() => {
+      this.providers.stop()
+      this.network.stop(callback)
+    })
   }
 
   /**
