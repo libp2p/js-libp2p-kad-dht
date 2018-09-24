@@ -115,14 +115,7 @@ class KadDHT {
    */
   start (callback) {
     this._running = true
-    this.network.start((err) => {
-      if (err) {
-        return callback(err)
-      }
-      this.randomWalk.start()
-
-      callback()
-    })
+    this.network.start(callback)
   }
 
   /**
@@ -134,7 +127,7 @@ class KadDHT {
    */
   stop (callback) {
     this._running = false
-    this.randomWalk.stop(() => {
+    this.randomWalk.stop(() => { // guarantee that random walk is stopped if it was started
       this.providers.stop()
       this.network.stop(callback)
     })
