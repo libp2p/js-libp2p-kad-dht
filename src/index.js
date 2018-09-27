@@ -30,8 +30,11 @@ class KadDHT {
   /**
    * Create a new KadDHT.
    *
-   * @param {Switch} sw
-   * @param {object} options // {kBucketSize=20, datastore=MemoryDatastore}
+   * @param {Switch} sw libp2p-switch instance
+   * @param {object} options DHT options
+   * @param {number} options.kBucketSize k-bucket size (default 20)
+   * @param {Datastore} options.datastore datastore (default MemoryDatastore)
+   * @param {boolean} options.enabledDiscovery enable dht discovery (default true)
    */
   constructor (sw, options) {
     assert(sw, 'libp2p-kad-dht requires a instance of Switch')
@@ -96,6 +99,11 @@ class KadDHT {
      * @type {RandomWalk}
      */
     this.randomWalk = new RandomWalk(this)
+
+    /**
+     * Random walk state, default true
+     */
+    this.randomWalkEnabled = !options.hasOwnProperty('enabledDiscovery') ? true : Boolean(options.enabledDiscovery)
   }
 
   /**
@@ -115,7 +123,15 @@ class KadDHT {
    */
   start (callback) {
     this._running = true
-    this.network.start(callback)
+    this.network.start((err) => {
+      if (err) {
+        return callback(err)
+      }
+
+      // Start random walk if enabled
+      this.randomWalkEnabled && this.randomWalk.start()
+      callback()
+    })
   }
 
   /**
