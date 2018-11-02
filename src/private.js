@@ -260,6 +260,7 @@ module.exports = (dht) => ({
    * @param {Buffer} key
    * @param {Object} options - get options
    * @param {number} options.maxTimeout - optional timeout (default: 60000)
+   * @param {boolean} options.selectFirst - select first value found (default: false)
    * @param {function(Error, Record)} callback
    * @returns {void}
    *
@@ -271,7 +272,7 @@ module.exports = (dht) => ({
       (cb) => dht.getMany(key, 16, options.maxTimeout, cb),
       (vals, cb) => {
         const recs = vals.map((v) => v.val)
-        const i = libp2pRecord.selection.bestRecord(dht.selectors, key, recs)
+        const i = options.selectFirst ? 0 : libp2pRecord.selection.bestRecord(dht.selectors, key, recs)
         const best = recs[i]
         dht._log('GetValue %b %s', key, best)
 
