@@ -222,6 +222,30 @@ describe('KadDHT', () => {
     })
   })
 
+  it('put - get with select first', function (done) {
+    this.timeout(10 * 1000)
+    const tdht = new TestDHT()
+
+    tdht.spawn(2, (err, dhts) => {
+      expect(err).to.not.exist()
+      const dhtA = dhts[0]
+      const dhtB = dhts[1]
+
+      waterfall([
+        (cb) => connect(dhtA, dhtB, cb),
+        (cb) => dhtA.put(Buffer.from('hello'), Buffer.from('world'), cb),
+        (cb) => dhtB.get(Buffer.from('hello'), { maxTimeout: 1000, selectFirst: true }, cb),
+        (res, cb) => {
+          expect(res).to.eql(Buffer.from('world'))
+          cb()
+        }
+      ], (err) => {
+        expect(err).to.not.exist()
+        tdht.teardown(done)
+      })
+    })
+  })
+
   it('provides', function (done) {
     this.timeout(20 * 1000)
 

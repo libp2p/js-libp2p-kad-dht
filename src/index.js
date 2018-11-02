@@ -192,6 +192,7 @@ class KadDHT {
    * @param {Buffer} key
    * @param {Object} options - get options
    * @param {number} options.maxTimeout - optional timeout (default: 60000)
+   * @param {boolean} options.selectFirst - select first value found (default: false)
    * @param {function(Error, Buffer)} callback
    * @returns {void}
    */
@@ -221,6 +222,7 @@ class KadDHT {
    * @param {number} nvals
    * @param {Object} options - get options
    * @param {number} options.maxTimeout - optional timeout (default: 60000)
+   * @param {boolean} options.selectFirst - select first value found (default: false)
    * @param {function(Error, Array<{from: PeerId, val: Buffer}>)} callback
    * @returns {void}
    */
