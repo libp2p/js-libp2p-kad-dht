@@ -230,10 +230,11 @@ describe('KadDHT', () => {
       expect(err).to.not.exist()
       const dhtA = dhts[0]
       const dhtB = dhts[1]
-      const dhtC = dhts[1]
+      const dhtC = dhts[2]
 
       waterfall([
         (cb) => connect(dhtA, dhtB, cb),
+        (cb) => connect(dhtA, dhtC, cb),
         (cb) => dhtA.put(Buffer.from('/v/hello'), Buffer.from('world'), cb),
         (cb) => dhtB.put(Buffer.from('/v/hello'), Buffer.from('world2'), cb),
         (cb) => dhtC.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb),
