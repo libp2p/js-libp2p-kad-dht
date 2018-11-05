@@ -232,19 +232,23 @@ describe('KadDHT', () => {
       const dhtB = dhts[1]
       const dhtC = dhts[2]
 
-      waterfall([
+      parallel([
         (cb) => connect(dhtA, dhtB, cb),
         (cb) => connect(dhtA, dhtC, cb),
-        (cb) => dhtA.put(Buffer.from('/v/hello'), Buffer.from('world'), cb),
-        (cb) => dhtB.put(Buffer.from('/v/hello'), Buffer.from('world2'), cb),
-        (cb) => dhtC.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb),
-        (res, cb) => {
-          expect(res).to.eql(Buffer.from('world2'))
-          cb()
-        }
+        (cb) => dhtA.put(Buffer.from('/v/hello'), Buffer.from('worldA'), cb),
+        (cb) => dhtB.put(Buffer.from('/v/hello'), Buffer.from('worldB'), cb),
+        (cb) => dhtC.put(Buffer.from('/v/hello'), Buffer.from('worldC'), cb)
       ], (err) => {
         expect(err).to.not.exist()
-        tdht.teardown(done)
+        parallel([
+          (cb) => dhtA.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb),
+          (cb) => dhtB.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb),
+          (cb) => dhtC.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb)
+        ], (err, res) => {
+          expect(err).to.not.exist()
+          expect(res).to.exist()
+          tdht.teardown(done)
+        })
       })
     })
   })
