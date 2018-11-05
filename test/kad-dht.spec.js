@@ -223,32 +223,33 @@ describe('KadDHT', () => {
   })
 
   it('put - get with update', function (done) {
-    this.timeout(10 * 1000)
+    this.timeout(20 * 1000)
     const tdht = new TestDHT()
 
-    tdht.spawn(3, (err, dhts) => {
+    tdht.spawn(2, (err, dhts) => {
       expect(err).to.not.exist()
       const dhtA = dhts[0]
       const dhtB = dhts[1]
-      const dhtC = dhts[2]
 
-      parallel([
-        (cb) => connect(dhtA, dhtB, cb),
-        (cb) => connect(dhtA, dhtC, cb),
+      const dhtASpy = sinon.spy(dhtA, '_putValueToPeer')
+
+      series([
         (cb) => dhtA.put(Buffer.from('/v/hello'), Buffer.from('worldA'), cb),
         (cb) => dhtB.put(Buffer.from('/v/hello'), Buffer.from('worldB'), cb),
-        (cb) => dhtC.put(Buffer.from('/v/hello'), Buffer.from('worldC'), cb)
+        (cb) => connect(dhtA, dhtB, cb)
       ], (err) => {
         expect(err).to.not.exist()
-        parallel([
+
+        series([
           (cb) => dhtA.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb),
-          (cb) => dhtB.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb),
-          (cb) => dhtC.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb)
-        ], (err, res) => {
+          (cb) => dhtB.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb)
+        ], (err, results) => {
           expect(err).to.not.exist()
-          expect(res[0]).to.eql(Buffer.from('worldA'))
-          expect(res[1]).to.eql(Buffer.from('worldB'))
-          expect(res[2]).to.eql(Buffer.from('worldC'))
+          results.forEach((res) => {
+            expect(res).to.eql(Buffer.from('worldA')) // first is selected
+          })
+          expect(dhtASpy.callCount).to.eql(1)
+          expect(dhtASpy.getCall(0).args[2].isEqual(dhtB.peerInfo.id)).to.eql(true) // inform B
           tdht.teardown(done)
         })
       })
