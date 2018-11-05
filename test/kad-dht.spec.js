@@ -246,7 +246,9 @@ describe('KadDHT', () => {
           (cb) => dhtC.get(Buffer.from('/v/hello'), { maxTimeout: 1000 }, cb)
         ], (err, res) => {
           expect(err).to.not.exist()
-          expect(res).to.exist()
+          expect(res[0]).to.eql(Buffer.from('worldA'))
+          expect(res[1]).to.eql(Buffer.from('worldB'))
+          expect(res[2]).to.eql(Buffer.from('worldC'))
           tdht.teardown(done)
         })
       })
