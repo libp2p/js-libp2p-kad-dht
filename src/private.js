@@ -278,7 +278,7 @@ module.exports = (dht) => ({
         } catch (err) {
           // Assume the first record if no selector available
           if (err.code !== 'ERR_NO_SELECTOR_FUNCTION_FOR_RECORD_KEY') {
-            return callback(err)
+            return cb(err)
           }
         }
 
