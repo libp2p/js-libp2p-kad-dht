@@ -222,7 +222,7 @@ describe('KadDHT', () => {
     })
   })
 
-  it('put - get using key with no selector', function (done) {
+  it('put - get using key with no prefix (no selector available)', function (done) {
     this.timeout(10 * 1000)
     const tdht = new TestDHT()
 
@@ -241,6 +241,27 @@ describe('KadDHT', () => {
         }
       ], (err) => {
         expect(err).to.not.exist()
+        tdht.teardown(done)
+      })
+    })
+  })
+
+  it('put - get should fail if unrecognized key prefix in get', function (done) {
+    this.timeout(10 * 1000)
+    const tdht = new TestDHT()
+
+    tdht.spawn(2, (err, dhts) => {
+      expect(err).to.not.exist()
+      const dhtA = dhts[0]
+      const dhtB = dhts[1]
+
+      waterfall([
+        (cb) => connect(dhtA, dhtB, cb),
+        (cb) => dhtA.put(Buffer.from('/v2/hello'), Buffer.from('world'), cb),
+        (cb) => dhtB.get(Buffer.from('/v2/hello'), { maxTimeout: 1000 }, cb)
+      ], (err) => {
+        expect(err).to.exist()
+        expect(err.code).to.eql('ERR_UNRECOGNIZED_KEY_PREFIX')
         tdht.teardown(done)
       })
     })
