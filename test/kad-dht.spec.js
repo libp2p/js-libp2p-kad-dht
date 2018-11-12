@@ -747,4 +747,23 @@ describe('KadDHT', () => {
       ], done)
     })
   })
+
+  describe('getMany', () => {
+    it('should fail if only has one peer', function (done) {
+      this.timeout(20 * 1000)
+
+      const nDHTs = 1
+      const tdht = new TestDHT()
+
+      tdht.spawn(nDHTs, (err, dhts) => {
+        expect(err).to.not.exist()
+
+        dhts[0].getMany('/v/hello', 5, (err) => {
+          expect(err).to.exist()
+          expect(err.code).to.be.eql('ERR_NO_PEERS_IN_ROUTING_TABLE')
+          tdht.teardown(done)
+        })
+      })
+    })
+  })
 })
