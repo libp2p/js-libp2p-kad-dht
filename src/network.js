@@ -39,7 +39,7 @@ class Network {
   start (callback) {
     const cb = (err) => setImmediate(() => callback(err))
 
-    if (this.isOnline) {
+    if (this._running) {
       return cb(errcode(new Error('Network is already running'), 'ERR_NETWORK_ALREADY_RUNNING'))
     }
 
