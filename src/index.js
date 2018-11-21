@@ -285,7 +285,7 @@ class KadDHT {
 
               const res = { closerPeers: peers }
 
-              if ((rec && rec.value) || err.code === 'ERR_INVALID_RECORD') {
+              if ((rec && rec.value) || (err && err.code === 'ERR_INVALID_RECORD')) {
                 vals.push({
                   val: rec && rec.value,
                   from: peer
