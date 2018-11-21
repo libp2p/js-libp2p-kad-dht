@@ -231,7 +231,7 @@ function writeReadMessage (conn, msg, callback) {
       try {
         response = Message.deserialize(res[0])
       } catch (err) {
-        return callback(errcode(new Error(`failed to deserialize response: ${err.message}`), 'ERR_FAILED_DESERIALIZE_RESPONSE'))
+        return callback(errcode(err, 'ERR_FAILED_DESERIALIZE_RESPONSE'))
       }
 
       callback(null, response)
