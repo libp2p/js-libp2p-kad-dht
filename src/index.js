@@ -83,8 +83,8 @@ class KadDHT {
      */
     this.providers = new Providers(this.datastore, this.peerInfo.id)
 
-    this.validators = { pk: libp2pRecord.validator.validators.pk }
-    this.selectors = { pk: libp2pRecord.selection.selectors.pk }
+    this.validators = { pk: libp2pRecord.validator.validators.pk, ipns: libp2pRecord.validator.validators.ipns }
+    this.selectors = { pk: libp2pRecord.selection.selectors.pk, ipns: libp2pRecord.selection.selectors.ipns }
 
     this.network = new Network(this)
 
