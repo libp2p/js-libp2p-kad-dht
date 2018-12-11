@@ -458,14 +458,14 @@ module.exports = (dht) => ({
    * Search the dht for up to `n` providers of the given CID.
    *
    * @param {CID} key
-   * @param {number} provideTimeout - How long the query should maximally run in milliseconds.
+   * @param {number} providerTimeout - How long the query should maximally run in milliseconds.
    * @param {number} n
    * @param {function(Error, Array<PeerInfo>)} callback
    * @returns {void}
    *
    * @private
    */
-  _findNProviders (key, provideTimeout, n, callback) {
+  _findNProviders (key, providerTimeout, n, callback) {
     let out = new LimitedPeerList(n)
 
     dht.providers.getProviders(key, (err, provs) => {
@@ -524,7 +524,7 @@ module.exports = (dht) => ({
 
       const peers = dht.routingTable.closestPeers(key.buffer, c.ALPHA)
 
-      timeout((cb) => query.run(peers, cb), provideTimeout)((err) => {
+      timeout((cb) => query.run(peers, cb), providerTimeout)((err) => {
         // combine peers from each path
         paths.forEach((path) => {
           path.toArray().forEach((peer) => {
