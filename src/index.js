@@ -179,11 +179,25 @@ class KadDHT {
    *
    * @param {Buffer} key
    * @param {Buffer} value
+   * @param {Object} options - get options
+   * @param {number} options.minPeers - minimum peers that must be put to to consider this a successful operation
+   * (default: 0)
    * @param {function(Error)} callback
    * @returns {void}
    */
-  put (key, value, callback) {
+  put (key, value, options, callback) {
+    if (typeof options === 'function') {
+      callback = options
+      options = {}
+    } else {
+      options = options || {}
+    }
+    if (!options.minPeers) {
+      options.minPeers = 0 // default
+    }
     this._log('PutValue %b', key)
+
+    let counter = 0
 
     waterfall([
       (cb) => utils.createPutRecord(key, value, cb),
@@ -191,10 +205,29 @@ class KadDHT {
         (cb) => this._putLocal(key, rec, cb),
         (cb) => this.getClosestPeers(key, cb),
         (peers, cb) => each(peers, (peer, cb) => {
-          this._putValueToPeer(key, rec, peer, cb)
+          this._putValueToPeer(key, rec, peer, (err) => {
+            if (err) {
+              this._log.error('Failed to put to peer (%b): %s', peer.id, err)
+            } else {
+              counter += 1
+            }
+            // always ok result
+            cb()
+          })
         }, cb)
       ], cb)
-    ], callback)
+    ], (err) => {
+      if (err) {
+        return callback(err)
+      }
+      if (counter < options.minPeers) {
+        const errMsg = 'Failed to put value to enough peers'
+
+        this._log.error(errMsg)
+        return callback(errcode(new Error(errMsg), 'ERR_NOT_ENOUGH_PUT_PEERS'))
+      }
+      callback()
+    })
   }
 
   /**
