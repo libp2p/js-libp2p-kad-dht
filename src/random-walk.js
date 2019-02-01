@@ -29,9 +29,9 @@ class RandomWalk {
    * @returns {void}
    */
   start (queries, period, timeout) {
-    if (queries == null) { queries = 1 }
-    if (period == null) { period = 5 * c.minute }
-    if (timeout == null) { timeout = 10 * c.second }
+    if (queries == null) { queries = RandomWalk.prototype.defaultQueriesPerPeriod }
+    if (period == null) { period = RandomWalk.prototype.defaultInterval }
+    if (timeout == null) { timeout = RandomWalk.prototype.defaultTimeout }
     // Don't run twice
     if (this._running) { return }
 
@@ -163,5 +163,9 @@ class RandomWalk {
     })
   }
 }
+
+RandomWalk.prototype.defaultQueriesPerPeriod = 1
+RandomWalk.prototype.defaultInterval = 5 * c.minute
+RandomWalk.prototype.defaultTimeout = 10 * c.second
 
 module.exports = RandomWalk

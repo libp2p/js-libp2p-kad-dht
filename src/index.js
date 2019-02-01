@@ -46,6 +46,7 @@ class KadDHT extends EventEmitter {
     options = options || {}
     options.validators = options.validators || {}
     options.selectors = options.selectors || {}
+    options.randomWalk = options.randomWalk || {}
 
     /**
      * Local reference to the libp2p-switch instance
@@ -118,6 +119,9 @@ class KadDHT extends EventEmitter {
      * Random walk state, default true
      */
     this.randomWalkEnabled = !options.hasOwnProperty('enabledDiscovery') ? true : Boolean(options.enabledDiscovery)
+    this.randomWalkQueriesPerPeriod = !options.randomWalk.hasOwnProperty('queriesPerPeriod') ? RandomWalk.prototype.defaultQueriesPerPeriod : parseInt(options.randomWalk.defaultQueriesPerPeriod)
+    this.randomWalkInterval = !options.randomWalk.hasOwnProperty('interval') ? RandomWalk.prototype.defaultInterval : parseInt(options.randomWalk.interval)
+    this.randomWalkTimeout = !options.randomWalk.hasOwnProperty('timeout') ? RandomWalk.prototype.defaultTimeout : parseInt(options.randomWalk.timeout)
   }
 
   /**
@@ -143,7 +147,7 @@ class KadDHT extends EventEmitter {
       }
 
       // Start random walk if enabled
-      this.randomWalkEnabled && this.randomWalk.start()
+      this.randomWalkEnabled && this.randomWalk.start(this.randomWalkQueriesPerPeriod, this.randomWalkInterval, this.randomWalkTimeout)
       callback()
     })
   }
