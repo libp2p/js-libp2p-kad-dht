@@ -22,6 +22,7 @@ const Providers = require('./providers')
 const Message = require('./message')
 const RandomWalk = require('./random-walk')
 const assert = require('assert')
+const defaultsDeep = require('@nodeutils/defaults-deep')
 
 /**
  * A DHT implementation modeled after Kademlia with S/Kademlia modifications.
@@ -46,7 +47,7 @@ class KadDHT extends EventEmitter {
     options = options || {}
     options.validators = options.validators || {}
     options.selectors = options.selectors || {}
-    options.randomWalk = options.randomWalk || {}
+    options.randomWalk = defaultsDeep(options.randomWalk, c.defaultRandomWalk)
 
     /**
      * Local reference to the libp2p-switch instance
@@ -118,10 +119,10 @@ class KadDHT extends EventEmitter {
     /**
      * Random walk state, default true
      */
-    this.randomWalkEnabled = !options.hasOwnProperty('enabledDiscovery') ? true : Boolean(options.enabledDiscovery)
-    this.randomWalkQueriesPerPeriod = !options.randomWalk.hasOwnProperty('queriesPerPeriod') ? RandomWalk.prototype.defaultQueriesPerPeriod : parseInt(options.randomWalk.defaultQueriesPerPeriod)
-    this.randomWalkInterval = !options.randomWalk.hasOwnProperty('interval') ? RandomWalk.prototype.defaultInterval : parseInt(options.randomWalk.interval)
-    this.randomWalkTimeout = !options.randomWalk.hasOwnProperty('timeout') ? RandomWalk.prototype.defaultTimeout : parseInt(options.randomWalk.timeout)
+    this.randomWalkEnabled = Boolean(options.randomWalk.enabled)
+    this.randomWalkQueriesPerPeriod = parseInt(options.randomWalk.queriesPerPeriod)
+    this.randomWalkInterval = parseInt(options.randomWalk.interval)
+    this.randomWalkTimeout = parseInt(options.randomWalk.timeout)
   }
 
   /**
