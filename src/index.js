@@ -4,6 +4,7 @@ const libp2pRecord = require('libp2p-record')
 const MemoryStore = require('interface-datastore').MemoryDatastore
 const waterfall = require('async/waterfall')
 const each = require('async/each')
+const filter = require('async/filter')
 const timeout = require('async/timeout')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
@@ -181,7 +182,7 @@ class KadDHT {
    * @param {Buffer} value
    * @param {Object} options - get options
    * @param {number} options.minPeers - minimum peers that must be put to to consider this a successful operation
-   * (default: 0)
+   * (default: closestPeers.length)
    * @param {function(Error)} callback
    * @returns {void}
    */
@@ -192,42 +193,41 @@ class KadDHT {
     } else {
       options = options || {}
     }
-    if (!options.minPeers) {
-      options.minPeers = 0 // default
-    }
-    this._log('PutValue %b', key)
 
-    let counter = 0
+    this._log('PutValue %b', key)
 
     waterfall([
       (cb) => utils.createPutRecord(key, value, cb),
       (rec, cb) => waterfall([
         (cb) => this._putLocal(key, rec, cb),
         (cb) => this.getClosestPeers(key, cb),
-        (peers, cb) => each(peers, (peer, cb) => {
-          this._putValueToPeer(key, rec, peer, (err) => {
-            if (err) {
-              this._log.error('Failed to put to peer (%b): %s', peer.id, err)
-            } else {
-              counter += 1
+        (peers, cb) => {
+          // Ensure we have a default `minPeers`
+          options.minPeers = options.minPeers || peers.length
+          // filter out the successful puts
+          filter(peers, (peer, cb) => {
+            this._putValueToPeer(key, rec, peer, (err) => {
+              if (err) {
+                this._log.error('Failed to put to peer (%b): %s', peer.id, err)
+                return cb(null, false)
+              }
+              cb(null, true)
+            })
+          }, (err, results) => {
+            if (err) return cb(err)
+
+            // Did we put to enough peers?
+            if (options.minPeers > results.length) {
+              const error = errcode(new Error('Failed to put value to enough peers'), 'ERR_NOT_ENOUGH_PUT_PEERS')
+              this._log.error(error)
+              return cb(error)
             }
-            // always ok result
+
             cb()
           })
-        }, cb)
+        }
       ], cb)
-    ], (err) => {
-      if (err) {
-        return callback(err)
-      }
-      if (counter < options.minPeers) {
-        const errMsg = 'Failed to put value to enough peers'
-
-        this._log.error(errMsg)
-        return callback(errcode(new Error(errMsg), 'ERR_NOT_ENOUGH_PUT_PEERS'))
-      }
-      callback()
-    })
+    ], callback)
   }
 
   /**

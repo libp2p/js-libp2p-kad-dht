@@ -349,6 +349,38 @@ describe('KadDHT', () => {
     })
   })
 
+  it('put - should require all peers to be put to successfully if no minPeers specified', function (done) {
+    this.timeout(10 * 1000)
+    const tdht = new TestDHT()
+
+    const errCode = 'ERR_NOT_AVAILABLE'
+    const error = errcode(new Error('fake error'), errCode)
+
+    tdht.spawn(3, (err, dhts) => {
+      expect(err).to.not.exist()
+      const dhtA = dhts[0]
+      const dhtB = dhts[1]
+      const dhtC = dhts[2]
+      const stub = sinon.stub(dhtC, '_verifyRecordLocally').callsArgWithAsync(1, error)
+
+      waterfall([
+        (cb) => connect(dhtA, dhtB, cb),
+        (cb) => connect(dhtA, dhtC, cb),
+        (cb) => dhtA.put(Buffer.from('/v/hello'), Buffer.from('world'), {}, cb),
+        (cb) => dhtB.get(Buffer.from('/v/hello'), { timeout: 1000 }, cb),
+        (res, cb) => {
+          expect(res).to.eql(Buffer.from('world'))
+          cb()
+        }
+      ], (err) => {
+        expect(err).to.exist()
+        expect(err.code).to.eql('ERR_NOT_ENOUGH_PUT_PEERS')
+        stub.restore()
+        tdht.teardown(done)
+      })
+    })
+  })
+
   it('put - get using key with no prefix (no selector available)', function (done) {
     this.timeout(10 * 1000)
     const tdht = new TestDHT()
