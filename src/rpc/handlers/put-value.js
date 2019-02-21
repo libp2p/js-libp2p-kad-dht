@@ -11,10 +11,9 @@ module.exports = (dht) => {
    *
    * @param {PeerInfo} peer
    * @param {Message} msg
-   * @param {function(Error, Message)} callback
-   * @returns {undefined}
+   * @returns {Promise<Message>}
    */
-  return function putValue (peer, msg, callback) {
+  return async function putValue (peer, msg) {
     const key = msg.key
     log('key: %b', key)
 
@@ -24,26 +23,22 @@ module.exports = (dht) => {
       const errMsg = `Empty record from: ${peer.id.toB58String()}`
 
       log.error(errMsg)
-      return callback(errcode(new Error(errMsg), 'ERR_EMPTY_RECORD'))
+      throw errcode(errMsg, 'ERR_EMPTY_RECORD')
     }
 
-    dht._verifyRecordLocally(record, (err) => {
-      if (err) {
-        log.error(err.message)
-        return callback(err)
-      }
+    try {
+      await dht._verifyRecordLocally(record)
+    } catch (err) {
+      log.error(err.message)
+      throw err
+    }
 
-      record.timeReceived = new Date()
+    record.timeReceived = new Date()
 
-      const key = utils.bufferToKey(record.key)
+    const k = utils.bufferToKey(record.key)
 
-      dht.datastore.put(key, record.serialize(), (err) => {
-        if (err) {
-          return callback(err)
-        }
+    await dht.datastore.put(k, record.serialize())
 
-        callback(null, msg)
-      })
-    })
+    return msg
   }
 }

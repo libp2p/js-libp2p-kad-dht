@@ -19,90 +19,105 @@ describe('Query', () => {
   let peerInfos
   let dht
 
-  before(function (done) {
+  before(async function () {
     this.timeout(5 * 1000)
-    createPeerInfo(10, (err, result) => {
-      if (err) {
-        return done(err)
-      }
+    peerInfos = await createPeerInfo(10)
 
-      peerInfos = result
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
-      dht = new DHT(sw)
-
-      done()
-    })
+    const sw = new Switch(peerInfos[0], new PeerBook())
+    sw.transport.add('tcp', new TCP())
+    sw.connection.addStreamMuxer(Mplex)
+    sw.connection.reuse()
+    dht = new DHT(sw)
   })
 
-  it('simple run', (done) => {
+  it('simple run', async () => {
     const peer = peerInfos[0]
 
     // mock this so we can dial non existing peers
     dht.switch.dial = (peer, callback) => callback()
 
     let i = 0
-    const query = (p, cb) => {
+    const query = (p) => {
       if (i++ === 1) {
         expect(p.id).to.eql(peerInfos[2].id.id)
 
-        return cb(null, {
+        return {
           value: Buffer.from('cool'),
           success: true
-        })
+        }
       }
       expect(p.id).to.eql(peerInfos[1].id.id)
-      cb(null, {
+      return {
         closerPeers: [peerInfos[2]]
-      })
+      }
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    q.run([peerInfos[1].id], (err, res) => {
-      expect(err).to.not.exist()
-      expect(res.paths[0].value).to.eql(Buffer.from('cool'))
-      expect(res.paths[0].success).to.eql(true)
-      expect(res.finalSet.size).to.eql(2)
-      done()
-    })
+    const res = await q.run([peerInfos[1].id])
+
+    expect(res.paths[0].value).to.eql(Buffer.from('cool'))
+    expect(res.paths[0].success).to.eql(true)
+    expect(res.finalSet.size).to.eql(2)
   })
 
-  it('returns an error if all queries error', (done) => {
+  it('does not throw an error if only some queries error', async () => {
     const peer = peerInfos[0]
 
     // mock this so we can dial non existing peers
     dht.switch.dial = (peer, callback) => callback()
 
-    const query = (p, cb) => cb(new Error('fail'))
+    let i = 0
+    const query = (p) => {
+      if (i++ === 1) {
+        throw new Error('fail')
+      }
+      return {
+        closerPeers: [peerInfos[2]]
+      }
+    }
 
     const q = new Query(dht, peer.id.id, () => query)
-    q.run([peerInfos[1].id], (err, res) => {
-      expect(err).to.exist()
+
+    await q.run([peerInfos[1].id])
+  })
+
+  it('throws an error if all queries error', async () => {
+    const peer = peerInfos[0]
+
+    // mock this so we can dial non existing peers
+    dht.switch.dial = (peer, callback) => callback()
+
+    const query = (p) => {
+      throw new Error('fail')
+    }
+
+    const q = new Query(dht, peer.id.id, () => query)
+
+    try {
+      await q.run([peerInfos[1].id])
+    } catch (err) {
       expect(err.message).to.eql('fail')
-      done()
-    })
+      return
+    }
+    expect.fail('No error thrown')
   })
 
-  it('only closerPeers', (done) => {
+  it('only closerPeers', async () => {
     const peer = peerInfos[0]
 
     // mock this so we can dial non existing peers
     dht.switch.dial = (peer, callback) => callback()
 
-    const query = (p, cb) => {
-      cb(null, {
+    const query = (p) => {
+      return {
         closerPeers: [peerInfos[2]]
-      })
+      }
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    q.run([peerInfos[1].id], (err, res) => {
-      expect(err).to.not.exist()
-      expect(res.finalSet.size).to.eql(2)
-      done()
-    })
+    const res = await q.run([peerInfos[1].id])
+
+    expect(res.finalSet.size).to.eql(2)
   })
 
   /*
@@ -123,38 +138,36 @@ describe('Query', () => {
    *                           <bad 0> <b 1> ... <b n>
    *
    */
-  it('uses disjoint paths', (done) => {
+  it('uses disjoint paths', async () => {
     const goodLength = 3
-    createDisjointTracks(peerInfos, goodLength, (err, targetId, starts, getResponse) => {
-      expect(err).to.not.exist()
-      // mock this so we can dial non existing peers
-      dht.switch.dial = (peer, callback) => callback()
-      let badEndVisited = false
+    const { targetId, tracks, getResponse } = await createDisjointTracks(peerInfos, goodLength)
 
-      const q = new Query(dht, targetId, (trackNum) => {
-        return (p, cb) => {
-          const response = getResponse(p, trackNum)
-          expect(response).to.exist() // or we aren't on the right track
-          if (response.end && !response.success) {
-            badEndVisited = true
-          }
-          if (response.success) {
-            expect(badEndVisited).to.eql(false)
-          }
-          cb(null, response)
+    // mock this so we can dial non existing peers
+    dht.switch.dial = (peer, callback) => callback()
+    let badEndVisited = false
+
+    const q = new Query(dht, targetId, (trackNum) => {
+      return (p) => {
+        const response = getResponse(p, trackNum)
+        expect(response).to.exist() // or we aren't on the right track
+        if (response.end && !response.success) {
+          badEndVisited = true
         }
-      })
-      q.concurrency = 1
-      // due to round-robin allocation of peers from starts, first
-      // path is good, second bad
-      q.run(starts, (err, res) => {
-        expect(err).to.not.exist()
-        // we should visit all nodes (except the target)
-        expect(res.finalSet.size).to.eql(peerInfos.length - 1)
-        // there should be one successful path
-        expect(res.paths.length).to.eql(1)
-        done()
-      })
+        if (response.success) {
+          expect(badEndVisited).to.eql(false)
+        }
+        return response
+      }
     })
+    q.concurrency = 1
+
+    // due to round-robin allocation of peers from tracks, first
+    // path is good, second bad
+    const res = await q.run(tracks)
+
+    // we should visit all nodes (except the target)
+    expect(res.finalSet.size).to.eql(peerInfos.length - 1)
+    // there should be one successful path
+    expect(res.paths.length).to.eql(1)
   })
 })

@@ -5,8 +5,6 @@
 const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
-const parallel = require('async/parallel')
-const waterfall = require('async/waterfall')
 const _ = require('lodash')
 
 const Message = require('../../../src/message')
@@ -22,31 +20,22 @@ describe('rpc - handlers - AddProvider', () => {
   let tdht
   let dht
 
-  before((done) => {
-    parallel([
-      (cb) => createPeerInfo(3, cb),
-      (cb) => createValues(2, cb)
-    ], (err, res) => {
-      expect(err).to.not.exist()
-      peers = res[0]
-      values = res[1]
-      done()
-    })
+  before(async () => {
+    const res = await Promise.all([
+      createPeerInfo(3),
+      createValues(2)
+    ])
+    peers = res[0]
+    values = res[1]
   })
 
-  beforeEach((done) => {
+  beforeEach(async () => {
     tdht = new TestDHT()
-
-    tdht.spawn(1, (err, dhts) => {
-      expect(err).to.not.exist()
-      dht = dhts[0]
-      done()
-    })
+    const dhts = await tdht.spawn(1)
+    dht = dhts[0]
   })
 
-  afterEach((done) => {
-    tdht.teardown(done)
-  })
+  afterEach(() => tdht.teardown())
 
   describe('invalid messages', () => {
     const tests = [{
@@ -60,16 +49,18 @@ describe('rpc - handlers - AddProvider', () => {
       error: 'ERR_INVALID_CID'
     }]
 
-    tests.forEach((t) => it(t.error.toString(), (done) => {
-      handler(dht)(peers[0], t.message, (err) => {
-        expect(err).to.exist()
+    tests.forEach((t) => it(t.error.toString(), async () => {
+      try {
+        await handler(dht)(peers[0], t.message)
+      } catch (err) {
         expect(err.code).to.eql(t.error)
-        done()
-      })
+        return
+      }
+      expect.fail('expected error')
     }))
   })
 
-  it('ignore providers not from the originator', (done) => {
+  it('ignore providers not from the originator', async () => {
     const cid = values[0].cid
 
     const msg = new Message(Message.TYPES.ADD_PROVIDER, cid.buffer, 0)
@@ -82,37 +73,25 @@ describe('rpc - handlers - AddProvider', () => {
       other
     ]
 
-    waterfall([
-      (cb) => handler(dht)(sender, msg, cb),
-      (cb) => dht.providers.getProviders(cid, cb),
-      (provs, cb) => {
-        expect(provs).to.have.length(1)
-        expect(provs[0].id).to.eql(sender.id.id)
-        const bookEntry = dht.peerBook.get(sender.id)
-        expect(bookEntry.multiaddrs.toArray()).to.eql(
-          sender.multiaddrs.toArray()
-        )
-        cb()
-      }
-    ], done)
+    await handler(dht)(sender, msg)
+    const provs = await dht.providers.getProviders(cid)
+    expect(provs).to.have.length(1)
+    expect(provs[0].id).to.eql(sender.id.id)
+    const bookEntry = dht.peerBook.get(sender.id)
+    expect(bookEntry.multiaddrs.toArray()).to.eql(sender.multiaddrs.toArray())
   })
 
-  it('ignore providers with no multiaddrs', (done) => {
+  it('ignore providers with no multiaddrs', async () => {
     const cid = values[0].cid
     const msg = new Message(Message.TYPES.ADD_PROVIDER, cid.buffer, 0)
     const sender = _.cloneDeep(peers[0])
     sender.multiaddrs.clear()
     msg.providerPeers = [sender]
 
-    waterfall([
-      (cb) => handler(dht)(sender, msg, cb),
-      (cb) => dht.providers.getProviders(cid, cb),
-      (provs, cb) => {
-        expect(provs).to.have.length(1)
-        expect(provs[0].id).to.eql(sender.id.id)
-        expect(dht.peerBook.has(sender.id)).to.equal(false)
-        cb()
-      }
-    ], done)
+    await handler(dht)(sender, msg)
+    const provs = await dht.providers.getProviders(cid)
+    expect(provs).to.have.length(1)
+    expect(provs[0].id).to.eql(sender.id.id)
+    expect(dht.peerBook.has(sender.id)).to.equal(false)
   })
 })

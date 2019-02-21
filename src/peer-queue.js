@@ -17,34 +17,22 @@ class PeerQueue {
    * Create from a given peer id.
    *
    * @param {PeerId} id
-   * @param {function(Error, PeerQueue)} callback
-   * @returns {void}
+   * @returns {Promise<PeerQueue>}
    */
-  static fromPeerId (id, callback) {
-    utils.convertPeerId(id, (err, key) => {
-      if (err) {
-        return callback(err)
-      }
-
-      callback(null, new PeerQueue(key))
-    })
+  static async fromPeerId (id) {
+    const key = await utils.convertPeerId(id)
+    return new PeerQueue(key)
   }
 
   /**
    * Create from a given buffer.
    *
-   * @param {Buffer} key
-   * @param {function(Error, PeerQueue)} callback
-   * @returns {void}
+   * @param {Buffer} buff
+   * @returns {Promise<PeerQueue>}
    */
-  static fromKey (key, callback) {
-    utils.convertBuffer(key, (err, key) => {
-      if (err) {
-        return callback(err)
-      }
-
-      callback(null, new PeerQueue(key))
-    })
+  static async fromKey (buff) {
+    const key = await utils.convertBuffer(buff)
+    return new PeerQueue(key)
   }
 
   /**
@@ -62,24 +50,18 @@ class PeerQueue {
    * Add a new PeerId to the queue.
    *
    * @param {PeerId} id
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise}
    */
-  enqueue (id, callback) {
+  async enqueue (id) {
     log('enqueue %s', id.toB58String())
-    utils.convertPeerId(id, (err, key) => {
-      if (err) {
-        return callback(err)
-      }
+    const key = await utils.convertPeerId(id)
 
-      const el = {
-        id: id,
-        distance: distance(this.from, key)
-      }
+    const el = {
+      id: id,
+      distance: distance(this.from, key)
+    }
 
-      this.heap.push(el)
-      callback()
-    })
+    this.heap.push(el)
   }
 
   /**

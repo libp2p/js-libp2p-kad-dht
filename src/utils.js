@@ -6,31 +6,28 @@ const mh = require('multihashes')
 const Key = require('interface-datastore').Key
 const base32 = require('base32.js')
 const distance = require('xor-distance')
-const map = require('async/map')
 const Record = require('libp2p-record').Record
-const setImmediate = require('async/setImmediate')
 const PeerId = require('peer-id')
+const errcode = require('err-code')
 
 /**
  * Creates a DHT ID by hashing a given buffer.
  *
  * @param {Buffer} buf
- * @param {function(Error, Buffer)} callback
- * @returns {void}
+ * @returns {Promise<Buffer>}
  */
-exports.convertBuffer = (buf, callback) => {
-  multihashing.digest(buf, 'sha2-256', callback)
+exports.convertBuffer = (buf) => {
+  return multihashing.digest(buf, 'sha2-256')
 }
 
 /**
  * Creates a DHT ID by hashing a Peer ID
  *
  * @param {PeerId} peer
- * @param {function(Error, Buffer)} callback
- * @returns {void}
+ * @returns {Promise<Buffer>}
  */
-exports.convertPeerId = (peer, callback) => {
-  multihashing.digest(peer.id, 'sha2-256', callback)
+exports.convertPeerId = (peer) => {
+  return multihashing.digest(peer.id, 'sha2-256')
 }
 
 /**
@@ -98,28 +95,17 @@ exports.decodeBase32 = (raw) => {
  *
  * @param {Array<PeerId>} peers
  * @param {Buffer} target
- * @param {function(Error, )} callback
- * @returns {void}
+ * @returns {Promise<Array<PeerId>>}
  */
-exports.sortClosestPeers = (peers, target, callback) => {
-  map(peers, (peer, cb) => {
-    exports.convertPeerId(peer, (err, id) => {
-      if (err) {
-        return cb(err)
-      }
-
-      cb(null, {
-        peer: peer,
-        distance: distance(id, target)
-      })
-    })
-  }, (err, distances) => {
-    if (err) {
-      return callback(err)
+exports.sortClosestPeers = async (peers, target) => {
+  const distances = await Promise.all(peers.map(async (peer) => {
+    const id = await exports.convertPeerId(peer)
+    return {
+      peer: peer,
+      distance: distance(id, target)
     }
-
-    callback(null, distances.sort(exports.xorCompare).map((d) => d.peer))
-  })
+  }))
+  return distances.sort(exports.xorCompare).map((d) => d.peer)
 }
 
 /**
@@ -150,16 +136,12 @@ exports.pathSize = (resultsWanted, numPaths) => {
  *
  * @param {Buffer} key
  * @param {Buffer} value
- * @param {function(Error, Buffer)} callback
- * @returns {void}
+ * @returns {Buffer}
  */
-exports.createPutRecord = (key, value, callback) => {
+exports.createPutRecord = (key, value) => {
   const timeReceived = new Date()
   const rec = new Record(key, value, timeReceived)
-
-  setImmediate(() => {
-    callback(null, rec.serialize())
-  })
+  return rec.serialize()
 }
 
 /**
@@ -189,4 +171,53 @@ exports.logger = (id, subsystem) => {
   logger.error = debug(name.concat(['error']).join(':'))
 
   return logger
+}
+
+/**
+ * Creates a Promise with a timeout
+ *
+ * @param {Promise} promise
+ * @param {number} timeout - timeout in ms. If undefined, there is no timeout.
+ * @param {number} [errMsg] - error message
+ * @returns {Promise} promise with a timeout
+ *
+ * @private
+ */
+exports.promiseTimeout = (promise, timeout, errMsg) => {
+  if (!timeout) {
+    return promise
+  }
+  return Promise.race([
+    promise,
+    new Promise((resolve, reject) => setTimeout(() => {
+      reject(errcode(errMsg || 'Promise timed out', 'ETIMEDOUT'))
+    }, timeout))
+  ])
+}
+
+/**
+ * Periodically retries the function call until it succeeds or the number of
+ * attempts exceeds times (in which case the Promise is rejected)
+ *
+ * @param {Object} options
+ * @param {number} options.times - maximum number of attempts to make
+ * @param {number} options.interval - interval between attempts in ms
+ * @param {function} fn - function to attempt to call
+ * @returns {Promise}
+ *
+ * @private
+ */
+exports.retry = async (options, fn) => {
+  for (let i = 0; i < options.times + 1; i++) {
+    try {
+      await fn()
+      return
+    } catch (err) {
+      if (i === options.times) {
+        throw err
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, options.interval))
+  }
 }

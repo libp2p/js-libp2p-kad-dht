@@ -17,11 +17,7 @@ class RoutingTable {
     this.self = self
     this._onPing = this._onPing.bind(this)
 
-    utils.convertPeerId(self, (err, selfKey) => {
-      if (err) {
-        throw err
-      }
-
+    utils.convertPeerId(self).then((selfKey) => {
       this.kb = new KBucket({
         localNodeId: selfKey,
         numberOfNodesPerKBucket: kBucketSize,
@@ -72,22 +68,13 @@ class RoutingTable {
    * Find a specific peer by id.
    *
    * @param {PeerId} peer
-   * @param {function(Error, PeerId)} callback
-   * @returns {void}
+   * @returns {Promise<PeerId|undefined>}
    */
-  find (peer, callback) {
-    utils.convertPeerId(peer, (err, key) => {
-      if (err) {
-        return callback(err)
-      }
-      const closest = this.closestPeer(key)
+  async find (peer) {
+    const key = await utils.convertPeerId(peer)
+    const closest = this.closestPeer(key)
 
-      if (closest && closest.isEqual(peer)) {
-        return callback(null, closest)
-      }
-
-      callback()
-    })
+    return closest && closest.isEqual(peer) ? closest : undefined
   }
 
   /**
@@ -119,34 +106,22 @@ class RoutingTable {
    * Add or update the routing table with the given peer.
    *
    * @param {PeerId} peer
-   * @param {function(Error)} callback
-   * @returns {undefined}
+   * @returns {Promise}
    */
-  add (peer, callback) {
-    utils.convertPeerId(peer, (err, id) => {
-      if (err) {
-        return callback(err)
-      }
-      this.kb.add({ id: id, peer: peer })
-      callback()
-    })
+  async add (peer) {
+    const id = await utils.convertPeerId(peer)
+    this.kb.add({ id: id, peer: peer })
   }
 
   /**
    * Remove a given peer from the table.
    *
    * @param {PeerId} peer
-   * @param {function(Error)} callback
-   * @returns {undefined}
+   * @returns {Promise}
    */
-  remove (peer, callback) {
-    utils.convertPeerId(peer, (err, id) => {
-      if (err) {
-        return callback(err)
-      }
-      this.kb.remove(id)
-      callback()
-    })
+  async remove (peer) {
+    const id = await utils.convertPeerId(peer)
+    this.kb.remove(id)
   }
 }
 

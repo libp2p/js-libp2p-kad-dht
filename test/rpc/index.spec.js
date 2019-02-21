@@ -21,40 +21,35 @@ const createPeerInfo = require('../utils/create-peer-info')
 describe('rpc', () => {
   let peerInfos
 
-  before((done) => {
-    createPeerInfo(2, (err, peers) => {
-      if (err) {
-        return done(err)
-      }
-
-      peerInfos = peers
-      done()
-    })
+  before(async () => {
+    peerInfos = await createPeerInfo(2)
   })
 
   describe('protocolHandler', () => {
-    it('calls back with the response', (done) => {
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
-      const dht = new KadDHT(sw, { kBucketSize: 5 })
+    it('returns the response', () => {
+      return new Promise((resolve) => {
+        const sw = new Switch(peerInfos[0], new PeerBook())
+        sw.transport.add('tcp', new TCP())
+        sw.connection.addStreamMuxer(Mplex)
+        sw.connection.reuse()
+        const dht = new KadDHT(sw, { kBucketSize: 5 })
 
-      dht.peerBook.put(peerInfos[1])
+        dht.peerBook.put(peerInfos[1])
 
-      const msg = new Message(Message.TYPES.GET_VALUE, Buffer.from('hello'), 5)
+        const msg = new Message(Message.TYPES.GET_VALUE, Buffer.from('hello'), 5)
 
-      const conn = makeConnection(msg, peerInfos[1], (err, res) => {
-        expect(err).to.not.exist()
-        expect(res).to.have.length(1)
-        const msg = Message.deserialize(res[0])
-        expect(msg).to.have.property('key').eql(Buffer.from('hello'))
-        expect(msg).to.have.property('closerPeers').eql([])
+        const conn = makeConnection(msg, peerInfos[1], (err, res) => {
+          expect(err).to.not.exist()
+          expect(res).to.have.length(1)
+          const msg = Message.deserialize(res[0])
+          expect(msg).to.have.property('key').eql(Buffer.from('hello'))
+          expect(msg).to.have.property('closerPeers').eql([])
 
-        done()
+          resolve()
+        })
+
+        rpc(dht)('protocol', conn)
       })
-
-      rpc(dht)('protocol', conn)
     })
   })
 })

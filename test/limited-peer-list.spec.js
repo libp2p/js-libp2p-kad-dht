@@ -12,16 +12,10 @@ const createPeerInfo = require('./utils/create-peer-info')
 describe('LimitedPeerList', () => {
   let peers
 
-  before(function (done) {
+  before(async function () {
     this.timeout(10 * 1000)
 
-    createPeerInfo(5, (err, p) => {
-      if (err) {
-        return done(err)
-      }
-      peers = p
-      done()
-    })
+    peers = await createPeerInfo(5)
   })
 
   it('basics', () => {

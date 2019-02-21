@@ -1,12 +1,10 @@
 'use strict'
 
-const waterfall = require('async/waterfall')
-const each = require('async/each')
-const queue = require('async/queue')
 const mh = require('multihashes')
 
 const c = require('./constants')
 const PeerQueue = require('./peer-queue')
+const WorkerQueue = require('./worker-queue')
 const utils = require('./utils')
 
 /**
@@ -26,7 +24,7 @@ class Query {
    * Query function.
    * @typedef {queryFunc} function
    * @param {PeerId} next - Peer to query
-   * @param {function(Error, Object)} callback - Query result callback
+   * @returns {Object}
    */
 
   /**
@@ -47,13 +45,20 @@ class Query {
   }
 
   /**
+   * Run result.
+   * @typedef {Object} RunResult
+   * @property {Set<PeerId>} finalSet - peers that were queried
+   * @property {Array<Object>} paths - array of states per disjoint path
+   */
+
+  /**
    * Run this query, start with the given list of peers first.
    *
    * @param {Array<PeerId>} peers
-   * @param {function(Error, Object)} callback
-   * @returns {void}
+   * @param {number} [timeout] - timeout in ms. If undefined, runs forever.
+   * @returns {Promise<RunResult>}
    */
-  run (peers, callback) {
+  async run (peers, timeout) {
     const run = {
       peersSeen: new Set(),
       errors: [],
@@ -62,7 +67,7 @@ class Query {
 
     if (peers.length === 0) {
       this._log.error('Running query with no peers')
-      return callback()
+      return
     }
 
     // create correct number of paths
@@ -85,100 +90,88 @@ class Query {
       }
     })
 
-    each(run.paths, (path, cb) => {
-      waterfall([
-        (cb) => PeerQueue.fromKey(this.key, cb),
-        (q, cb) => {
-          path.peersToQuery = q
-          each(path.peers, (p, cb) => addPeerToQuery(p, this.dht, path, cb), cb)
-        },
-        (cb) => workerQueue(this, path, cb)
-      ], cb)
-    }, (err, results) => {
-      this._log('query:done')
-      if (err) {
-        return callback(err)
+    // Set up a worker queue for each path
+    const workers = await Promise.all(run.paths.map(async (path) => {
+      path.peersToQuery = await PeerQueue.fromKey(this.key)
+      await Promise.all(path.peers.map((p) => addPeerToQuery(p, this.dht, path)))
+      return workerQueue(this, path)
+    }))
+
+    // Run the workers with a timeout
+    try {
+      await utils.promiseTimeout(
+        Promise.all(workers.map(w => w.onComplete())),
+        timeout,
+        `Query for key ${this.key} timed out in ${timeout}ms`
+      )
+    } catch (err) {
+      // There was an error, so stop all the workers
+      for (const worker of workers) {
+        worker.stop()
       }
+      this._log(err.message)
+      throw err
+    }
 
-      if (run.errors.length === run.peersSeen.size) {
-        return callback(run.errors[0])
+    this._log('query:done')
+
+    if (run.errors.length === run.peersSeen.size) {
+      throw run.errors[0]
+    }
+
+    run.res = {
+      finalSet: run.peersSeen,
+      paths: []
+    }
+
+    run.paths.forEach((path) => {
+      if (path.res && path.res.success) {
+        run.res.paths.push(path.res)
       }
-
-      run.res = {
-        finalSet: run.peersSeen,
-        paths: []
-      }
-
-      run.paths.forEach((path) => {
-        if (path.res && path.res.success) {
-          run.res.paths.push(path.res)
-        }
-      })
-
-      callback(null, run.res)
     })
+
+    return run.res
   }
 }
 
 /**
- * Use the queue from async to keep `concurrency` amount items running
+ * Use the queue to keep `concurrency` amount items running
  * per path.
  *
  * @param {Query} query
  * @param {Object} path
- * @param {function(Error)} callback
- * @returns {void}
+ * @returns {Promise}
  * @private
  */
-function workerQueue (query, path, callback) {
-  let killed = false
-  const q = queue((next, cb) => {
+function workerQueue (query, path) {
+  const processPeer = async (queue, peer) => {
     query._log('queue:work')
-    execQuery(next, query, path, (err, done) => {
-      // Ignore after kill
-      if (killed) {
-        return cb()
-      }
-      query._log('queue:work:done', err, done)
-      if (err) {
-        return cb(err)
-      }
-      if (done) {
-        q.kill()
-        killed = true
-        return callback()
-      }
-      cb()
-    })
-  }, query.concurrency)
 
-  const fill = () => {
-    query._log('queue:fill')
-    while (q.length() < query.concurrency &&
-           path.peersToQuery.length > 0) {
-      q.push(path.peersToQuery.dequeue())
+    let done, err
+    try {
+      done = await execQuery(peer, query, path)
+    } catch (e) {
+      query._log.error('queue', e)
+      err = e
     }
+
+    // Ignore tasks that finish after we're already done
+    if (!queue.running) {
+      return true
+    }
+
+    query._log('queue:work:done', err, done)
+
+    if (err) {
+      throw err
+    }
+
+    return done
   }
 
-  fill()
-
-  // callback handling
-  q.error = (err) => {
-    query._log.error('queue', err)
-    callback(err)
-  }
-
-  q.drain = () => {
-    query._log('queue:drain')
-    callback()
-  }
-
-  q.unsaturated = () => {
-    query._log('queue:unsatured')
-    fill()
-  }
-
-  q.buffer = 0
+  return new WorkerQueue(path.peersToQuery, processPeer, {
+    concurrency: query.concurrency
+  })
 }
 
 /**
@@ -187,32 +180,32 @@ function workerQueue (query, path, callback) {
  * @param {PeerId} next
  * @param {Query} query
  * @param {Object} path
- * @param {function(Error)} callback
- * @returns {void}
+ * @returns {Promise}
  * @private
  */
-function execQuery (next, query, path, callback) {
-  path.query(next, (err, res) => {
-    if (err) {
-      path.run.errors.push(err)
-      callback()
-    } else if (res.success) {
-      path.res = res
-      callback(null, true)
-    } else if (res.closerPeers && res.closerPeers.length > 0) {
-      each(res.closerPeers, (closer, cb) => {
-        // don't add ourselves
-        if (query.dht._isSelf(closer.id)) {
-          return cb()
-        }
-        closer = query.dht.peerBook.put(closer)
-        query.dht._peerDiscovered(closer)
-        addPeerToQuery(closer.id, query.dht, path, cb)
-      }, callback)
-    } else {
-      callback()
-    }
-  })
+async function execQuery (next, query, path) {
+  let res
+  try {
+    res = await path.query(next)
+  } catch (err) {
+    path.run.errors.push(err)
+    return
+  }
+  if (res.success) {
+    path.res = res
+    return true
+  }
+  if (res.closerPeers && res.closerPeers.length > 0) {
+    await Promise.all(res.closerPeers.map((closer) => {
+      // don't add ourselves
+      if (query.dht._isSelf(closer.id)) {
+        return
+      }
+      closer = query.dht.peerBook.put(closer)
+      query.dht._peerDiscovered(closer)
+      return addPeerToQuery(closer.id, query.dht, path)
+    }))
+  }
 }
 
 /**
@@ -221,22 +214,21 @@ function execQuery (next, query, path, callback) {
  * @param {PeerId} next
  * @param {DHT} dht
  * @param {Object} path
- * @param {function(Error)} callback
- * @returns {void}
+ * @returns {Promise}
  * @private
  */
-function addPeerToQuery (next, dht, path, callback) {
+function addPeerToQuery (next, dht, path) {
   const run = path.run
   if (dht._isSelf(next)) {
-    return callback()
+    return
   }
 
   if (run.peersSeen.has(next)) {
-    return callback()
+    return
   }
 
   run.peersSeen.add(next)
-  path.peersToQuery.enqueue(next, callback)
+  return path.peersToQuery.enqueue(next)
 }
 
 module.exports = Query

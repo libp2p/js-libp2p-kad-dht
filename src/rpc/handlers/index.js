@@ -17,7 +17,7 @@ module.exports = (dht) => {
    *
    * @param {number} type
    *
-   * @returns {function(PeerInfo, Message, function(Error, Message))}
+   * @returns {function(PeerInfo, Message)}
    *
    * @private
    */

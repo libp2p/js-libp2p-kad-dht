@@ -17,35 +17,23 @@ describe('rpc - handlers - Ping', () => {
   let tdht
   let dht
 
-  before((done) => {
-    createPeerInfo(2, (err, res) => {
-      expect(err).to.not.exist()
-      peers = res
-      done()
-    })
+  before(async () => {
+    peers = await createPeerInfo(2)
   })
 
-  beforeEach((done) => {
+  beforeEach(async () => {
     tdht = new TestDHT()
-
-    tdht.spawn(1, (err, dhts) => {
-      expect(err).to.not.exist()
-      dht = dhts[0]
-      done()
-    })
+    const dhts = await tdht.spawn(1)
+    dht = dhts[0]
   })
 
-  afterEach((done) => {
-    tdht.teardown(done)
-  })
+  afterEach(() => tdht.teardown())
 
-  it('replies with the same message', (done) => {
+  it('replies with the same message', async () => {
     const msg = new Message(T, Buffer.from('hello'), 5)
 
-    handler(dht)(peers[0], msg, (err, response) => {
-      expect(err).to.not.exist()
-      expect(response).to.be.eql(msg)
-      done()
-    })
+    const response = await handler(dht)(peers[0], msg)
+
+    expect(response).to.be.eql(msg)
   })
 })

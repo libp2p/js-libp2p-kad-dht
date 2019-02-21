@@ -4,8 +4,6 @@
 const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
-const parallel = require('async/parallel')
-const waterfall = require('async/waterfall')
 
 const Message = require('../../../src/message')
 const utils = require('../../../src/utils')
@@ -23,86 +21,68 @@ describe('rpc - handlers - GetProviders', () => {
   let tdht
   let dht
 
-  before((done) => {
-    parallel([
-      (cb) => createPeerInfo(3, cb),
-      (cb) => createValues(2, cb)
-    ], (err, res) => {
-      expect(err).to.not.exist()
-      peers = res[0]
-      values = res[1]
-      done()
-    })
+  before(async () => {
+    const res = await Promise.all([
+      createPeerInfo(3),
+      createValues(2)
+    ])
+    peers = res[0]
+    values = res[1]
   })
 
-  beforeEach((done) => {
+  beforeEach(async () => {
     tdht = new TestDHT()
-
-    tdht.spawn(1, (err, dhts) => {
-      expect(err).to.not.exist()
-      dht = dhts[0]
-      done()
-    })
+    const dhts = await tdht.spawn(1)
+    dht = dhts[0]
   })
 
-  afterEach((done) => {
-    tdht.teardown(done)
-  })
+  afterEach(() => tdht.teardown())
 
-  it('errors with an invalid key ', (done) => {
+  it('errors with an invalid key ', async () => {
     const msg = new Message(T, Buffer.from('hello'), 0)
 
-    handler(dht)(peers[0], msg, (err, response) => {
+    try {
+      await handler(dht)(peers[0], msg)
+    } catch (err) {
       expect(err.code).to.eql('ERR_INVALID_CID')
-      expect(response).to.not.exist()
-      done()
-    })
+      return
+    }
+    expect.fail('did not throw')
   })
 
-  it('responds with self if the value is in the datastore', (done) => {
+  it('responds with self if the value is in the datastore', async () => {
     const v = values[0]
 
     const msg = new Message(T, v.cid.buffer, 0)
     const dsKey = utils.bufferToKey(v.cid.buffer)
 
-    waterfall([
-      (cb) => dht.datastore.put(dsKey, v.value, cb),
-      (cb) => handler(dht)(peers[0], msg, cb)
-    ], (err, response) => {
-      expect(err).to.not.exist()
+    await dht.datastore.put(dsKey, v.value)
+    const response = await handler(dht)(peers[0], msg)
 
-      expect(response.key).to.be.eql(v.cid.buffer)
-      expect(response.providerPeers).to.have.length(1)
-      expect(response.providerPeers[0].id.toB58String())
-        .to.eql(dht.peerInfo.id.toB58String())
-
-      done()
-    })
+    expect(response.key).to.be.eql(v.cid.buffer)
+    expect(response.providerPeers).to.have.length(1)
+    expect(response.providerPeers[0].id.toB58String())
+      .to.eql(dht.peerInfo.id.toB58String())
   })
 
-  it('responds with listed providers and closer peers', (done) => {
+  it('responds with listed providers and closer peers', async () => {
     const v = values[0]
 
     const msg = new Message(T, v.cid.buffer, 0)
     const prov = peers[1].id
     const closer = peers[2]
 
-    waterfall([
-      (cb) => dht._add(closer, cb),
-      (cb) => dht.providers.addProvider(v.cid, prov, cb),
-      (cb) => handler(dht)(peers[0], msg, cb)
-    ], (err, response) => {
-      expect(err).to.not.exist()
+    await dht._add(closer)
+    await dht.providers.addProvider(v.cid, prov)
+    const response = await handler(dht)(peers[0], msg)
 
-      expect(response.key).to.be.eql(v.cid.buffer)
-      expect(response.providerPeers).to.have.length(1)
-      expect(response.providerPeers[0].id.toB58String())
-        .to.eql(prov.toB58String())
+    expect(response.key).to.be.eql(v.cid.buffer)
+    expect(response.providerPeers).to.have.length(1)
+    expect(response.providerPeers[0].id.toB58String())
+      .to.eql(prov.toB58String())
 
-      expect(response.closerPeers).to.have.length(1)
-      expect(response.closerPeers[0].id.toB58String())
-        .to.eql(closer.id.toB58String())
-      done()
-    })
+    expect(response.closerPeers).to.have.length(1)
+    expect(response.closerPeers[0].id.toB58String())
+      .to.eql(closer.id.toB58String())
   })
 })

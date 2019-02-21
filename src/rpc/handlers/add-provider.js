@@ -11,14 +11,13 @@ module.exports = (dht) => {
    *
    * @param {PeerInfo} peer
    * @param {Message} msg
-   * @param {function(Error, Message)} callback
-   * @returns {undefined}
+   * @returns {Promise<Message>}
    */
-  return function addProvider (peer, msg, callback) {
+  return function addProvider (peer, msg) {
     log('start')
 
     if (!msg.key || msg.key.length === 0) {
-      return callback(errcode(new Error('Missing key'), 'ERR_MISSING_KEY'))
+      throw errcode('Missing key', 'ERR_MISSING_KEY')
     }
 
     let cid
@@ -27,7 +26,7 @@ module.exports = (dht) => {
     } catch (err) {
       const errMsg = `Invalid CID: ${err.message}`
 
-      return callback(errcode(new Error(errMsg), 'ERR_INVALID_CID'))
+      throw errcode(errMsg, 'ERR_INVALID_CID')
     }
 
     msg.providerPeers.forEach((pi) => {
@@ -49,6 +48,6 @@ module.exports = (dht) => {
       }
     })
 
-    dht.providers.addProvider(cid, peer.id, callback)
+    return dht.providers.addProvider(cid, peer.id)
   }
 }
