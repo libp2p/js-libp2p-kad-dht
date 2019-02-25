@@ -31,15 +31,25 @@ const defaultsDeep = require('@nodeutils/defaults-deep')
  */
 class KadDHT extends EventEmitter {
   /**
+   * Random walk options
+   *
+   * @typedef {Object} randomWalkOptions
+   * @property {boolean} enabled discovery enabled (default: true)
+   * @property {number} queriesPerPeriod how many queries to run per period (default: 1)
+   * @property {number} interval how often to run the the random-walk process, in milliseconds (default: 300000)
+   * @property {number} timeout how long to wait for the the random-walk query to run, in milliseconds (default: 10000)
+   */
+
+  /**
    * Create a new KadDHT.
    *
    * @param {Switch} sw libp2p-switch instance
    * @param {object} options DHT options
    * @param {number} options.kBucketSize k-bucket size (default 20)
    * @param {Datastore} options.datastore datastore (default MemoryDatastore)
-   * @param {boolean} options.enabledDiscovery enable dht discovery (default true)
    * @param {object} options.validators validators object with namespace as keys and function(key, record, callback)
    * @param {object} options.selectors selectors object with namespace as keys and function(key, records)
+   * @param {randomWalkOptions} options.randomWalk randomWalk options
    */
   constructor (sw, options) {
     super()
