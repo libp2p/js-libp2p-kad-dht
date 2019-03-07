@@ -14,6 +14,7 @@ const PeerBook = require('peer-book')
 const Switch = require('libp2p-switch')
 const TCP = require('libp2p-tcp')
 const Mplex = require('libp2p-mplex')
+const { collect } = require('streaming-iterables')
 
 const errcode = require('err-code')
 
@@ -250,6 +251,27 @@ describe('KadDHT', () => {
     })
   })
 
+  it('put - get many', function () {
+    this.timeout(10 * 1000)
+    return withDHTs(3, async ([dhtA, dhtB, dhtC]) => {
+      await connect(dhtA, dhtC)
+      await connect(dhtB, dhtC)
+
+      await dhtA.put(Buffer.from('/v/hello'), Buffer.from('world'))
+      await dhtB.put(Buffer.from('/v/hello'), Buffer.from('world'))
+
+      for (let count = 1; count <= 3; count++) {
+        let i = 0
+        const it = dhtC.getMany(Buffer.from('/v/hello'), count, { timeout: 1000 })
+        for await (const res of it) {
+          expect(res.val).to.eql(Buffer.from('world'))
+          i++
+        }
+        expect(i).to.eql(count)
+      }
+    })
+  })
+
   it('put - get', function () {
     this.timeout(10 * 1000)
     return withDHTs(2, async ([dhtA, dhtB]) => {
@@ -439,7 +461,7 @@ describe('KadDHT', () => {
       let n = 0
       await Promise.all(values.map(async (v) => {
         n = (n + 1) % 3
-        const provs = await dhts[n].findProviders(v.cid, { timeout: 5000 })
+        const provs = await collect(dhts[n].findProviders(v.cid, { timeout: 5000 }))
 
         expect(provs).to.have.length(1)
         expect(provs[0].id.id).to.be.eql(ids[3].id)
@@ -461,8 +483,8 @@ describe('KadDHT', () => {
       await connect(dhts[1], dhts[2])
       await Promise.all(dhts.map((dht) => dht.provide(val.cid)))
 
-      const res1 = await dhts[0].findProviders(val.cid, {})
-      const res2 = await dhts[0].findProviders(val.cid, { maxNumProviders: 2 })
+      const res1 = await collect(dhts[0].findProviders(val.cid, {}))
+      const res2 = await collect(dhts[0].findProviders(val.cid, { maxNumProviders: 2 }))
 
       // find providers find all the 3 providers
       expect(res1).to.exist()
@@ -760,7 +782,7 @@ describe('KadDHT', () => {
 
       return withDHTs(1, async (dhts) => {
         try {
-          await dhts[0].getMany('/v/hello', 5)
+          await collect(dhts[0].getMany('/v/hello', 5))
         } catch (err) {
           expect(err.code).to.be.eql('ERR_NO_PEERS_IN_ROUTING_TABLE')
           return

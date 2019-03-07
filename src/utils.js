@@ -174,10 +174,11 @@ exports.logger = (id, subsystem) => {
 }
 
 /**
- * Creates a Promise with a timeout
+ * Creates a Promise with a timeout - the Promise rejects with an Error with
+ * code ETIMEDOUT after timeout ms
  *
  * @param {Promise} promise
- * @param {number} timeout - timeout in ms. If undefined, there is no timeout.
+ * @param {number} timeout - timeout in ms. If falsey, there is no timeout.
  * @param {number} [errMsg] - error message
  * @returns {Promise} promise with a timeout
  *
@@ -193,6 +194,35 @@ exports.promiseTimeout = (promise, timeout, errMsg) => {
       reject(errcode(errMsg || 'Promise timed out', 'ETIMEDOUT'))
     }, timeout))
   ])
+}
+
+/**
+ * Creates an async Iterable with a timeout - throws an Error with code
+ * ETIMEDOUT after timeout ms
+ *
+ * @param {Iterable} iterable
+ * @param {number} timeout - timeout in ms. If falsey, there is no timeout.
+ * @param {number} [errMsg] - error message
+ * @returns {Iterable} iterable with a timeout
+ *
+ * @private
+ */
+exports.iterableTimeout = async function * (iterable, timeout, errMsg) {
+  if (!timeout) {
+    return iterable
+  }
+
+  const start = Date.now()
+
+  let next
+  while (!next || !next.done) {
+    let elapsed = Date.now() - start
+    const nextPromise = iterable.next()
+    next = await exports.promiseTimeout(nextPromise, timeout - elapsed, errMsg || 'Timed out')
+    if (!next.done) {
+      yield next.value
+    }
+  }
 }
 
 /**

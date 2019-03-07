@@ -9,7 +9,7 @@ const PeerId = require('peer-id')
 const PeerQueue = require('../src/peer-queue')
 
 describe('PeerQueue', () => {
-  it('basics', async () => {
+  async function testBasics (toArray) {
     const p1 = new PeerId(Buffer.from('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a31'))
     const p2 = new PeerId(Buffer.from('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a32'))
     const p3 = new PeerId(Buffer.from('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33'))
@@ -27,17 +27,34 @@ describe('PeerQueue', () => {
     await pq.enqueue(p5)
     await pq.enqueue(p1)
 
-    expect([
-      pq.dequeue(),
-      pq.dequeue(),
-      pq.dequeue(),
-      pq.dequeue(),
-      pq.dequeue(),
-      pq.dequeue()
-    ].map((m) => m.toB58String())).to.be.eql([
+    const asArray = toArray(pq)
+    expect((asArray).map((m) => m.toB58String())).to.be.eql([
       p1, p1, p1, p4, p3, p2
     ].map((m) => m.toB58String()))
 
     expect(pq.length).to.be.eql(0)
+  }
+
+  it('basics', () => {
+    return testBasics((pq) => {
+      return [
+        pq.dequeue(),
+        pq.dequeue(),
+        pq.dequeue(),
+        pq.dequeue(),
+        pq.dequeue(),
+        pq.dequeue()
+      ]
+    })
+  })
+
+  it('iterable', () => {
+    return testBasics((pq) => {
+      const messages = []
+      for (const m of pq) {
+        messages.push(m)
+      }
+      return messages
+    })
   })
 })

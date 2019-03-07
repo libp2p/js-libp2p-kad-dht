@@ -6,6 +6,7 @@ const MemoryStore = require('interface-datastore').MemoryDatastore
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const crypto = require('libp2p-crypto')
+const { collect } = require('streaming-iterables')
 
 const errcode = require('err-code')
 
@@ -248,9 +249,9 @@ class KadDHT extends EventEmitter {
    * @param {number} nvals
    * @param {Object} options - get options
    * @param {number} options.timeout - optional timeout (default: 60000)
-   * @returns {Promise<Array<{from: PeerId, val: Buffer}>>}
+   * @returns {AsyncIterator<{from: PeerId, val: Buffer}>}
    */
-  async getMany (key, nvals, options = {}) {
+  async * getMany (key, nvals, options = {}) {
     if (!options.maxTimeout && !options.timeout) {
       options.timeout = c.minute // default
     } else if (options.maxTimeout && !options.timeout) { // TODO this will be deprecated in a next release
@@ -258,8 +259,9 @@ class KadDHT extends EventEmitter {
     }
 
     this._log('getMany %b (%s)', key, nvals)
-    let vals = []
+    let valCount = 0
 
+    // First check the local store
     let localRec, err
     try {
       localRec = await this._getLocal(key)
@@ -272,19 +274,23 @@ class KadDHT extends EventEmitter {
     }
 
     if (!err) {
-      vals.push({
+      valCount++
+      yield {
         val: localRec.value,
         from: this.peerInfo.id
-      })
+      }
     }
 
-    if (nvals <= 1) {
-      return vals
+    // Already have enough values
+    if (valCount >= nvals) {
+      return
     }
 
-    const paths = []
+    // Not enough values yet, let's go out to the swarm
     const id = await utils.convertBuffer(key)
 
+    // As a starting list of peers, get the closest ALPHA peers to the key that
+    // we know about from the routing table
     const rtp = this.routingTable.closestPeers(id, c.ALPHA)
 
     this._log('peers in rt: %d', rtp.length)
@@ -295,19 +301,23 @@ class KadDHT extends EventEmitter {
       throw errcode(errMsg, 'ERR_NO_PEERS_IN_ROUTING_TABLE')
     }
 
-    // we have peers, lets do the actual query to them
+    // We have peers, lets do the actual query to them
+    const startingValCount = valCount
     const query = new Query(this, key, (pathIndex, numPaths) => {
-      // This function body runs once per disjoint path
-      const pathSize = utils.pathSize(nvals - vals.length, numPaths)
-      const pathVals = []
-      paths.push(pathVals)
+      // This function body runs once per disjoint path.
+      // Note: For S/Kademlia, We need to get peers from nvals disjoint paths
+      // (not just nvals different peers)
+      // eg 20 values from 8 paths = Math.ceiling(20 / 8) = 3 peers per path
+      const pathSize = utils.pathSize(nvals - startingValCount, numPaths)
+      let pathVals = 0
 
       // Here we return the query function to use on this particular disjoint path
       return async (peer) => {
-        let valueOrPeers
+        let valueOrPeers, err
         try {
           valueOrPeers = await this._getValueOrPeers(peer, key)
-        } catch (err) {
+        } catch (e) {
+          err = e
           // If we have an invalid record we just want to continue and fetch a new one.
           if (err.code !== 'ERR_INVALID_RECORD') {
             throw err
@@ -317,15 +327,17 @@ class KadDHT extends EventEmitter {
 
         const res = { closerPeers: peers }
 
+        // Note: An invalid record still counts as a retrieved record
         if ((record && record.value) || (err && err.code === 'ERR_INVALID_RECORD')) {
-          pathVals.push({
+          pathVals++
+          res.value = {
             val: record && record.value,
             from: peer
-          })
+          }
         }
 
-        // enough is enough
-        if (pathVals.length >= pathSize) {
+        // We have enough values for this path so we're done
+        if (pathVals >= pathSize) {
           res.success = true
         }
 
@@ -333,17 +345,17 @@ class KadDHT extends EventEmitter {
       }
     })
 
-    // run our query
-    await query.run(rtp, options.timeout)
-
-    // combine vals from each path
-    vals = [].concat.apply(vals, paths).slice(0, nvals)
-
-    if (err && vals.length === 0) {
-      throw err
+    for await (const res of query.run(rtp, options.timeout)) {
+      if ((res || {}).value) {
+        valCount++
+        yield res.value
+      }
+      if (valCount >= nvals) {
+        query.stop()
+        return
+      }
     }
-
-    return vals
+    query.stop()
   }
 
   /**
@@ -374,13 +386,14 @@ class KadDHT extends EventEmitter {
       }
     })
 
-    const res = await q.run(tablePeers)
+    const results = await collect(q.run(tablePeers))
+    const peers = (results[0] || {}).peersSeen
 
-    if (!res || !res.finalSet) {
+    if (!(peers || {}).length) {
       return []
     }
 
-    const sorted = await utils.sortClosestPeers(Array.from(res.finalSet), id)
+    const sorted = await utils.sortClosestPeers(peers, id)
     return sorted.slice(0, c.K)
   }
 
@@ -456,9 +469,10 @@ class KadDHT extends EventEmitter {
   async provide (key) {
     this._log('provide: %s', key.toBaseEncodedString())
 
-    await this.providers.addProvider(key, this.peerInfo.id)
-
-    const peers = await this.getClosestPeers(key.buffer)
+    const [, peers] = await Promise.all([
+      this.providers.addProvider(key, this.peerInfo.id),
+      this.getClosestPeers(key.buffer)
+    ])
 
     const msg = new Message(Message.TYPES.ADD_PROVIDER, key.buffer, 0)
     msg.providerPeers = peers.map((p) => new PeerInfo(p))
@@ -476,9 +490,9 @@ class KadDHT extends EventEmitter {
    * @param {Object} options - findProviders options
    * @param {number} options.timeout - how long the query should maximally run, in milliseconds (default: 60000)
    * @param {number} options.maxNumProviders - maximum number of providers to find
-   * @returns {Promise<Array<PeerInfo>>}
+   * @returns {AsyncIterator<PeerInfo>}
    */
-  findProviders (key, options = {}) {
+  async * findProviders (key, options = {}) {
     if (!options.maxTimeout && !options.timeout) {
       options.timeout = c.minute // default
     } else if (options.maxTimeout && !options.timeout) { // TODO this will be deprecated in a next release
@@ -488,7 +502,7 @@ class KadDHT extends EventEmitter {
     options.maxNumProviders = options.maxNumProviders || c.K
 
     this._log('findProviders %s', key.toBaseEncodedString())
-    return this._findNProviders(key, options.timeout, options.maxNumProviders)
+    return yield * this._findNProviders(key, options.timeout, options.maxNumProviders)
   }
 
   // ----------- Peer Routing
@@ -510,12 +524,12 @@ class KadDHT extends EventEmitter {
 
     this._log('findPeer %s', id.toB58String())
 
-    const pi = await this.findPeerLocal(id)
+    const peerId = await this.findPeerLocal(id)
 
     // already got it
-    if (pi != null) {
+    if (peerId != null) {
       this._log('found local')
-      return pi
+      return peerId
     }
 
     const key = await utils.convertPeerId(id)
@@ -546,7 +560,7 @@ class KadDHT extends EventEmitter {
         // found it
         if (match) {
           return {
-            peer: match,
+            value: match,
             success: true
           }
         }
@@ -557,15 +571,12 @@ class KadDHT extends EventEmitter {
       }
     })
 
-    const result = await query.run(peers, options.timeout)
+    const results = await collect(query.run(peers, options.timeout))
 
-    let success = false
-    result.paths.forEach((res) => {
-      if (res.success) {
-        success = true
-        this.peerBook.put(res.peer)
-      }
-    })
+    const success = Boolean(results.length && results[0].value)
+    if (success) {
+      this.peerBook.put(results[0].value)
+    }
 
     this._log('findPeer %s: %s', id.toB58String(), success)
     if (!success) {

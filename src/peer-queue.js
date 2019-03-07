@@ -75,6 +75,17 @@ class PeerQueue {
     return el.id
   }
 
+  /**
+   * Iterable interface
+   *
+   * @yields {PeerId}
+   */
+  * [Symbol.iterator] () {
+    while (this.length) {
+      yield this.dequeue()
+    }
+  }
+
   get length () {
     return this.heap.size()
   }

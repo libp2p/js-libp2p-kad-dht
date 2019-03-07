@@ -3,6 +3,7 @@
 const PeerId = require('peer-id')
 const libp2pRecord = require('libp2p-record')
 const PeerInfo = require('peer-info')
+const { collect } = require('streaming-iterables')
 
 const errcode = require('err-code')
 
@@ -10,7 +11,7 @@ const utils = require('./utils')
 const Message = require('./message')
 const c = require('./constants')
 const Query = require('./query')
-const LimitedPeerList = require('./limited-peer-list')
+const LimitedPeerSet = require('./limited-peer-set')
 
 const Record = libp2pRecord.Record
 
@@ -75,12 +76,15 @@ module.exports = (dht) => ({
     const dsKey = utils.bufferToKey(key)
 
     // Fetch value from ds
-    const exists = await dht.datastore.has(dsKey)
-    if (!exists) {
-      return undefined
+    let rawRecord
+    try {
+      rawRecord = await dht.datastore.get(dsKey)
+    } catch (err) {
+      if (err.code === 'ERR_NOT_FOUND') {
+        return undefined
+      }
+      throw err
     }
-
-    const rawRecord = await dht.datastore.get(dsKey)
 
     // Create record from the returned bytes
     const record = Record.deserialize(rawRecord)
@@ -219,61 +223,8 @@ module.exports = (dht) => ({
    * @private
    */
   async _get (key, options) {
-    // waterfall([
-    //   (cb) => dht.getMany(key, 16, options, cb),
-    //   (vals, cb) => {
-    //     const recs = vals.map((v) => v.val)
-    //     let i = 0
-
-    //     try {
-    //       i = libp2pRecord.selection.bestRecord(dht.selectors, key, recs)
-    //     } catch (err) {
-    //       // Assume the first record if no selector available
-    //       if (err.code !== 'ERR_NO_SELECTOR_FUNCTION_FOR_RECORD_KEY') {
-    //         return cb(err)
-    //       }
-    //     }
-
-    //     const best = recs[i]
-    //     dht._log('GetValue %b %s', key, best)
-
-    //     if (!best) {
-    //       return cb(errcode(new Error('best value was not found'), 'ERR_NOT_FOUND'))
-    //     }
-
-    //     // Send out correction record
-    //     waterfall([
-    //       (cb) => utils.createPutRecord(key, best, cb),
-    //       (fixupRec, cb) => each(vals, (v, cb) => {
-    //         // no need to do anything
-    //         if (v.val.equals(best)) {
-    //           return cb()
-    //         }
-
-    //         // correct ourself
-    //         if (dht._isSelf(v.from)) {
-    //           return dht._putLocal(key, fixupRec, (err) => {
-    //             if (err) {
-    //               dht._log.error('Failed error correcting self', err)
-    //             }
-    //             cb()
-    //           })
-    //         }
-
-    //         // send correction
-    //         dht._putValueToPeer(key, fixupRec, v.from, (err) => {
-    //           if (err) {
-    //             dht._log.error('Failed error correcting entry', err)
-    //           }
-    //           cb()
-    //         })
-    //       }, cb)
-    //     ], (err) => cb(err, err ? null : best))
-    //   }
-    // ], callback)
-
     dht._log('_get %b', key)
-    const vals = await dht.getMany(key, 16, options)
+    const vals = await collect(dht.getMany(key, c.GET_MANY_RECORD_COUNT, options))
 
     const recs = vals.map((v) => v.val)
     let i = 0
@@ -464,12 +415,16 @@ module.exports = (dht) => ({
    * @param {CID} key
    * @param {number} providerTimeout - How long the query should maximally run in milliseconds.
    * @param {number} n
-   * @returns {Promise<Array<PeerInfo>>}
+   * @returns {AsyncIterator<PeerInfo>}
    *
    * @private
    */
-  async _findNProviders (key, providerTimeout, n) {
-    let out = new LimitedPeerList(n)
+  async * _findNProviders (key, providerTimeout, n) {
+    if (n === 0) {
+      return
+    }
+
+    let out = new LimitedPeerSet(n)
 
     const provs = await dht.providers.getProviders(key)
 
@@ -480,21 +435,23 @@ module.exports = (dht) => ({
       } else {
         info = dht.peerBook.put(new PeerInfo(id))
       }
-      out.push(info)
-    }
-
-    // All done
-    if (out.length >= n) {
-      return out.toArray()
+      if (!out.has(info)) {
+        out.add(info)
+        yield info
+        if (out.size >= n) {
+          return
+        }
+      }
     }
 
     // need more, query the network
-    const paths = []
     const query = new Query(dht, key.buffer, (pathIndex, numPaths) => {
-      // This function body runs once per disjoint path
-      const pathSize = utils.pathSize(out.length - n, numPaths)
-      const pathProviders = new LimitedPeerList(pathSize)
-      paths.push(pathProviders)
+      // This function body runs once per disjoint path.
+      // Note: For S/Kademlia, We need to get peers from nvals disjoint paths
+      // (not just nvals different peers)
+      // eg 20 values from 8 paths = Math.ceiling(20 / 8) = 3 peers per path
+      const pathSize = utils.pathSize(out.size - n, numPaths)
+      const pathProviders = new LimitedPeerSet(pathSize)
 
       // Here we return the query function to use on this particular disjoint path
       return async (peer) => {
@@ -504,43 +461,49 @@ module.exports = (dht) => ({
         dht._log('(%s) found %s provider entries', dht.peerInfo.id.toB58String(), provs.length)
 
         for (const prov of provs) {
-          pathProviders.push(dht.peerBook.put(prov))
+          pathProviders.add(dht.peerBook.put(prov))
         }
 
-        // hooray we have all that we want
-        if (pathProviders.length >= pathSize) {
-          return { success: true }
+        const res = {}
+        if (provs.length) {
+          res.value = provs
         }
 
-        // it looks like we want some more
-        return {
-          closerPeers: msg.closerPeers
+        // We have enough values for this path so we're done
+        if (pathProviders.size >= pathSize) {
+          res.success = true
+          return res
         }
+
+        // We still need more
+        res.closerPeers = msg.closerPeers
+        return res
       }
     })
 
     const peers = dht.routingTable.closestPeers(key.buffer, c.ALPHA)
 
-    let err
     try {
-      await query.run(peers, providerTimeout)
-    } catch (e) {
-      err = e
-    }
-
-    // combine peers from each path
-    for (const path of paths) {
-      for (const peer of path.toArray()) {
-        out.push(peer)
+      for await (const res of query.run(peers, providerTimeout)) {
+        for (const provider of res.value || []) {
+          if (!out.has(provider)) {
+            out.add(provider)
+            yield provider
+          }
+          if (out.size >= n) {
+            query.stop()
+            return
+          }
+        }
       }
+    } catch (err) {
+      // Ignore timeout error if we have collected some records
+      if (err && (err.code !== 'ETIMEDOUT' || out.size === 0)) {
+        throw err
+      }
+    } finally {
+      query.stop()
     }
-
-    // Ignore timeout error if we have collected some records
-    if (err && (err.code !== 'ETIMEDOUT' || out.length === 0)) {
-      throw err
-    }
-
-    return out.toArray()
   },
 
   /**

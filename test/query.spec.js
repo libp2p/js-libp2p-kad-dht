@@ -8,6 +8,7 @@ const PeerBook = require('peer-book')
 const Switch = require('libp2p-switch')
 const TCP = require('libp2p-tcp')
 const Mplex = require('libp2p-mplex')
+const { collect } = require('streaming-iterables')
 
 const DHT = require('../src')
 const Query = require('../src/query')
@@ -38,26 +39,51 @@ describe('Query', () => {
 
     let i = 0
     const query = (p) => {
-      if (i++ === 1) {
+      i++
+      if (i === 4) {
+        expect(p.id).to.eql(peerInfos[4].id.id)
+
+        return {
+          value: Buffer.from('carrots'),
+          success: true
+        }
+      }
+      if (i === 3) {
+        expect(p.id).to.eql(peerInfos[3].id.id)
+
+        return {
+          closerPeers: [peerInfos[4]]
+        }
+      }
+      if (i === 2) {
         expect(p.id).to.eql(peerInfos[2].id.id)
 
         return {
-          value: Buffer.from('cool'),
-          success: true
+          value: Buffer.from('bananas'),
+          closerPeers: [peerInfos[3]]
         }
       }
       expect(p.id).to.eql(peerInfos[1].id.id)
       return {
+        value: Buffer.from('apples'),
         closerPeers: [peerInfos[2]]
       }
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    const res = await q.run([peerInfos[1].id])
 
-    expect(res.paths[0].value).to.eql(Buffer.from('cool'))
-    expect(res.paths[0].success).to.eql(true)
-    expect(res.finalSet.size).to.eql(2)
+    const expected = [
+      ['apples', 2],
+      ['bananas', 3],
+      ['carrots', 4]
+    ]
+    let r = 0
+    for await (const res of q.run([peerInfos[1].id])) {
+      expect(res.value.toString()).to.eql(expected[r][0])
+      expect(res.peersSeen.length).to.eql(expected[r][1])
+      r++
+    }
+    expect(r).to.eql(3)
   })
 
   it('does not throw an error if only some queries error', async () => {
@@ -78,7 +104,10 @@ describe('Query', () => {
 
     const q = new Query(dht, peer.id.id, () => query)
 
-    await q.run([peerInfos[1].id])
+    const results = await collect(q.run([peerInfos[1].id]))
+
+    expect(results.length).to.eql(1)
+    expect(results[0].peersSeen.length).to.eql(2)
   })
 
   it('throws an error if all queries error', async () => {
@@ -93,10 +122,47 @@ describe('Query', () => {
 
     const q = new Query(dht, peer.id.id, () => query)
 
+    let results = []
     try {
-      await q.run([peerInfos[1].id])
+      results = await collect(q.run([peerInfos[1].id]))
     } catch (err) {
+      expect(results.length).to.eql(0)
       expect(err.message).to.eql('fail')
+      return
+    }
+    expect.fail('No error thrown')
+  })
+
+  it('throws an error if the query times out', async () => {
+    const peer = peerInfos[0]
+
+    // mock this so we can dial non existing peers
+    dht.switch.dial = (peer, callback) => callback()
+
+    let i = 0
+    const query = async (p) => {
+      if (i++ === 1) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        return {
+          closerPeers: [peerInfos[3]]
+        }
+      }
+      return {
+        value: 'hello',
+        closerPeers: [peerInfos[2]]
+      }
+    }
+
+    const q = new Query(dht, peer.id.id, () => query)
+    const results = []
+    try {
+      for await (const res of q.run([peerInfos[1].id], 100)) {
+        results.push(res)
+      }
+    } catch (err) {
+      expect(err.code).to.eql('ETIMEDOUT')
+      expect(results.length).to.eql(1)
+      expect(results[0].peersSeen.length).to.eql(2)
       return
     }
     expect.fail('No error thrown')
@@ -115,9 +181,154 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    const res = await q.run([peerInfos[1].id])
+    const results = await collect(q.run([peerInfos[1].id]))
 
-    expect(res.finalSet.size).to.eql(2)
+    expect(results.length).to.eql(1)
+    expect(results[0].peersSeen.length).to.eql(2)
+  })
+
+  it('only closerPeers concurrent', async () => {
+    const peer = peerInfos[0]
+
+    // mock this so we can dial non existing peers
+    dht.switch.dial = (peer, callback) => callback()
+
+    //    1 -------> 3
+    //    1 <-> 2 -> 3 -> 4
+    //               3 -> 5 -> 6
+    //    1 --------------------> 7
+    const topology = {
+      [peerInfos[1].id.toB58String()]: [
+        peerInfos[2],
+        peerInfos[3],
+        peerInfos[7]
+      ],
+      [peerInfos[2].id.toB58String()]: [
+        peerInfos[3],
+        peerInfos[1]
+      ],
+      [peerInfos[3].id.toB58String()]: [
+        peerInfos[4],
+        peerInfos[5]
+      ],
+      [peerInfos[5].id.toB58String()]: [
+        peerInfos[6]
+      ]
+    }
+
+    const query = (p) => {
+      const closer = topology[p.toB58String()]
+      return {
+        closerPeers: closer || []
+      }
+    }
+
+    const q = new Query(dht, peer.id.id, () => query)
+    const results = await collect(q.run([peerInfos[1].id]))
+
+    expect(results.length).to.eql(1)
+    expect(results[0].peersSeen.length).to.eql(7)
+  })
+
+  it('concurrent with values', async () => {
+    const peer = peerInfos[0]
+    const values = ['apples', 'oranges', 'pears', 'strawberries'].map(Buffer.from)
+
+    // mock this so we can dial non existing peers
+    dht.switch.dial = (peer, callback) => callback()
+
+    //    1 -------> 3
+    //    1 <-> 2 -> 3 -> 4
+    //               3 -> 5 -> 6
+    //    1 --------------------> 7
+    const topology = {
+      [peerInfos[1].id.toB58String()]: {
+        closer: [
+          peerInfos[2],
+          peerInfos[3],
+          peerInfos[7]
+        ],
+        value: values[0]
+      },
+      [peerInfos[2].id.toB58String()]: {
+        closer: [
+          peerInfos[3],
+          peerInfos[1]
+        ]
+      },
+      [peerInfos[3].id.toB58String()]: {
+        closer: [
+          peerInfos[4],
+          peerInfos[5]
+        ],
+        value: values[1]
+      },
+      [peerInfos[5].id.toB58String()]: {
+        closer: [
+          peerInfos[6]
+        ],
+        value: values[2]
+      },
+      [peerInfos[6].id.toB58String()]: {
+        value: values[3]
+      }
+    }
+
+    const query = (p) => {
+      const res = topology[p.toB58String()] || {}
+      return {
+        closerPeers: res.closer || [],
+        value: res.value
+      }
+    }
+
+    const q = new Query(dht, peer.id.id, () => query)
+    const results = await collect(q.run([peerInfos[1].id]))
+
+    expect(results.length).to.eql(4)
+    expect(results.map(r => r.value).sort()).to.eql(values.sort())
+    expect(results[results.length - 1].peersSeen.length).to.eql(7)
+  })
+
+  it('values with early success', async () => {
+    const peer = peerInfos[0]
+    const values = ['apples', 'oranges'].map(Buffer.from)
+
+    // mock this so we can dial non existing peers
+    dht.switch.dial = (peer, callback) => callback()
+
+    // 1 -> 2 -> 3 -> 4
+    const topology = {
+      [peerInfos[1].id.toB58String()]: {
+        closer: [peerInfos[2]],
+        value: values[0]
+      },
+      [peerInfos[2].id.toB58String()]: {
+        closer: [peerInfos[3]],
+        success: true
+      },
+      // Should not reach here because previous query returns success
+      [peerInfos[3].id.toB58String()]: {
+        closer: [peerInfos[4]],
+        value: values[1]
+      }
+    }
+
+    const query = (p) => {
+      const res = topology[p.toB58String()] || {}
+      return {
+        closerPeers: res.closer || [],
+        value: res.value,
+        success: res.success
+      }
+    }
+
+    const q = new Query(dht, peer.id.id, () => query)
+    const results = await collect(q.run([peerInfos[1].id]))
+
+    expect(results.length).to.eql(2)
+    expect(results[0].value).to.eql(values[0])
+    expect(results[1].value).to.eql(undefined)
   })
 
   /*
@@ -163,11 +374,11 @@ describe('Query', () => {
 
     // due to round-robin allocation of peers from tracks, first
     // path is good, second bad
-    const res = await q.run(tracks)
+    const results = await collect(q.run(tracks))
 
-    // we should visit all nodes (except the target)
-    expect(res.finalSet.size).to.eql(peerInfos.length - 1)
     // there should be one successful path
-    expect(res.paths.length).to.eql(1)
+    expect(results.length).to.eql(1)
+    // we should visit all nodes (except the target)
+    expect(results[0].peersSeen.length).to.eql(peerInfos.length - 1)
   })
 })

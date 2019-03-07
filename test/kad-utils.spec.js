@@ -110,30 +110,83 @@ describe('kad utils', () => {
   describe('promiseTimeout', () => {
     it('does not throw if promise resolves within timeout', async function () {
       await utils.promiseTimeout(new Promise((resolve) => {
-        setTimeout(resolve(), 100)
+        setTimeout(resolve, 100)
       }), 200)
     })
 
     it('throws if promise does not resolve within timeout', async function () {
       try {
         await utils.promiseTimeout(new Promise((resolve) => {
-          setTimeout(resolve(), 200)
-        }), 100)
+          setTimeout(resolve, 200)
+        }), 1)
       } catch (err) {
         expect(err.message).to.eql('Promise timed out')
         expect(err.code).to.eql('ETIMEDOUT')
+        return
       }
+      expect.fail('Did not throw')
     })
 
     it('throws with custom error message', async function () {
       try {
         await utils.promiseTimeout(new Promise((resolve) => {
-          setTimeout(resolve(), 200)
-        }), 100, 'hello')
+          setTimeout(resolve, 200)
+        }), 1, 'hello')
       } catch (err) {
         expect(err.message).to.eql('hello')
         expect(err.code).to.eql('ETIMEDOUT')
+        return
       }
+      expect.fail('Did not throw')
+    })
+  })
+
+  describe('iterableTimeout', () => {
+    async function * iterable (count, delay) {
+      for (let i = 0; i < count; i++) {
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        yield i
+      }
+    }
+
+    it('does not throw if iterable completes within timeout', async function () {
+      let count = 0
+      for await (const val of utils.iterableTimeout(iterable(2, 100), 300)) {
+        expect(val).to.eql(count)
+        count++
+      }
+      expect(count).to.eql(2)
+    })
+
+    it('throws if iterable does not complete within timeout', async function () {
+      let count = 0
+      try {
+        for await (const val of utils.iterableTimeout(iterable(2, 100), 150)) {
+          expect(val).to.eql(count)
+          count++
+        }
+      } catch (err) {
+        expect(err.message).to.eql('Timed out')
+        expect(err.code).to.eql('ETIMEDOUT')
+        expect(count).to.eql(1)
+        return
+      }
+      expect.fail('Did not throw')
+    })
+
+    it('throws with custom error message', async function () {
+      let count = 0
+      try {
+        for await (const val of utils.iterableTimeout(iterable(2, 100), 1, 'hello')) {
+          expect(val).to.eql(count)
+          count++
+        }
+      } catch (err) {
+        expect(err.message).to.eql('hello')
+        expect(err.code).to.eql('ETIMEDOUT')
+        return
+      }
+      expect.fail('Did not throw')
     })
   })
 

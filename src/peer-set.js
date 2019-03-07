@@ -1,11 +1,11 @@
 'use strict'
 
 /**
- * A list of unique peer infos.
+ * A set of unique peer infos.
  */
-class PeerList {
+class PeerSet {
   constructor () {
-    this.list = []
+    this.peers = new Map()
   }
 
   /**
@@ -14,9 +14,12 @@ class PeerList {
    * @param {PeerInfo} info
    * @returns {bool}
    */
-  push (info) {
+  add (info) {
+    if (!info) {
+      return false
+    }
     if (!this.has(info)) {
-      this.list.push(info)
+      this.peers.set(info.id.toB58String(), info)
       return true
     }
     return false
@@ -29,36 +32,26 @@ class PeerList {
    * @returns {bool}
    */
   has (info) {
-    const match = this.list.find((i) => i.id.isEqual(info.id))
-    return Boolean(match)
+    return this.peers.has(info && info.id.toB58String())
   }
 
   /**
-   * Get the list as an array.
+   * Get the set as an array.
    *
    * @returns {Array<PeerInfo>}
    */
   toArray () {
-    return this.list.slice()
+    return [...this.peers.values()]
   }
 
   /**
-   * Remove the last element
-   *
-   * @returns {PeerInfo}
-   */
-  pop () {
-    return this.list.pop()
-  }
-
-  /**
-   * The length of the list
+   * The size of the set
    *
    * @type {number}
    */
-  get length () {
-    return this.list.length
+  get size () {
+    return this.peers.size
   }
 }
 
-module.exports = PeerList
+module.exports = PeerSet
