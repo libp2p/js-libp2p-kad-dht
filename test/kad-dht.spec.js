@@ -296,7 +296,7 @@ describe('KadDHT', () => {
       const dhtB = dhts[1]
       const dhtC = dhts[2]
       const dhtD = dhts[3]
-      const stub = sinon.stub(dhtD, '_verifyRecordLocally').callsArgWithAsync(1, error)
+      const stub = sinon.stub(dhtD, '_verifyRecordLocally').throws(error)
 
       await connect(dhtA, dhtB)
       await connect(dhtA, dhtC)
@@ -309,7 +309,7 @@ describe('KadDHT', () => {
     })
   })
 
-  it('put - should fail if not enough peers can be written to', function (done) {
+  it('put - should fail if not enough peers can be written to', function () {
     this.timeout(10 * 1000)
 
     const errCode = 'ERR_NOT_AVAILABLE'
@@ -320,8 +320,8 @@ describe('KadDHT', () => {
       const dhtB = dhts[1]
       const dhtC = dhts[2]
       const dhtD = dhts[3]
-      const stub = sinon.stub(dhtD, '_verifyRecordLocally').callsArgWithAsync(1, error)
-      const stub2 = sinon.stub(dhtC, '_verifyRecordLocally').callsArgWithAsync(1, error)
+      const stub = sinon.stub(dhtD, '_verifyRecordLocally').throws(error)
+      const stub2 = sinon.stub(dhtC, '_verifyRecordLocally').throws(error)
 
       await connect(dhtA, dhtB)
       await connect(dhtA, dhtC)
@@ -338,24 +338,19 @@ describe('KadDHT', () => {
     })
   })
 
-  it('put - should require all peers to be put to successfully if no minPeers specified', function (done) {
+  it('put - should require all peers to be put to successfully if no minPeers specified', function () {
     this.timeout(10 * 1000)
 
     const errCode = 'ERR_NOT_AVAILABLE'
     const error = errcode(new Error('fake error'), errCode)
 
     return withDHTs(3, async ([dhtA, dhtB, dhtC]) => {
-      const stub = sinon.stub(dhtC, '_verifyRecordLocally').callsArgWithAsync(1, error)
+      const stub = sinon.stub(dhtC, '_verifyRecordLocally').throws(error)
 
       await connect(dhtA, dhtB)
       await connect(dhtA, dhtC)
       try {
         await dhtA.put(Buffer.from('/v/hello'), Buffer.from('world'), { minPeers: 2 })
-        // (cb) => dhtB.get(Buffer.from('/v/hello'), { timeout: 1000 }, cb),
-        // (res, cb) => {
-        //   expect(res).to.eql(Buffer.from('world'))
-        //   cb()
-        // }
       } catch (err) {
         expect(err.code).to.eql('ERR_NOT_ENOUGH_PUT_PEERS')
         stub.restore()
