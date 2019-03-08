@@ -72,18 +72,11 @@ describe('Query', () => {
 
     const q = new Query(dht, peer.id.id, () => query)
 
-    const expected = [
-      ['apples', 2],
-      ['bananas', 3],
-      ['carrots', 4]
-    ]
-    let r = 0
-    for await (const res of q.run([peerInfos[1].id])) {
-      expect(res.value.toString()).to.eql(expected[r][0])
-      expect(res.peersSeen.length).to.eql(expected[r][1])
-      r++
-    }
-    expect(r).to.eql(3)
+    const results = await collect(q.run([peerInfos[1].id]))
+    expect(results[0].value.toString()).to.eql('apples')
+    expect(results[1].value.toString()).to.eql('bananas')
+    expect(results[2].value.toString()).to.eql('carrots')
+    expect(results[2].peersSeen.length).to.eql(4)
   })
 
   it('does not throw an error if only some queries error', async () => {
@@ -162,7 +155,7 @@ describe('Query', () => {
     } catch (err) {
       expect(err.code).to.eql('ETIMEDOUT')
       expect(results.length).to.eql(1)
-      expect(results[0].peersSeen.length).to.eql(2)
+      expect(results[0].peersSeen.length).to.eql(1)
       return
     }
     expect.fail('No error thrown')
@@ -299,10 +292,12 @@ describe('Query', () => {
 
     // 1 -> 2 -> 3 -> 4
     const topology = {
+      // Should be returned because it has a value
       [peerInfos[1].id.toB58String()]: {
         closer: [peerInfos[2]],
         value: values[0]
       },
+      // Should be returned because success is true
       [peerInfos[2].id.toB58String()]: {
         closer: [peerInfos[3]],
         success: true

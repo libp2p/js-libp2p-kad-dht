@@ -3,8 +3,10 @@
 const Heap = require('heap')
 const distance = require('xor-distance')
 const debug = require('debug')
+const EventEmitter = require('events')
 
 const utils = require('./utils')
+const QueueTransform = require('./queue-transform')
 
 const log = debug('libp2p:dht:peer-queue')
 
@@ -12,7 +14,7 @@ const log = debug('libp2p:dht:peer-queue')
  * PeerQueue is a heap that sorts its entries (PeerIds) by their
  * xor distance to the inital provided key.
  */
-class PeerQueue {
+class PeerQueue extends EventEmitter {
   /**
    * Create from a given peer id.
    *
@@ -41,6 +43,8 @@ class PeerQueue {
    * @param {Buffer} from - The sha2-256 encoded peer id
    */
   constructor (from) {
+    super()
+
     log('create: %b', from)
     this.from = from
     this.heap = new Heap(utils.xorCompare)
@@ -62,6 +66,7 @@ class PeerQueue {
     }
 
     this.heap.push(el)
+    this.emit('enqueued', id)
   }
 
   /**
@@ -84,6 +89,16 @@ class PeerQueue {
     while (this.length) {
       yield this.dequeue()
     }
+  }
+
+  /**
+   * Create a new QueueTransform for this queue
+   *
+   * @param {function} processFn
+   * @param {number} concurrency
+   */
+  transform (processFn, concurrency = 1) {
+    return new QueueTransform(this, processFn, concurrency)
   }
 
   get length () {

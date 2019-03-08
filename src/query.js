@@ -2,7 +2,7 @@
 
 const EventEmitter = require('events')
 const mh = require('multihashes')
-const { parallelMerge, transform } = require('streaming-iterables')
+const { parallelMerge } = require('streaming-iterables')
 const PeerIdSet = require('./peer-id-set')
 
 const c = require('./constants')
@@ -249,51 +249,43 @@ class Path extends EventEmitter {
   }
 
   /**
-   * Add a peer to the peers to be queried.
-   *
-   * @param {PeerId} peer
-   * @returns {Promise}
-   */
-  addPeerToQuery (peer) {
-    if (this.dht._isSelf(peer)) {
-      return
-    }
-
-    if (this.runPeersSeen.has(peer)) {
-      return
-    }
-
-    this.runPeersSeen.add(peer)
-    return this.peersToQuery.enqueue(peer)
-  }
-
-  /**
    * Use the queue to keep `concurrency` amount items running per path.
    * Returns an asynchronous iterator of values returned by the queryFunc.
    *
    * @returns {AsyncIterator<Object>}
    */
   async * createWorkerQueue () {
-    const processQueue = transform(this.concurrency, this.processPeer.bind(this))
+    const iterator = this.peersToQuery.transform(this.processPeer.bind(this), this.concurrency)
 
-    // Note: processQueue will take query.concurrency items from the queue,
-    // but during processing we may add more items to the queue, so we need
-    // to wrap the for-await-of with this while to check if more items have
-    // been added.
-    // Note this is a bug: https://github.com/bustle/streaming-iterables/issues/26
-    while (this.running && this.peersToQuery.length) {
-      // Process each peer in the queue
-      for await (const res of processQueue(this.peersToQuery)) {
-        // Make sure we're still running
-        if (!this.running) {
+    // Process each peer in the queue
+    // Note: During processing we may add more peers to the queue
+    for await (const res of iterator) {
+      // Make sure we're still running
+      if (!this.running) {
+        iterator.stop()
+        return
+      }
+
+      if (res) {
+        if (res.value || res.success) {
+          // Yield the value. (Note: even if we didn't get a value, we still
+          // want to indicate to the caller that something happened)
+          yield res.value
+        }
+
+        // If the query function indicates that we're done, stop iterating
+        if (res.success) {
+          iterator.stop()
           return
         }
 
-        if (res) {
-          // Yield the value field of the result
-          yield res.value
-          // If the response indicates that we're done, return
-          if (res.success) {
+        // If there are more peers to query, queue them up
+        if ((res.closerPeers || []).length) {
+          await this.processCloserPeers(res.closerPeers)
+
+          // Make sure we're still running
+          if (!this.running) {
+            iterator.stop()
             return
           }
         }
@@ -310,71 +302,52 @@ class Path extends EventEmitter {
   async processPeer (peer) {
     this._log('queue:work')
 
-    let res, err
     try {
-      res = await this.execQuery(peer)
-    } catch (e) {
-      this._log.error('queue', e)
-      err = e
+      const res = await this.query(peer)
+      this._log('queue:work:done' + (res || {}).success ? ' (complete)' : '')
+      return res
+    } catch (err) {
+      this._log('queue:work:err', err)
+      this.emit('query error', err)
     }
-
-    // Ignore tasks that finish after we're already done
-    if (!this.running) {
-      return true
-    }
-
-    this._log('queue:work:done', err, (res || {}).success)
-
-    if (err) {
-      throw err
-    }
-
-    return res
   }
 
   /**
-   * Execute a query on the next peer.
+   * Add closer peers to the peers to be queried.
+   *
+   * @param {Array<PeerId>} closerPeers
+   * @returns {Promise}
+   */
+  processCloserPeers (closerPeers) {
+    return Promise.all(closerPeers.map((closer) => {
+      // don't add ourselves
+      if (this.dht._isSelf(closer.id)) {
+        return
+      }
+
+      closer = this.dht.peerBook.put(closer)
+      this.dht._peerDiscovered(closer)
+      return this.addPeerToQuery(closer.id)
+    }))
+  }
+
+  /**
+   * Add a peer to the peers to be queried.
    *
    * @param {PeerId} peer
-   * @returns {Promise<{value: Object, success: bool}>}
+   * @returns {Promise}
    */
-  async execQuery (peer) {
-    let res
-    try {
-      res = await this.query(peer)
-    } catch (err) {
-      this.emit('query error', err)
+  addPeerToQuery (peer) {
+    if (this.dht._isSelf(peer)) {
       return
     }
 
-    // Make sure the query is still running
-    if (!this.running) {
+    if (this.runPeersSeen.has(peer)) {
       return
     }
 
-    // We're done, so don't queue up any more peers
-    if (res.success) {
-      return res
-    }
-
-    // If there are more peers to query, add them to the queue
-    if (res.closerPeers && res.closerPeers.length > 0) {
-      await Promise.all(res.closerPeers.map((closer) => {
-        // don't add ourselves
-        if (this.dht._isSelf(closer.id)) {
-          return
-        }
-
-        closer = this.dht.peerBook.put(closer)
-        this.dht._peerDiscovered(closer)
-        return this.addPeerToQuery(closer.id)
-      }))
-    }
-
-    // If we got a value, return the result
-    if (res.value) {
-      return res
-    }
+    this.runPeersSeen.add(peer)
+    return this.peersToQuery.enqueue(peer)
   }
 }
 
