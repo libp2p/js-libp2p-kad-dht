@@ -96,6 +96,7 @@ class PeerQueue extends EventEmitter {
    *
    * @param {function} processFn
    * @param {number} concurrency
+   * @returns {AsyncIterator<Object>}
    */
   transform (processFn, concurrency = 1) {
     return new QueueTransform(this, processFn, concurrency)

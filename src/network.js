@@ -1,13 +1,10 @@
 'use strict'
 
-const pull = require('pull-stream')
-const lp = require('pull-length-prefixed')
-
 const errcode = require('err-code')
+const pull = require('pull-stream')
 
 const rpc = require('./rpc')
 const c = require('./constants')
-const Message = require('./message')
 const utils = require('./utils')
 
 /**
@@ -139,7 +136,7 @@ class Network {
           return reject(err)
         }
 
-        resolve(this._writeReadMessage(conn, msg.serialize()))
+        resolve(this._writeReadMessage(conn, msg))
       })
     })
   }
@@ -164,7 +161,7 @@ class Network {
           return reject(err)
         }
 
-        resolve(this._writeMessage(conn, msg.serialize()))
+        resolve(this.dht._connectionHelper.writeMessage(conn, msg))
       })
     })
   }
@@ -181,59 +178,11 @@ class Network {
    */
   _writeReadMessage (conn, msg) {
     return utils.promiseTimeout(
-      writeReadMessage(conn, msg),
+      this.dht._connectionHelper.writeReadMessage(conn, msg),
       this.readMessageTimeout,
       `Send/Receive message timed out in ${this.readMessageTimeout}ms`
     )
   }
-
-  /**
-   * Write a message to the given connection.
-   *
-   * @param {Connection} conn - the connection to use
-   * @param {Buffer} msg - the message to send
-   * @returns {Promise}
-   * @private
-   */
-  _writeMessage (conn, msg) {
-    return new Promise((resolve, reject) => {
-      pull(
-        pull.values([msg]),
-        lp.encode(),
-        conn,
-        pull.onEnd((err) => err ? reject(err) : resolve())
-      )
-    })
-  }
-}
-
-function writeReadMessage (conn, msg) {
-  return new Promise((resolve, reject) => {
-    pull(
-      pull.values([msg]),
-      lp.encode(),
-      conn,
-      pull.filter((msg) => msg.length < c.maxMessageSize),
-      lp.decode(),
-      pull.collect((err, res) => {
-        if (err) {
-          return reject(err)
-        }
-        if (res.length === 0) {
-          return reject(errcode('No message received', 'ERR_NO_MESSAGE_RECEIVED'))
-        }
-
-        let response
-        try {
-          response = Message.deserialize(res[0])
-        } catch (err) {
-          return reject(errcode(err, 'ERR_FAILED_DESERIALIZE_RESPONSE'))
-        }
-
-        resolve(response)
-      })
-    )
-  })
 }
 
 module.exports = Network

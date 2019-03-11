@@ -112,8 +112,6 @@ class QueueTransform extends EventEmitter {
    * Retrieve the next item from the iterator.
    */
   async next () {
-    // console.log('next', { completed: this.completed.length, running: this.running.length, errors: this.errors.length })
-
     // If we have any completed tasks, return the most recently completed one
     if (this.completed.length) {
       const value = await this.completed.shift()

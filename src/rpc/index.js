@@ -1,12 +1,7 @@
 'use strict'
 
-const pull = require('pull-stream')
-const lp = require('pull-length-prefixed')
-
-const Message = require('../message')
 const handlers = require('./handlers')
 const utils = require('../utils')
-const c = require('../constants')
 
 module.exports = (dht) => {
   const log = utils.logger(dht.peerInfo.id, 'rpc')
@@ -58,40 +53,7 @@ module.exports = (dht) => {
       }
 
       log('from: %s', peer.id.toB58String())
-
-      pull(
-        conn,
-        lp.decode(),
-        pull.filter((msg) => msg.length < c.maxMessageSize),
-        pull.map((rawMsg) => {
-          let msg
-          try {
-            msg = Message.deserialize(rawMsg)
-          } catch (err) {
-            log.error('failed to read incoming message', err)
-            return
-          }
-
-          return msg
-        }),
-        pull.filter(Boolean),
-        pull.asyncMap((msg, cb) => handleMessage(peer, msg).then(res => cb(null, res)).catch(cb)),
-        // Not all handlers will return a response
-        pull.filter(Boolean),
-        pull.map((response) => {
-          let msg
-          try {
-            msg = response.serialize()
-          } catch (err) {
-            log.error('failed to send message', err)
-            return
-          }
-          return msg
-        }),
-        pull.filter(Boolean),
-        lp.encode(),
-        conn
-      )
+      dht._connectionHelper.through(conn, (msg) => handleMessage(peer, msg))
     })
   }
 }

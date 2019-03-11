@@ -10,6 +10,7 @@ const { collect } = require('streaming-iterables')
 
 const errcode = require('err-code')
 
+const ConnectionHelper = require('./connection-helper')
 const RoutingTable = require('./routing')
 const utils = require('./utils')
 const c = require('./constants')
@@ -110,6 +111,7 @@ class KadDHT extends EventEmitter {
     }
 
     this.network = new Network(this)
+    this._connectionHelper = new ConnectionHelper(this.peerInfo.id)
 
     this._log = utils.logger(this.peerInfo.id)
 
