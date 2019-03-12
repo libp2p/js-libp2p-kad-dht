@@ -10,8 +10,9 @@ const PeerQueue = require('./peer-queue')
 const utils = require('./utils')
 
 /**
- * Divide peers up into disjoint paths (subqueries). Any peer can only be used once over all paths.
- * Within each path, query peers from closest to farthest away.
+ * Divide peers up into disjoint paths (subqueries). Any peer can only be used
+ * once over all paths. Within each path, query peers from closest to farthest
+ * away.
  */
 class Query {
   /**
@@ -26,14 +27,16 @@ class Query {
    * Query function.
    *
    * The query function should return an object with
-   *   value: any Object - it will be yielded by the Query.run() method
+   *   value: any Object - it will be yielded by the Query.run() method.
    *   closerPeers: an array of PeerInfo objects - if supplied, Query.run()
-   *   will queue up those peers to be queried next
-   *   success: if true, no more queries will be made
+   *     will queue up those peers to be queried next.
+   *   pathComplete: if true, no more queries will be made on this path.
+   *   queryComplete: if true, no more queries will be made and queries
+   *     on all other paths will be stopped.
    *
    * @typedef {queryFunc} function
    * @param {PeerId} peer - Peer to query
-   * @returns {closerPeers: Array<PeerInfo>, value: Object, success: bool}
+   * @returns {closerPeers: Array<PeerInfo>, value: Object, pathComplete: bool, queryComplete: bool}
    */
 
   /**
@@ -50,6 +53,16 @@ class Query {
     this.key = key
     this.makePathQuery = makePathQuery
     this._log = utils.logger(this.dht.peerInfo.id, 'query:' + mh.toB58String(key))
+    this.running = false
+  }
+
+  /**
+   * Called when the Query starts.
+   */
+  _onStart () {
+    this.running = true
+    this.dht._queryManager.started(this)
+    this._log('run:start')
   }
 
   /**
@@ -60,6 +73,12 @@ class Query {
    */
   stop () {
     this.run && this.run.stop()
+
+    if (this.running) {
+      this.running = false
+      this._log('run:complete')
+      this.dht._queryManager.stopped(this)
+    }
   }
 
   /**
@@ -82,7 +101,6 @@ class Query {
       return
     }
 
-    let resCount = 0
     const run = new Run(this.dht, this.key, this.makePathQuery, this._log)
     this.run = run
 
@@ -90,37 +108,38 @@ class Query {
     run.on('query error', (err) => queryErrors.push(err))
 
     try {
+      this._onStart()
+
       let iterator = run.execute(peers)
       if (timeout) {
         const msg = `Query timed out after ${timeout}ms`
         iterator = utils.iterableTimeout(iterator, timeout, msg)
       }
 
+      let resCount = 0
       for await (const res of iterator) {
         resCount++
         yield res
       }
-    } catch (err) {
-      run.stop()
 
-      this._log(err.message)
-      throw err
-    }
-
-    // Every query failed - something is seriously wrong, so throw an error
-    if (queryErrors.length === run.peersSeen.size) {
-      throw queryErrors[0]
-    }
-
-    // We searched all paths without finding a value or getting a success
-    // response, so just yield the peers we saw
-    if (resCount === 0 && run.peersSeen.size) {
-      yield {
-        peersSeen: run.peersSeen.toArray()
+      // Every query failed - something is seriously wrong, so throw an error
+      if (queryErrors.length === run.peersSeen.size) {
+        throw queryErrors[0]
       }
-    }
 
-    this._log('query:done')
+      // We searched all paths without finding a value or getting a success
+      // response, so just yield the peers we saw
+      if (resCount === 0 && run.peersSeen.size) {
+        yield {
+          peersSeen: run.peersSeen.toArray()
+        }
+      }
+    } catch (err) {
+      this._log('run:error: %s', err.message)
+      throw err
+    } finally {
+      this.stop()
+    }
   }
 }
 
@@ -188,10 +207,16 @@ class Run extends EventEmitter {
     // queues in parallel
     let iterator = parallelMerge(...workers)
 
-    for await (const value of iterator) {
+    for await (const res of iterator) {
       yield {
         peersSeen: this.peersSeen.toArray(),
-        value: value
+        value: res.value
+      }
+
+      // The result indicates that the Query has completed so stop all paths
+      if (res.queryComplete) {
+        this.stop()
+        return
       }
     }
   }
@@ -267,14 +292,14 @@ class Path extends EventEmitter {
       }
 
       if (res) {
-        if (res.value || res.success) {
-          // Yield the value. (Note: even if we didn't get a value, we still
+        if (res.value || res.pathComplete || res.queryComplete) {
+          // Yield the result. (Note: even if we didn't get a value, we still
           // want to indicate to the caller that something happened)
-          yield res.value
+          yield res
         }
 
         // If the query function indicates that we're done, stop iterating
-        if (res.success) {
+        if (res.pathComplete || res.queryComplete) {
           iterator.stop()
           return
         }
@@ -300,14 +325,22 @@ class Path extends EventEmitter {
    * @returns {Promise<{value: Object, success: bool}>}
    */
   async processPeer (peer) {
-    this._log('queue:work')
+    const peerId = peer.toB58String()
+    this._log('path:query to %s', peerId)
 
     try {
+      const start = Date.now()
       const res = await this.query(peer)
-      this._log('queue:work:done' + (res || {}).success ? ' (complete)' : '')
+
+      let msg = 'path:query to %s complete in %sms'
+      if ((res || {}).success) {
+        msg += ' (path query complete)'
+      }
+      this._log(msg, peerId, Date.now() - start)
+
       return res
     } catch (err) {
-      this._log('queue:work:err', err)
+      this._log('path:query to %s error: %s', peerId, err)
       this.emit('query error', err)
     }
   }
@@ -318,8 +351,8 @@ class Path extends EventEmitter {
    * @param {Array<PeerId>} closerPeers
    * @returns {Promise}
    */
-  processCloserPeers (closerPeers) {
-    return Promise.all(closerPeers.map((closer) => {
+  async processCloserPeers (closerPeers) {
+    const addPeers = closerPeers.map((closer) => {
       // don't add ourselves
       if (this.dht._isSelf(closer.id)) {
         return
@@ -327,8 +360,14 @@ class Path extends EventEmitter {
 
       closer = this.dht.peerBook.put(closer)
       this.dht._peerDiscovered(closer)
+
       return this.addPeerToQuery(closer.id)
-    }))
+    }).filter(Boolean)
+
+    await Promise.all(addPeers)
+
+    this._log('path:added (%d unseen / %d discovered) peers to queue (queue size %d)',
+      addPeers.length, closerPeers.length, this.peersToQuery.length)
   }
 
   /**

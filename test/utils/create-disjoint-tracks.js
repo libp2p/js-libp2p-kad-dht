@@ -57,7 +57,7 @@ async function createDisjointTracks (peerInfos, goodLength) {
       if (trackNum === 0) { // good track; success
         return {
           end: true,
-          success: true
+          pathComplete: true
         }
       } else { // bad track; dead end
         return {

@@ -18,6 +18,7 @@ const Query = require('./query')
 const Network = require('./network')
 const privateApi = require('./private')
 const Providers = require('./providers')
+const QueryManager = require('./query-manager')
 const Message = require('./message')
 const RandomWalk = require('./random-walk')
 const assert = require('assert')
@@ -113,6 +114,13 @@ class KadDHT extends EventEmitter {
     this.network = new Network(this)
     this._connectionHelper = new ConnectionHelper(this.peerInfo.id)
 
+    /**
+     * Keeps track of running queries
+     *
+     * @type {QueryManager}
+     */
+    this._queryManager = new QueryManager()
+
     this._log = utils.logger(this.peerInfo.id)
 
     // Inject private apis so we don't clutter up this file
@@ -165,9 +173,15 @@ class KadDHT extends EventEmitter {
    */
   async stop () {
     this._running = false
-    await this.randomWalk.stop() // guarantee that random walk is stopped if it was started
+
+    // Make sure that random walk is stopped if it was started
+    await this.randomWalk.stop()
+
+    // Make sure any running queries are stopped
+    this._queryManager.stopQueries()
+
     this.providers.stop()
-    return this.network.stop()
+    this.network.stop()
   }
 
   /**
@@ -340,7 +354,7 @@ class KadDHT extends EventEmitter {
 
         // We have enough values for this path so we're done
         if (pathVals >= pathSize) {
-          res.success = true
+          res.pathComplete = true
         }
 
         return res
@@ -383,7 +397,7 @@ class KadDHT extends EventEmitter {
 
         return {
           closerPeers: closer,
-          success: options.shallow ? true : undefined
+          pathComplete: options.shallow ? true : undefined
         }
       }
     })
@@ -563,7 +577,7 @@ class KadDHT extends EventEmitter {
         if (match) {
           return {
             value: match,
-            success: true
+            queryComplete: true
           }
         }
 

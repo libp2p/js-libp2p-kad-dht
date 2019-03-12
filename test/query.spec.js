@@ -45,7 +45,7 @@ describe('Query', () => {
 
         return {
           value: Buffer.from('carrots'),
-          success: true
+          pathComplete: true
         }
       }
       if (i === 3) {
@@ -297,10 +297,10 @@ describe('Query', () => {
         closer: [peerInfos[2]],
         value: values[0]
       },
-      // Should be returned because success is true
+      // Should be returned because pathComplete is true
       [peerInfos[2].id.toB58String()]: {
         closer: [peerInfos[3]],
-        success: true
+        pathComplete: true
       },
       // Should not reach here because previous query returns success
       [peerInfos[3].id.toB58String()]: {
@@ -314,7 +314,7 @@ describe('Query', () => {
       return {
         closerPeers: res.closer || [],
         value: res.value,
-        success: res.success
+        pathComplete: res.pathComplete
       }
     }
 
@@ -324,6 +324,63 @@ describe('Query', () => {
     expect(results.length).to.eql(2)
     expect(results[0].value).to.eql(values[0])
     expect(results[1].value).to.eql(undefined)
+  })
+
+  it('disjoint path values with early success', async () => {
+    const peer = peerInfos[0]
+    const values = ['v1', 'pathAv1', 'pathAv2', 'pathBv1'].map(Buffer.from)
+
+    // mock this so we can dial non existing peers
+    dht.switch.dial = (peer, callback) => callback()
+
+    // 1 -> 2 -> 3
+    // 1 -> 4 [stop]
+    const topology = {
+      // Should be returned because it has a value
+      [peerInfos[1].id.toB58String()]: {
+        closer: [peerInfos[2], peerInfos[4]],
+        value: values[0]
+      },
+      // This query has a delay which means it only returns after the other
+      // path has already indicated the query is complete, so its result
+      // should be ignored
+      [peerInfos[2].id.toB58String()]: {
+        delay: 100,
+        closer: [peerInfos[3]],
+        value: values[1]
+      },
+      // Query has stopped by the time we reach here, should be ignored
+      [peerInfos[3].id.toB58String()]: {
+        value: values[2]
+      },
+
+      // This is the other path, it indicates that the query is complete
+      [peerInfos[4].id.toB58String()]: {
+        closer: [peerInfos[4]],
+        value: values[3],
+        queryComplete: true
+      }
+    }
+
+    const query = async (p) => {
+      const res = topology[p.toB58String()] || {}
+      if (res.delay) {
+        await new Promise((resolve) => setTimeout(resolve, res.delay))
+      }
+      return {
+        closerPeers: res.closer || [],
+        value: res.value,
+        queryComplete: res.queryComplete
+      }
+    }
+
+    const q = new Query(dht, peer.id.id, () => query)
+    const results = await collect(q.run([peerInfos[1].id]))
+
+    // We should only get back the values from the path 1 -> 4
+    expect(results.length).to.eql(2)
+    expect(results[0].value.toString()).to.eql('v1')
+    expect(results[1].value.toString()).to.eql('pathBv1')
   })
 
   /*
@@ -356,10 +413,10 @@ describe('Query', () => {
       return (p) => {
         const response = getResponse(p, trackNum)
         expect(response).to.exist() // or we aren't on the right track
-        if (response.end && !response.success) {
+        if (response.end && !response.pathComplete) {
           badEndVisited = true
         }
-        if (response.success) {
+        if (response.pathComplete) {
           expect(badEndVisited).to.eql(false)
         }
         return response

@@ -471,7 +471,7 @@ module.exports = (dht) => ({
 
         // We have enough values for this path so we're done
         if (pathProviders.size >= pathSize) {
-          res.success = true
+          res.pathComplete = true
           return res
         }
 
