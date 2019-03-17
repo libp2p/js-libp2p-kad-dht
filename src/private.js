@@ -263,7 +263,7 @@ module.exports = (dht) => ({
   async _sendCorrectionRecord (key, vals, best) {
     const fixupRec = utils.createPutRecord(key, best)
 
-    return Promise.all(vals.map((v) => {
+    return Promise.all(vals.map(async (v) => {
       // no need to do anything
       if (v.val.equals(best)) {
         return
@@ -272,16 +272,16 @@ module.exports = (dht) => ({
       // correct ourself
       if (dht._isSelf(v.from)) {
         try {
-          return dht._putLocal(key, fixupRec)
+          await dht._putLocal(key, fixupRec)
         } catch (err) {
           dht._log.error('Failed error correcting self', err)
-          return
         }
+        return
       }
 
       // send correction
       try {
-        return dht._putValueToPeer(key, fixupRec, v.from)
+        await dht._putValueToPeer(key, fixupRec, v.from)
       } catch (err) {
         dht._log.error('Failed error correcting entry', err)
       }
