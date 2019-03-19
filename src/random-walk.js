@@ -38,7 +38,11 @@ class RandomWalk {
         runningHandle._timeoutId = setTimeout(async () => {
           runningHandle._timeoutId = null
 
-          await this._walk(queries, timeout)
+          try {
+            await this._walk(queries, timeout)
+          } catch (err) {
+            this._kadDHT._log.error('random-walk:error', err)
+          }
 
           // Was walk cancelled while fn was being called?
           if (runningHandle._onCancel) {
@@ -94,17 +98,12 @@ class RandomWalk {
     this._kadDHT._log('random-walk:start')
 
     for (let i = 0; i < queries && this._runningHandle; i++) {
-      try {
-        const id = await this._randomPeerId()
-        await utils.promiseTimeout(
-          this._query(id),
-          walkTimeout,
-          `Random walk for id ${id} timed out in ${walkTimeout}ms`
-        )
-      } catch (err) {
-        this._kadDHT._log.error('random-walk:error', err)
-        throw err
-      }
+      const id = await this._randomPeerId()
+      await utils.promiseTimeout(
+        this._query(id),
+        walkTimeout,
+        `Random walk for id ${id} timed out in ${walkTimeout}ms`
+      )
       this._kadDHT._log('random-walk:done')
     }
   }
