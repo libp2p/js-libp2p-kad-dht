@@ -113,10 +113,7 @@ function toPbPeer (peer) {
 }
 
 function fromPbPeer (peer) {
-  const info = new PeerInfo(new PeerId(peer.id))
-  peer.addrs.forEach((a) => info.multiaddrs.add(a))
-
-  return info
+  return new PeerInfo(new PeerId(peer.id), peer.addrs)
 }
 
 module.exports = Message
