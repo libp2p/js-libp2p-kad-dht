@@ -127,6 +127,23 @@ describe('Query', () => {
     })
   })
 
+  it('returns empty run if initial peer list is empty', (done) => {
+    const peer = peerInfos[0]
+
+    const query = (p, cb) => {}
+
+    const q = new Query(dht, peer.id.id, () => query)
+    q.run([], (err, res) => {
+      expect(err).to.not.exist()
+
+      // Should not visit any peers
+      expect(res.paths.length).to.eql(0)
+      expect(res.finalSet.size).to.eql(0)
+
+      done()
+    })
+  })
+
   it('only closerPeers', (done) => {
     const peer = peerInfos[0]
 
@@ -300,6 +317,50 @@ describe('Query', () => {
 
         done()
       }
+    })
+  })
+
+  it('queries run after shutdown return immediately', (done) => {
+    createDHT(peerInfos, (err, dhtA) => {
+      if (err) {
+        return done(err)
+      }
+
+      const peer = peerInfos[0]
+
+      // mock this so we can dial non existing peers
+      dhtA.switch.dial = (peer, callback) => callback()
+
+      // 1 -> 2 -> 3
+      const topology = {
+        [peerInfos[1].id.toB58String()]: {
+          closer: [peerInfos[2]]
+        },
+        [peerInfos[2].id.toB58String()]: {
+          closer: [peerInfos[3]]
+        }
+      }
+
+      const query = (p, cb) => {
+        const res = topology[p.toB58String()] || {}
+        cb(null, {
+          closerPeers: res.closer || []
+        })
+      }
+
+      const q = new Query(dhtA, peer.id.id, () => query)
+
+      dhtA.stop(() => {
+        q.run([peerInfos[1].id], (err, res) => {
+          expect(err).to.not.exist()
+
+          // Should not visit any peers
+          expect(res.paths.length).to.eql(0)
+          expect(res.finalSet.size).to.eql(0)
+
+          done()
+        })
+      })
     })
   })
 

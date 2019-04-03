@@ -56,18 +56,17 @@ class Query {
   run (peers, callback) {
     if (!this.dht._queryManager.running) {
       this._log.error('Attempt to run query after shutdown')
-      return callback()
+      return callback(null, { finalSet: new Set(), paths: [] })
+    }
+    if (peers.length === 0) {
+      this._log.error('Running query with no peers')
+      return callback(null, { finalSet: new Set(), paths: [] })
     }
 
     const run = {
       peersSeen: new Set(),
       errors: [],
       paths: null // array of states per disjoint path
-    }
-
-    if (peers.length === 0) {
-      this._log.error('Running query with no peers')
-      return callback()
     }
 
     // create correct number of paths
