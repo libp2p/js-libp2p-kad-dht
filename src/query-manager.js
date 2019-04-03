@@ -9,7 +9,7 @@ class QueryManager {
    */
   constructor () {
     this.queries = new Set()
-    this.running = true
+    this.running = false
   }
 
   /**
@@ -28,6 +28,13 @@ class QueryManager {
    */
   queryCompleted (query) {
     this.queries.delete(query)
+  }
+
+  /**
+   * Starts the query manager.
+   */
+  start () {
+    this.running = true
   }
 
   /**

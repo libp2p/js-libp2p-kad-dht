@@ -161,6 +161,7 @@ class KadDHT extends EventEmitter {
    */
   start (callback) {
     this._running = true
+    this._queryManager.start()
     this.network.start((err) => {
       if (err) {
         return callback(err)
