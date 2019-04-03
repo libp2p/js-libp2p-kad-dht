@@ -54,6 +54,11 @@ class Query {
    * @returns {void}
    */
   run (peers, callback) {
+    if (!this.dht._queryManager.running) {
+      this._log.error('Attempt to run query after shutdown')
+      return callback()
+    }
+
     const run = {
       peersSeen: new Set(),
       errors: [],
@@ -84,6 +89,9 @@ class Query {
         peersToQuery: null
       }
     })
+
+    // Register this query so we stop it if the DHT stops
+    this.dht._queryManager.queryStarted(this)
 
     // Create a manager to keep track of the worker queue for each path
     this.workerManager = new WorkerManager()
@@ -133,6 +141,7 @@ class Query {
    */
   stop () {
     this.workerManager && this.workerManager.stop()
+    this.dht._queryManager.queryCompleted(this)
   }
 }
 

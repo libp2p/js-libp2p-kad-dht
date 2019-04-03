@@ -16,6 +16,14 @@ const Query = require('../src/query')
 const createPeerInfo = require('./utils/create-peer-info')
 const createDisjointTracks = require('./utils/create-disjoint-tracks')
 
+const createDHT = (peerInfos) => {
+  const sw = new Switch(peerInfos[0], new PeerBook())
+  sw.transport.add('tcp', new TCP())
+  sw.connection.addStreamMuxer(Mplex)
+  sw.connection.reuse()
+  return new DHT(sw)
+}
+
 describe('Query', () => {
   let peerInfos
   let dht
@@ -28,11 +36,7 @@ describe('Query', () => {
       }
 
       peerInfos = result
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
-      dht = new DHT(sw)
+      dht = createDHT(peerInfos)
 
       done()
     })
@@ -232,6 +236,60 @@ describe('Query', () => {
 
       done()
     })
+  })
+
+  it('all queries stop after shutdown', (done) => {
+    const dhtA = createDHT(peerInfos)
+    const peer = peerInfos[0]
+
+    // mock this so we can dial non existing peers
+    dhtA.switch.dial = (peer, callback) => callback()
+
+    // 1 -> 2 -> 3 -> 4
+    const topology = {
+      [peerInfos[1].id.toB58String()]: {
+        closer: [peerInfos[2]]
+      },
+      [peerInfos[2].id.toB58String()]: {
+        closer: [peerInfos[3]]
+      },
+      // Should not reach here because query gets shut down
+      [peerInfos[3].id.toB58String()]: {
+        closer: [peerInfos[4]]
+      }
+    }
+
+    const visited = []
+    const query = (p, cb) => {
+      visited.push(p)
+
+      const invokeCb = () => {
+        const res = topology[p.toB58String()] || {}
+        cb(null, {
+          closerPeers: res.closer || []
+        })
+      }
+
+      // Shut down after visiting peerInfos[2]
+      if (p.toB58String() === peerInfos[2].id.toB58String()) {
+        dhtA.stop(invokeCb)
+        setTimeout(checkExpectations, 100)
+      } else {
+        invokeCb()
+      }
+    }
+
+    const q = new Query(dhtA, peer.id.id, () => query)
+    q.run([peerInfos[1].id], (err, res) => {
+      expect(err).to.not.exist()
+    })
+
+    function checkExpectations () {
+      // Should only visit peers up to the point where we shut down
+      expect(visited).to.eql([peerInfos[1].id, peerInfos[2].id])
+
+      done()
+    }
   })
 
   it('disjoint path values', (done) => {
