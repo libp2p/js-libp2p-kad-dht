@@ -103,6 +103,7 @@ function waitForWellFormedTables (dhts, minPeers, avgPeers, waitTimeout, callbac
   }, waitTimeout)(callback)
 }
 
+// Count how many peers are in b but are not in a
 function countDiffPeers (a, b) {
   const s = new Set()
   a.forEach((p) => s.add(p.toB58String()))
@@ -678,6 +679,7 @@ describe('KadDHT', () => {
   it('find peer query', function (done) {
     this.timeout(40 * 1000)
 
+    // Create 101 nodes
     const nDHTs = 101
     const tdht = new TestDHT()
 
@@ -686,12 +688,17 @@ describe('KadDHT', () => {
 
       const ids = dhts.map((d) => d.peerInfo.id)
 
+      // The origin node for the FIND_PEER query
       const guy = dhts[0]
+      // The other nodes
       const others = dhts.slice(1)
+      // The DHT key
       const val = Buffer.from('foobar')
       const connected = {} // indexes in others that are reachable from guy
 
       series([
+        // Make connections from each of the first 20 nodes to 16 of the
+        // remaining 80 nodes at random
         (cb) => times(20, (i, cb) => {
           times(16, (j, cb) => {
             const t = 20 + random(79)
@@ -699,41 +706,71 @@ describe('KadDHT', () => {
             connect(others[i], others[t], cb)
           }, cb)
         }, cb),
+        // Make a connection from the origin node to each of the first 20 nodes
         (cb) => times(20, (i, cb) => {
           connected[i] = true
           connect(guy, others[i], cb)
         }, cb),
+        // Hash the key into the DHT's key format
         (cb) => kadUtils.convertBuffer(val, (err, rtval) => {
           expect(err).to.not.exist()
+
+          // Get the alpha (3) closest peers to the key from the origin's
+          // routing table
           const rtablePeers = guy.routingTable.closestPeers(rtval, c.ALPHA)
           expect(rtablePeers).to.have.length(3)
 
+          // Get all connected peers from the origin's peer book
           const netPeers = guy.peerBook.getAllArray().filter((p) => p.isConnected())
           expect(netPeers).to.have.length(20)
 
+          // The set of peers used to initiate the query (the closest alpha
+          // peers to the key that the origin knows about)
           const rtableSet = {}
           rtablePeers.forEach((p) => {
             rtableSet[p.toB58String()] = true
           })
 
+          // The ids of nodes that have connections
           const connectedIds = ids.slice(1).filter((id, i) => connected[i])
 
           series([
+            // Make the query
             (cb) => guy.getClosestPeers(val, cb),
+            // Find the closest connected peers to the key
             (cb) => kadUtils.sortClosestPeers(connectedIds, rtval, cb)
           ], (err, res) => {
             expect(err).to.not.exist()
+
+            // Query response
             const out = res[0]
+
+            // All connected peers in order of distance from key
             const actualClosest = res[1]
 
+            // Expect that the response includes nodes that are were not
+            // already in the origin's routing table (ie it went out to
+            // the network to find closer peers)
             expect(out.filter((p) => !rtableSet[p.toB58String()]))
               .to.not.be.empty()
 
+            // Expect that there were 20 peers found
             expect(out).to.have.length(20)
+
+            // The expected closest 20 peers to the key
             const exp = actualClosest.slice(0, 20)
 
+            // Expect the 20 peers found to be the 20 closest connected peers
+            // to the key
             kadUtils.sortClosestPeers(out, rtval, (err, got) => {
               expect(err).to.not.exist()
+
+              // TODO:
+              // With this change this expectation fails intermittently,
+              // because getClosestPeers() doesn't always find the closest 20
+              // peers (eg sometimes it will find 18 of the closest plus a
+              // couple of others that are not quite the closest).
+              // I'm not sure what the best approach to testing should be here?
               expect(countDiffPeers(exp, got)).to.eql(0)
 
               cb()
