@@ -478,11 +478,20 @@ class WorkerQueue {
   }
 
   /**
-   * Add peers to the queue until there are enough to satisfy the concurrency.
+   * Add peers to the worker queue until there are enough to satisfy the
+   * worker queue concurrency.
+   * Note that we don't want to take any more than those required to satisfy
+   * concurrency from the peers-to-query queue, because we always want to
+   * query the closest peers to the key first, and new peers are continously
+   * being added to the peers-to-query queue.
    */
   fill () {
     this.log('queue:fill')
-    while (this.queue.length() < this.concurrency &&
+
+    // Note:
+    // - queue.running(): number of items that are currently running
+    // - queue.length(): the number of items that are waiting to be run
+    while (this.queue.running() + this.queue.length() < this.concurrency &&
            this.path.peersToQuery.length > 0) {
       this.queue.push(this.path.peersToQuery.dequeue())
     }
