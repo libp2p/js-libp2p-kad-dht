@@ -230,7 +230,11 @@ describe('KadDHT', () => {
     sw.transport.add('tcp', new TCP())
     sw.connection.addStreamMuxer(Mplex)
     sw.connection.reuse()
-    const dht = new KadDHT(sw, { enabledDiscovery: false })
+    const dht = new KadDHT(sw, {
+      randomWalk: {
+        enabled: false
+      }
+    })
 
     series([
       (cb) => dht.start(cb),
@@ -246,7 +250,11 @@ describe('KadDHT', () => {
     sw.transport.add('tcp', new TCP())
     sw.connection.addStreamMuxer(Mplex)
     sw.connection.reuse()
-    const dht = new KadDHT(sw, { enabledDiscovery: false })
+    const dht = new KadDHT(sw, {
+      randomWalk: {
+        enabled: false
+      }
+    })
 
     series([
       (cb) => dht.stop(cb)
