@@ -506,7 +506,7 @@ class WorkerQueue {
    */
   processNext (peer, cb) {
     if (!this.running) {
-      return
+      return cb()
     }
 
     // The paths must be disjoint, meaning that no two paths in the Query may
@@ -518,7 +518,7 @@ class WorkerQueue {
     // Check if we've queried enough peers already
     this.run.continueQuerying((err, continueQuerying) => {
       if (!this.running) {
-        return
+        return cb()
       }
 
       if (err) {
@@ -527,7 +527,7 @@ class WorkerQueue {
 
       // If we've queried enough peers, bail out
       if (!continueQuerying) {
-        return
+        return cb()
       }
 
       // Check if another path has queried this peer in the mean time
@@ -551,17 +551,18 @@ class WorkerQueue {
 
         // If query is complete, stop all workers.
         // Note: run.stop() calls stop() on all the workers, which kills the
-        // queue and calls callback(), so we don't need to call cb() here
+        // queue and calls callbackFn()
         if (state && state.queryComplete) {
           this.log('query:complete')
-          return this.run.stop()
+          this.run.stop()
+          return cb()
         }
 
         // If path is complete, just stop this worker.
-        // Note: this.stop() kills the queue and calls callback() so we don't
-        // need to call cb() here
+        // Note: this.stop() kills the queue and calls callbackFn()
         if (state && state.pathComplete) {
-          return this.stop()
+          this.stop()
+          return cb()
         }
 
         // Otherwise, process next peer
