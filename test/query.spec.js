@@ -650,8 +650,13 @@ describe('Query', () => {
         q.run(initial, (err, res) => {
           expect(err).to.not.exist()
 
-          // Should query 20 peers and then stop
-          expect(visited.length).to.be.gt(20)
+          // Should query 19 peers, then find some peers closer to the key, and
+          // finally stop once those closer peers have been queried
+          const expectedVisited = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 38])
+          const visitedSet = new Set(visited.map(peerIndex))
+          for (const i of expectedVisited) {
+            expect(visitedSet.has(i))
+          }
 
           // Should never get to end of tail (see note above)
           expect(visited.find(p => peerIndex(p) === 29)).not.to.exist()
