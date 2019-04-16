@@ -74,8 +74,7 @@ function connect (a, b, callback) {
 
 function bootstrap (dhts) {
   dhts.forEach((dht) => {
-    // dht.randomWalk._walk(3, 10000, () => {}) // don't need to know when it finishes
-    dht.randomWalk.start(1, 1000) // don't need to know when it finishes
+    dht.randomWalk._walk(1, 1000, () => {})
   })
 }
 
@@ -212,7 +211,7 @@ describe('KadDHT', () => {
       (cb) => dht.start(cb),
       (cb) => {
         expect(dht.network.start.calledOnce).to.equal(true)
-        expect(dht.randomWalk.start.calledOnce).to.equal(false)
+        expect(dht.randomWalk._runningHandle).to.not.exist()
 
         cb()
       },
@@ -567,13 +566,17 @@ describe('KadDHT', () => {
   })
 
   it('random-walk', function (done) {
-    this.timeout(40 * 1000)
+    this.timeout(10 * 1000)
 
     const nDHTs = 20
     const tdht = new TestDHT()
 
     // random walk disabled for a manual usage
-    tdht.spawn(nDHTs, { enabledDiscovery: false }, (err, dhts) => {
+    tdht.spawn(nDHTs, {
+      randomWalk: {
+        enabled: false
+      }
+    }, (err, dhts) => {
       expect(err).to.not.exist()
 
       series([

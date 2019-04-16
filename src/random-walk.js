@@ -12,10 +12,22 @@ const c = require('./constants')
 const errcode = require('err-code')
 
 class RandomWalk {
-  constructor (kadDHT) {
-    assert(kadDHT, 'Random Walk needs an instance of the Kademlia DHT')
+  /**
+   * @constructor
+   * @param {DHT} dht
+   * @param {object} options
+   * @param {randomWalkOptions.enabled} options.enabled
+   * @param {randomWalkOptions.queriesPerPeriod} options.queriesPerPeriod
+   * @param {randomWalkOptions.interval} options.interval
+   * @param {randomWalkOptions.timeout} options.timeout
+   * @param {randomWalkOptions.delay} options.delay
+   * @param {DHT} options.dht
+   */
+  constructor (dht, options) {
+    this._options = { ...c.defaultRandomWalk, ...options }
+    assert(dht, 'Random Walk needs an instance of the Kademlia DHT')
     this._runningHandle = null
-    this._kadDHT = kadDHT
+    this._kadDHT = dht
   }
 
   /**
@@ -23,30 +35,27 @@ class RandomWalk {
    * every interval requesting random data. This is done to keep the dht
    * healthy over time.
    *
-   * @param {number} [queries=1] - how many queries to run per period
-   * @param {number} [period=300000] - how often to run the the random-walk process, in milliseconds (5min)
-   * @param {number} [timeout=10000] - how long to wait for the the random-walk query to run, in milliseconds (10s)
    * @returns {void}
    */
-  start (queries = c.defaultRandomWalk.queriesPerPeriod, period = c.defaultRandomWalk.interval, timeout = c.defaultRandomWalk.timeout) {
+  start () {
     // Don't run twice
-    if (this._running) { return }
+    if (this._running || !this._options.enabled) { return }
 
     // Create running handle
     const runningHandle = {
       _onCancel: null,
       _timeoutId: null,
-      runPeriodically: (fn, period) => {
+      runPeriodically: (walk, period) => {
         runningHandle._timeoutId = setTimeout(() => {
           runningHandle._timeoutId = null
 
-          fn((nextPeriod) => {
+          walk((nextPeriod) => {
             // Was walk cancelled while fn was being called?
             if (runningHandle._onCancel) {
               return runningHandle._onCancel()
             }
             // Schedule next
-            runningHandle.runPeriodically(fn, nextPeriod)
+            runningHandle.runPeriodically(walk, nextPeriod)
           })
         }, period)
       },
@@ -61,10 +70,15 @@ class RandomWalk {
       }
     }
 
-    // Start runner
-    runningHandle.runPeriodically((done) => {
-      this._walk(queries, timeout, () => done(period))
-    }, period)
+    // Start doing random walks after `this._options.delay`
+    runningHandle._timeoutId = setTimeout(() => {
+      // Start runner immediately
+      runningHandle.runPeriodically((done) => {
+        // Each subsequent walk should run on a `this._options.interval` interval
+        this._walk(this._options.queriesPerPeriod, this._options.timeout, () => done(this._options.interval))
+      }, 0)
+    }, this._options.delay)
+
     this._runningHandle = runningHandle
   }
 
