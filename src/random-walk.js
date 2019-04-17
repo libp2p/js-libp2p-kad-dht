@@ -8,6 +8,7 @@ const multihashing = require('multihashing-async')
 const PeerId = require('peer-id')
 const assert = require('assert')
 const c = require('./constants')
+const { logger } = require('./utils')
 
 const errcode = require('err-code')
 
@@ -28,6 +29,7 @@ class RandomWalk {
     assert(dht, 'Random Walk needs an instance of the Kademlia DHT')
     this._runningHandle = null
     this._kadDHT = dht
+    this.log = logger(dht.peerInfo.id, 'random-walk')
   }
 
   /**
@@ -110,7 +112,7 @@ class RandomWalk {
    * @private
    */
   _walk (queries, walkTimeout, callback) {
-    this._kadDHT._log('random-walk:start')
+    this.log('start')
 
     times(queries, (i, cb) => {
       waterfall([
@@ -120,11 +122,11 @@ class RandomWalk {
         }, walkTimeout)(cb)
       ], (err) => {
         if (err) {
-          this._kadDHT._log.error('random-walk:error', err)
+          this.log.error('query finished with error', err)
           return callback(err)
         }
 
-        this._kadDHT._log('random-walk:done')
+        this.log('done')
         callback(null)
       })
     })
@@ -140,7 +142,7 @@ class RandomWalk {
    * @private
    */
   _query (id, callback) {
-    this._kadDHT._log('random-walk:query:%s', id.toB58String())
+    this.log('query:%s', id.toB58String())
 
     this._kadDHT.findPeer(id, (err, peer) => {
       if (err.code === 'ERR_NOT_FOUND') {
@@ -150,7 +152,7 @@ class RandomWalk {
       if (err) {
         return callback(err)
       }
-      this._kadDHT._log('random-walk:query:found', err, peer)
+      this.log('query:found', peer)
 
       // wait what, there was something found? Lucky day!
       callback(errcode(new Error(`random-walk: ACTUALLY FOUND PEER: ${peer}, ${id.toB58String()}`), 'ERR_FOUND_RANDOM_PEER'))
