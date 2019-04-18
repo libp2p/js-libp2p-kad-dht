@@ -67,14 +67,14 @@ describe('Random Walk', () => {
     it('should stop walking if a query errors', (done) => {
       const queries = 5
       const error = new Error('ERR_BOOM')
-      const _queryStub = sinon.stub(randomWalk, '_query')
-      _queryStub.onCall(2).callsArgWith(2, error)
-      _queryStub.callsArgWith(2, null)
+      const findPeerStub = sinon.stub(randomWalk._kadDHT, 'findPeer')
+      findPeerStub.onCall(2).callsArgWith(2, error)
+      findPeerStub.callsArgWith(2, { code: 'ERR_NOT_FOUND' })
 
       randomWalk._walk(queries, 1e3, (err) => {
         expect(err).to.eql(error)
         // 2 successes and error on the 3rd
-        expect(randomWalk._query.callCount).to.eql(3)
+        expect(findPeerStub.callCount).to.eql(3)
         done()
       })
     })
@@ -182,6 +182,30 @@ describe('Random Walk', () => {
         expect(timeout).to.eql(options.timeout)
         done()
       })
+      randomWalk.start()
+    })
+
+    it('should run the query on interval', (done) => {
+      const options = {
+        enabled: true,
+        delay: 0,
+        timeout: 3e3,
+        interval: 100,
+        queriesPerPeriod: 1
+      }
+      const error = { code: 'ERR_NOT_FOUND' }
+      const randomWalk = new RandomWalk(mockDHT, options)
+      sinon.stub(randomWalk._kadDHT, 'findPeer').callsFake((_, opts, callback) => {
+        expect(opts.timeout).to.eql(options.timeout).mark()
+        callback(error)
+      })
+
+      expect(3).checks(() => {
+        randomWalk.stop()
+        expect(randomWalk._kadDHT.findPeer.callCount).to.eql(3)
+        done()
+      })
+
       randomWalk.start()
     })
   })
