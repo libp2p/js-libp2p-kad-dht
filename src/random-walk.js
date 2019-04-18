@@ -68,6 +68,8 @@ class RandomWalk {
    * Run function `walk` on every `interval` ms
    * @param {function(callback)} walk The function to execute on `interval`
    * @param {number} interval The interval to run on in ms
+   *
+   * @private
    */
   _runPeriodically (walk, interval) {
     this._timeoutId = setTimeout(() => {
@@ -128,9 +130,17 @@ class RandomWalk {
   /**
    * The query run during a random walk request.
    *
+   * TODO: While query currently supports an abort controller, it is not
+   * yet supported by `DHT.findPeer`. Once https://github.com/libp2p/js-libp2p-kad-dht/pull/82
+   * is complete, and AbortController support has been added to the
+   * DHT query functions, the abort here will just work, provided the
+   * functions support `options.signal`. Once done, this todo should be
+   * removed.
+   *
    * @param {PeerId} id
    * @param {object} options
    * @param {number} options.timeout
+   * @param {AbortControllerSignal} options.signal
    * @param {function(Error)} callback
    * @returns {void}
    *
