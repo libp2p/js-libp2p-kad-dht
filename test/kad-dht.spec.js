@@ -580,11 +580,7 @@ describe('KadDHT', () => {
     const tdht = new TestDHT()
 
     // random walk disabled for a manual usage
-    tdht.spawn(nDHTs, {
-      randomWalk: {
-        enabled: false
-      }
-    }, (err, dhts) => {
+    tdht.spawn(nDHTs, (err, dhts) => {
       expect(err).to.not.exist()
 
       series([
