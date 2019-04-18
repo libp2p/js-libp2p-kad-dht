@@ -3,12 +3,12 @@
 const times = require('async/times')
 const crypto = require('libp2p-crypto')
 const waterfall = require('async/waterfall')
-const timeout = require('async/timeout')
 const multihashing = require('multihashing-async')
 const PeerId = require('peer-id')
 const assert = require('assert')
 const c = require('./constants')
 const { logger } = require('./utils')
+const AbortController = require('abort-controller')
 
 const errcode = require('err-code')
 
@@ -52,23 +52,18 @@ class RandomWalk {
           runningHandle._timeoutId = null
 
           walk((nextPeriod) => {
-            // Was walk cancelled while fn was being called?
-            if (runningHandle._onCancel) {
-              return runningHandle._onCancel()
-            }
             // Schedule next
             runningHandle.runPeriodically(walk, nextPeriod)
           })
         }, period)
       },
-      cancel: (cb) => {
+      cancel: () => {
         // Not currently running, can callback immediately
         if (runningHandle._timeoutId) {
           clearTimeout(runningHandle._timeoutId)
-          return cb()
+          return
         }
-        // Wait to finish and then call callback
-        runningHandle._onCancel = cb
+        this._controller.abort()
       }
     }
 
@@ -85,20 +80,20 @@ class RandomWalk {
   }
 
   /**
-   * Stop the random-walk process.
-   * @param {function(Error)} callback
+   * Stop the random-walk process. Any active
+   * queries will be aborted.
    *
    * @returns {void}
    */
-  stop (callback) {
+  stop () {
     const runningHandle = this._runningHandle
 
     if (!runningHandle) {
-      return callback()
+      return
     }
 
     this._runningHandle = null
-    runningHandle.cancel(callback)
+    runningHandle.cancel()
   }
 
   /**
@@ -113,22 +108,34 @@ class RandomWalk {
    */
   _walk (queries, walkTimeout, callback) {
     this.log('start')
+    this._controller = new AbortController()
 
-    times(queries, (i, cb) => {
+    times(queries, (i, next) => {
+      this.log('running query %s', i)
+
+      // Perform the walk
       waterfall([
         (cb) => this._randomPeerId(cb),
-        (id, cb) => timeout((cb) => {
-          this._query(id, cb)
-        }, walkTimeout)(cb)
+        (id, cb) => this._query(id, {
+          timeout: walkTimeout,
+          signal: this._controller.signal
+        }, cb)
       ], (err) => {
-        if (err) {
+        if (err && err.code !== 'ETIMEDOUT') {
           this.log.error('query finished with error', err)
-          return callback(err)
+          return next(err)
         }
 
-        this.log('done')
-        callback(null)
+        this.log('finished query')
+        next(null)
       })
+    }, (err) => {
+      if (err) {
+        this.log.error(err)
+      }
+
+      this.log('finished queries')
+      callback(err)
     })
   }
 
@@ -136,16 +143,18 @@ class RandomWalk {
    * The query run during a random walk request.
    *
    * @param {PeerId} id
+   * @param {object} options
+   * @param {number} options.timeout
    * @param {function(Error)} callback
    * @returns {void}
    *
    * @private
    */
-  _query (id, callback) {
+  _query (id, options, callback) {
     this.log('query:%s', id.toB58String())
 
-    this._kadDHT.findPeer(id, (err, peer) => {
-      if (err.code === 'ERR_NOT_FOUND') {
+    this._kadDHT.findPeer(id, options, (err, peer) => {
+      if (err && err.code === 'ERR_NOT_FOUND') {
         // expected case, we asked for random stuff after all
         return callback()
       }

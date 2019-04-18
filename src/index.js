@@ -173,11 +173,10 @@ class KadDHT extends EventEmitter {
    */
   stop (callback) {
     this._running = false
-    this.randomWalk.stop(() => { // guarantee that random walk is stopped if it was started
-      this.providers.stop()
-      this.network.stop(callback)
-    })
+    this.randomWalk.stop()
+    this.providers.stop()
     this._queryManager.stop()
+    this.network.stop(callback)
   }
 
   /**
@@ -581,6 +580,7 @@ class KadDHT extends EventEmitter {
    * @param {PeerId} id
    * @param {Object} options - findPeer options
    * @param {number} options.timeout - how long the query should maximally run, in milliseconds (default: 60000)
+   * @param {EventEmitter} options.signal - an `AbortController` signal
    * @param {function(Error, PeerInfo)} callback
    * @returns {void}
    */
