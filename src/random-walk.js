@@ -25,9 +25,8 @@ class RandomWalk {
    * @param {DHT} options.dht
    */
   constructor (dht, options) {
-    this._options = { ...c.defaultRandomWalk, ...options }
     assert(dht, 'Random Walk needs an instance of the Kademlia DHT')
-    this._runningHandle = null
+    this._options = { ...c.defaultRandomWalk, ...options }
     this._kadDHT = dht
     this.log = logger(dht.peerInfo.id, 'random-walk')
   }
@@ -41,42 +40,16 @@ class RandomWalk {
    */
   start () {
     // Don't run twice
-    if (this._running || !this._options.enabled) { return }
-
-    // Create running handle
-    const runningHandle = {
-      _onCancel: null,
-      _timeoutId: null,
-      runPeriodically: (walk, period) => {
-        runningHandle._timeoutId = setTimeout(() => {
-          runningHandle._timeoutId = null
-
-          walk((nextPeriod) => {
-            // Schedule next
-            runningHandle.runPeriodically(walk, nextPeriod)
-          })
-        }, period)
-      },
-      cancel: () => {
-        // Not currently running, can callback immediately
-        if (runningHandle._timeoutId) {
-          clearTimeout(runningHandle._timeoutId)
-          return
-        }
-        this._controller.abort()
-      }
-    }
+    if (this._timeoutId || !this._options.enabled) { return }
 
     // Start doing random walks after `this._options.delay`
-    runningHandle._timeoutId = setTimeout(() => {
+    this._timeoutId = setTimeout(() => {
       // Start runner immediately
-      runningHandle.runPeriodically((done) => {
+      this._runPeriodically((done) => {
         // Each subsequent walk should run on a `this._options.interval` interval
         this._walk(this._options.queriesPerPeriod, this._options.timeout, () => done(this._options.interval))
       }, 0)
     }, this._options.delay)
-
-    this._runningHandle = runningHandle
   }
 
   /**
@@ -86,14 +59,25 @@ class RandomWalk {
    * @returns {void}
    */
   stop () {
-    const runningHandle = this._runningHandle
+    clearTimeout(this._timeoutId)
+    this._timeoutId = null
+    this._controller && this._controller.abort()
+  }
 
-    if (!runningHandle) {
-      return
-    }
+  /**
+   * Run function `walk` on every `interval` ms
+   * @param {function(callback)} walk The function to execute on `interval`
+   * @param {number} interval The interval to run on in ms
+   */
+  _runPeriodically (walk, interval) {
+    this._timeoutId = setTimeout(() => {
+      this._timeoutId = null
 
-    this._runningHandle = null
-    runningHandle.cancel()
+      walk((nextInterval) => {
+        // Schedule next
+        this._runPeriodically(walk, nextInterval)
+      })
+    }, interval)
   }
 
   /**
@@ -111,29 +95,31 @@ class RandomWalk {
     this._controller = new AbortController()
 
     times(queries, (i, next) => {
-      this.log('running query %s', i)
+      this.log('running query %d', i)
 
       // Perform the walk
       waterfall([
         (cb) => this._randomPeerId(cb),
-        (id, cb) => this._query(id, {
-          timeout: walkTimeout,
-          signal: this._controller.signal
-        }, cb)
+        (id, cb) => {
+          // Check if we've happened to already abort
+          if (!this._controller) return cb()
+
+          this._query(id, {
+            timeout: walkTimeout,
+            signal: this._controller.signal
+          }, cb)
+        }
       ], (err) => {
         if (err && err.code !== 'ETIMEDOUT') {
-          this.log.error('query finished with error', err)
+          this.log.error('query %d finished with error', i, err)
           return next(err)
         }
 
-        this.log('finished query')
+        this.log('finished query %d', i)
         next(null)
       })
     }, (err) => {
-      if (err) {
-        this.log.error(err)
-      }
-
+      this._controller = null
       this.log('finished queries')
       callback(err)
     })

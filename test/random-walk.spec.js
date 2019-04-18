@@ -133,24 +133,40 @@ describe('Random Walk', () => {
   })
 
   describe('start', () => {
-    it('should not start if it is running', () => {
+    it('should not start if it is running', (done) => {
       const randomWalk = new RandomWalk(mockDHT, {
         enabled: true,
         delay: 0,
         interval: 100
       })
-      randomWalk._running = true
+
+      sinon.stub(randomWalk, '_runPeriodically')
+
       randomWalk.start()
-      expect(randomWalk._runningHandle).to.not.exist()
+      randomWalk.start()
+
+      // Wait a tick
+      setTimeout(() => {
+        expect(randomWalk._runPeriodically.callCount).to.eql(1)
+        randomWalk.stop()
+        done()
+      })
     })
 
-    it('should not start if it is not enabled', () => {
+    it('should not start if it is not enabled', (done) => {
       const randomWalk = new RandomWalk(mockDHT, {
         enabled: false
       })
-      randomWalk._running = true
+      sinon.stub(randomWalk, '_runPeriodically')
+
       randomWalk.start()
-      expect(randomWalk._runningHandle).to.not.exist()
+
+      // Wait a tick
+      setTimeout(() => {
+        expect(randomWalk._runPeriodically.callCount).to.eql(0)
+        randomWalk.stop()
+        done()
+      })
     })
 
     it('should start if not running and enabled', (done) => {
@@ -188,9 +204,9 @@ describe('Random Walk', () => {
         interval: 100e3
       })
       randomWalk.start()
-      expect(randomWalk._runningHandle._timeoutId).to.exist()
+      expect(randomWalk._timeoutId).to.exist()
       randomWalk.stop()
-      expect(randomWalk._runningHandle).to.not.exist()
+      expect(randomWalk._timeoutId).to.not.exist()
     })
 
     it('should cancel the walk if already running', (done) => {
@@ -202,7 +218,7 @@ describe('Random Walk', () => {
       })
       sinon.stub(randomWalk._kadDHT, 'findPeer').callsFake((id, options) => {
         options.signal.addEventListener('abort', () => {
-          expect(randomWalk._runningHandle).to.not.exist()
+          expect(randomWalk._timeoutId).to.not.exist()
           options.signal.removeEventListener('abort')
           done()
         })
