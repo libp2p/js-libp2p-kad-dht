@@ -574,7 +574,7 @@ describe('KadDHT', () => {
   })
 
   it('random-walk', function (done) {
-    this.timeout(10 * 1000)
+    this.timeout(20 * 1000)
 
     const nDHTs = 20
     const tdht = new TestDHT()
