@@ -580,7 +580,7 @@ class KadDHT extends EventEmitter {
    * @param {PeerId} id
    * @param {Object} options - findPeer options
    * @param {number} options.timeout - how long the query should maximally run, in milliseconds (default: 60000)
-   * @param {EventEmitter} options.signal - an `AbortController` signal
+   * @param {AbortControllerSignal} options.signal - an `AbortController` signal
    * @param {function(Error, PeerInfo)} callback
    * @returns {void}
    */
