@@ -73,8 +73,6 @@ class RandomWalk {
    */
   _runPeriodically (walk, interval) {
     this._timeoutId = setTimeout(() => {
-      this._timeoutId = null
-
       walk((nextInterval) => {
         // Schedule next
         this._runPeriodically(walk, nextInterval)

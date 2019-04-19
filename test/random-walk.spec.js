@@ -139,18 +139,21 @@ describe('Random Walk', () => {
         delay: 0,
         interval: 100
       })
+      sinon.spy(randomWalk, '_runPeriodically')
 
-      sinon.stub(randomWalk, '_runPeriodically')
+      sinon.stub(randomWalk, '_walk').callsFake(() => {
+        // Try to start again
+        randomWalk.start()
 
-      randomWalk.start()
-      randomWalk.start()
-
-      // Wait a tick
-      setTimeout(() => {
-        expect(randomWalk._runPeriodically.callCount).to.eql(1)
-        randomWalk.stop()
-        done()
+        // Wait a tick to allow the 0ms delay to trigger
+        setTimeout(() => {
+          expect(randomWalk._runPeriodically.callCount).to.eql(1)
+          randomWalk.stop()
+          done()
+        })
       })
+
+      randomWalk.start()
     })
 
     it('should not start if it is not enabled', (done) => {
