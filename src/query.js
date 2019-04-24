@@ -71,6 +71,8 @@ class Query {
     }
 
     this.run = new Run(this)
+
+    this._log(`query running with K=${this.dht.kBucketSize}, A=${c.ALPHA}, D=${Math.min(this.dht.disjointPaths, peers.length)}`)
     this.run.once('start', this._onStart)
     this.run.once('complete', this._onComplete)
     this.run.execute(peers, callback)
@@ -166,7 +168,7 @@ class Run extends EventEmitter {
     const paths = [] // array of states per disjoint path
 
     // Create disjoint paths
-    const numPaths = Math.min(c.DISJOINT_PATHS, peers.length)
+    const numPaths = Math.min(this.query.dht.disjointPaths, peers.length)
     for (let i = 0; i < numPaths; i++) {
       paths.push(new Path(this, this.query.makePath(i, numPaths)))
     }

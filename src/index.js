@@ -75,6 +75,13 @@ class KadDHT extends EventEmitter {
     this.kBucketSize = options.kBucketSize || c.K
 
     /**
+     * Number of disjoint query paths to use
+     * This is set to `kBucketSize`/2 per the S/Kademlia paper
+     * @type {number}
+     */
+    this.disjointPaths = Math.ceil(this.kBucketSize / 2)
+
+    /**
      * Number of closest peers to return on kBucket search, default 20
      *
      * @type {number}
