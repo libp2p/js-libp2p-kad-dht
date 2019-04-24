@@ -79,7 +79,7 @@ class KadDHT extends EventEmitter {
      *
      * @type {number}
      */
-    this.ncp = options.ncp || c.K
+    this.ncp = options.ncp || this.kBucketSize
 
     /**
      * The routing table.
@@ -321,7 +321,7 @@ class KadDHT extends EventEmitter {
       waterfall([
         (cb) => utils.convertBuffer(key, cb),
         (id, cb) => {
-          const rtp = this.routingTable.closestPeers(id, c.K)
+          const rtp = this.routingTable.closestPeers(id, this.kBucketSize)
 
           this._log('peers in rt: %d', rtp.length)
           if (rtp.length === 0) {
@@ -412,7 +412,7 @@ class KadDHT extends EventEmitter {
         return callback(err)
       }
 
-      const tablePeers = this.routingTable.closestPeers(id, c.K)
+      const tablePeers = this.routingTable.closestPeers(id, this.kBucketSize)
 
       const q = new Query(this, key, () => {
         // There is no distinction between the disjoint paths,
@@ -442,7 +442,7 @@ class KadDHT extends EventEmitter {
 
         waterfall([
           (cb) => utils.sortClosestPeers(Array.from(res.finalSet), id, cb),
-          (sorted, cb) => cb(null, sorted.slice(0, c.K))
+          (sorted, cb) => cb(null, sorted.slice(0, this.kBucketSize))
         ], callback)
       })
     })
@@ -613,7 +613,7 @@ class KadDHT extends EventEmitter {
       waterfall([
         (cb) => utils.convertPeerId(id, cb),
         (key, cb) => {
-          const peers = this.routingTable.closestPeers(key, c.K)
+          const peers = this.routingTable.closestPeers(key, this.kBucketSize)
 
           if (peers.length === 0) {
             return cb(errcode(new Error('Peer lookup failed'), 'ERR_LOOKUP_FAILED'))

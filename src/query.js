@@ -4,7 +4,6 @@ const EventEmitter = require('events')
 const waterfall = require('async/waterfall')
 const each = require('async/each')
 const queue = require('async/queue')
-const timeout = require('async/timeout')
 const mh = require('multihashes')
 
 const c = require('./constants')
@@ -94,6 +93,7 @@ class Query {
    */
   _onComplete () {
     this._log(`query:done in ${Date.now() - this._startTime}ms`)
+    this._log(`${this.run.errors.length} of ${this.run.peersSeen.size} peers errored (${this.run.errors.length / this.run.peersSeen.size * 100}% fail rate)`)
 
     // Ensure worker queues for all paths are stopped at the end of the query
     this.stop()
@@ -278,7 +278,7 @@ class Run extends EventEmitter {
 
     // Convert the key into a DHT key by hashing it
     utils.convertBuffer(this.query.key, (err, dhtKey) => {
-      this.peersQueried = new PeerDistanceList(dhtKey, c.K)
+      this.peersQueried = new PeerDistanceList(dhtKey, this.query.dht.kBucketSize)
 
       for (const cb of this.awaitingKey) {
         cb(err)
@@ -341,7 +341,7 @@ class Path {
    */
   constructor (run, queryFunc) {
     this.run = run
-    this.queryFunc = timeout(queryFunc, c.MAX_MESSAGE_TIMEOUT) // TODO: make configurable
+    this.queryFunc = queryFunc
     this.initialPeers = []
   }
 

@@ -82,7 +82,7 @@ module.exports = (dht) => ({
    * Try to fetch a given record by from the local datastore.
    * Returns the record iff it is still valid, meaning
    * - it was either authored by this node, or
-   * - it was receceived less than `MAX_RECORD_AGE` ago.
+   * - it was received less than `MAX_RECORD_AGE` ago.
    *
    * @param {Buffer} key
    * @param {function(Error, Record)} callback
@@ -522,7 +522,7 @@ module.exports = (dht) => ({
         }
       })
 
-      const peers = dht.routingTable.closestPeers(key.buffer, c.K)
+      const peers = dht.routingTable.closestPeers(key.buffer, dht.kBucketSize)
 
       timeout((cb) => query.run(peers, cb), providerTimeout)((err) => {
         query.stop()

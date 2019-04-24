@@ -23,7 +23,7 @@ exports.PROVIDERS_VALIDITY = 24 * hour
 
 exports.PROVIDERS_CLEANUP_INTERVAL = hour
 
-exports.READ_MESSAGE_TIMEOUT = minute
+exports.READ_MESSAGE_TIMEOUT = 30 * second
 
 // The number of records that will be retrieved on a call to getMany()
 exports.GET_MANY_RECORD_COUNT = 16
@@ -34,12 +34,9 @@ exports.K = 20
 // Alpha is the concurrency for asynchronous requests
 exports.ALPHA = 3
 
-// How long individual query messages are allowed to take
-exports.MAX_MESSAGE_TIMEOUT = 5 * minute
-
 // Number of disjoint query paths to use
 // This is set to K/2 per the S/Kademlia paper
-exports.DISJOINT_PATHS = 10
+exports.DISJOINT_PATHS = exports.K / 2
 
 exports.maxMessageSize = 2 << 22 // 4MB
 
@@ -47,6 +44,6 @@ exports.defaultRandomWalk = {
   enabled: true,
   queriesPerPeriod: 1,
   interval: 5 * minute,
-  timeout: 30 * second,
+  timeout: 10 * second,
   delay: 10 * second
 }
