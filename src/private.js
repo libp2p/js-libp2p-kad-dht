@@ -522,7 +522,7 @@ module.exports = (dht) => ({
         }
       })
 
-      const peers = dht.routingTable.closestPeers(key.buffer, c.ALPHA)
+      const peers = dht.routingTable.closestPeers(key.buffer, c.K)
 
       timeout((cb) => query.run(peers, cb), providerTimeout)((err) => {
         query.stop()
