@@ -34,6 +34,9 @@ exports.K = 20
 // Alpha is the concurrency for asynchronous requests
 exports.ALPHA = 3
 
+// How long individual query messages are allowed to take
+exports.MAX_MESSAGE_TIMEOUT = 5 * minute
+
 // Number of disjoint query paths to use
 // This is set to K/2 per the S/Kademlia paper
 exports.DISJOINT_PATHS = 10

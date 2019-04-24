@@ -4,6 +4,7 @@ const EventEmitter = require('events')
 const waterfall = require('async/waterfall')
 const each = require('async/each')
 const queue = require('async/queue')
+const timeout = require('async/timeout')
 const mh = require('multihashes')
 
 const c = require('./constants')
@@ -81,6 +82,7 @@ class Query {
    */
   _onStart () {
     this.running = true
+    this._startTime = Date.now()
     this._log('query:start')
 
     // Register this query so we can stop it if the DHT stops
@@ -91,7 +93,7 @@ class Query {
    * Called when the run completes (even if there's an error).
    */
   _onComplete () {
-    this._log('query:done')
+    this._log(`query:done in ${Date.now() - this._startTime}ms`)
 
     // Ensure worker queues for all paths are stopped at the end of the query
     this.stop()
@@ -339,7 +341,7 @@ class Path {
    */
   constructor (run, queryFunc) {
     this.run = run
-    this.queryFunc = queryFunc
+    this.queryFunc = timeout(queryFunc, c.MAX_MESSAGE_TIMEOUT) // TODO: make configurable
     this.initialPeers = []
   }
 
@@ -456,6 +458,7 @@ class WorkerQueue {
    * @param {Error} err
    */
   stop (err) {
+    this.log('worker:stop')
     if (!this.running) {
       return
     }
@@ -494,6 +497,10 @@ class WorkerQueue {
     while (this.queue.running() + this.queue.length() < this.concurrency &&
            this.path.peersToQuery.length > 0) {
       this.queue.push(this.path.peersToQuery.dequeue())
+    }
+
+    if (this.queue.length() < 1) {
+      this.log('queue is empty and cant be filled')
     }
   }
 
