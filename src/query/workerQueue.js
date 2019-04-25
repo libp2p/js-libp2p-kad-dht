@@ -46,7 +46,7 @@ class WorkerQueue {
     // When a space opens up in the queue, add some more peers
     q.unsaturated = () => {
       if (this.running) {
-        // this.log('queue:unsaturated')
+        this.log('queue:unsaturated')
         this.fill()
       }
     }
@@ -63,13 +63,13 @@ class WorkerQueue {
    * @param {Error} err
    */
   stop (err) {
-    this.log('worker:stop')
     if (!this.running) {
       return
     }
 
     this.running = false
     this.queue.kill()
+    this.log('worker:stop, %d workers still running', this.run.workers.filter(w => w.running).length)
     this.callbackFn(err)
   }
 
@@ -94,7 +94,7 @@ class WorkerQueue {
    * being added to the peers-to-query queue.
    */
   fill () {
-    // this.log('queue:fill')
+    this.log('queue:fill')
 
     // Note:
     // - queue.running(): number of items that are currently running
@@ -102,10 +102,6 @@ class WorkerQueue {
     while (this.queue.running() + this.queue.length() < this.concurrency &&
            this.path.peersToQuery.length > 0) {
       this.queue.push(this.path.peersToQuery.dequeue())
-    }
-
-    if (this.queue.running() === 0 && this.queue.length() === 0 && this.path.peersToQuery.length < 1) {
-      this.log('queue is empty')
     }
   }
 
@@ -137,8 +133,9 @@ class WorkerQueue {
         return cb(err)
       }
 
-      // If we've queried enough peers, bail out
+      // If we've queried enough peers, stop the queue
       if (!continueQuerying) {
+        this.stop()
         return cb()
       }
 
@@ -149,14 +146,14 @@ class WorkerQueue {
       this.run.peersSeen.add(peer)
 
       // Execute the query on the next peer
-      // this.log('queue:work')
+      this.log('queue:work')
       this.execQuery(peer, (err, state) => {
         // Ignore response after worker killed
         if (!this.running) {
           return cb()
         }
 
-        // this.log('queue:work:done', err, state)
+        this.log('queue:work:done', err, state)
         if (err) {
           return cb(err)
         }
