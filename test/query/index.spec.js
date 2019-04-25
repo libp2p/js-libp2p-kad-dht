@@ -1,4 +1,5 @@
 /* eslint-env mocha */
+/* eslint max-nested-callbacks: ["error", 6] */
 'use strict'
 
 const chai = require('chai')
@@ -18,12 +19,12 @@ const { convertBuffer } = require('../../src/utils')
 const NUM_IDS = 101
 
 describe('Query', () => {
-  let peers_all
+  let peerInfos
   let ourPeerInfo
   before((done) => {
     createPeerInfo(NUM_IDS, (err, peers) => {
       ourPeerInfo = peers.shift()
-      peers_all = peers
+      peerInfos = peers
       done(err)
     })
   })
@@ -41,7 +42,7 @@ describe('Query', () => {
         if (err) return done(err)
         targetKey.dhtKey = dhtKey
 
-        sortClosestPeerInfos(peers_all, targetKey.dhtKey, (err, peers) => {
+        sortClosestPeerInfos(peerInfos, targetKey.dhtKey, (err, peers) => {
           sortedPeers = peers
           done(err)
         })
@@ -107,4 +108,3 @@ describe('Query', () => {
     })
   })
 })
-

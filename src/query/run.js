@@ -198,7 +198,6 @@ class Run extends EventEmitter {
     // off the head of the closest peers queue so it will include that peer.
     const running = worker.queue.workersList().map(i => i.data)
 
-
     // Check if any of the peers that are currently being queried are closer
     // to the key than the peers we've already queried
     this.peersQueried.anyCloser(running, (err, someCloser) => {
