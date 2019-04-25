@@ -13,6 +13,7 @@ const Query = require('../../src/query')
 const Path = require('../../src/query/path')
 const Run = require('../../src/query/run')
 const DHT = require('../../src')
+const c = require('../../src/constants')
 const createPeerInfo = require('../utils/create-peer-info')
 const { sortClosestPeerInfos } = require('../utils')
 const { convertBuffer } = require('../../src/utils')
@@ -90,15 +91,22 @@ describe('Query', () => {
         }, (err) => {
           if (err) return done(err)
 
+          const continueSpy = sinon.spy(run, 'continueQuerying')
+
           // Run the 4 paths
           run.executePaths(paths, (err) => {
             expect(err).to.not.exist()
             // The resulting peers should all be from path 0 as it had the closest
             expect(run.peersQueried.peers).to.eql(paths[0].initialPeers)
+
+            // Continue should be called on all `peersPerPath` queries of the first path,
+            // plus ALPHA (concurrency) of the other 3 paths
+            expect(continueSpy.callCount).to.eql(peersPerPath + (3 * c.ALPHA))
+
             // The query should ONLY have been called on path 0 as it
             // was the only path to contain closer peers that what we
             // pre populated `run.peersQueried` with
-            expect(querySpy.callCount).to.eql(20)
+            expect(querySpy.callCount).to.eql(peersPerPath)
             const queriedPeers = querySpy.getCalls().map(call => call.args[0])
             expect(queriedPeers).to.eql(paths[0].initialPeers)
             done()
