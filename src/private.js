@@ -171,7 +171,7 @@ module.exports = (dht) => ({
    *
    * @param {Buffer} key
    * @param {PeerId} peer
-   * @param {function(Error)} callback
+   * @param {function(Error, Array<PeerInfo>)} callback
    * @returns {void}
    *
    * @private
@@ -185,13 +185,12 @@ module.exports = (dht) => ({
 
       const out = msg.closerPeers
         .filter((pInfo) => !dht._isSelf(pInfo.id))
-        .map((pInfo) => dht.peerBook.put(pInfo))
 
       callback(null, out)
     })
   },
   /**
-   * Is the given peer id the peer id?
+   * Is the given peer id our PeerId?
    *
    * @param {PeerId} other
    * @returns {bool}
@@ -206,7 +205,7 @@ module.exports = (dht) => ({
    *
    * @param {PeerId} peer
    * @param {PeerId} target
-   * @param {function(Error)} callback
+   * @param {function(Error, Message)} callback
    * @returns {void}
    *
    * @private
