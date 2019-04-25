@@ -1,0 +1,110 @@
+/* eslint-env mocha */
+'use strict'
+
+const chai = require('chai')
+chai.use(require('dirty-chai'))
+chai.use(require('chai-checkmark'))
+const expect = chai.expect
+const sinon = require('sinon')
+const each = require('async/each')
+
+const Query = require('../../src/query')
+const Path = require('../../src/query/path')
+const Run = require('../../src/query/run')
+const DHT = require('../../src')
+const createPeerInfo = require('../utils/create-peer-info')
+const { sortClosestPeerInfos } = require('../utils')
+const { convertBuffer } = require('../../src/utils')
+const NUM_IDS = 101
+
+describe('Query', () => {
+  let peers_all
+  let ourPeerInfo
+  before((done) => {
+    createPeerInfo(NUM_IDS, (err, peers) => {
+      ourPeerInfo = peers.shift()
+      peers_all = peers
+      done(err)
+    })
+  })
+
+  describe('get closest peers', () => {
+    let targetKey = {
+      key: Buffer.from('A key to find'),
+      dhtKey: null
+    }
+    let sortedPeers
+    let dht
+
+    before('get sorted peers', (done) => {
+      convertBuffer(targetKey.key, (err, dhtKey) => {
+        if (err) return done(err)
+        targetKey.dhtKey = dhtKey
+
+        sortClosestPeerInfos(peers_all, targetKey.dhtKey, (err, peers) => {
+          sortedPeers = peers
+          done(err)
+        })
+      })
+    })
+
+    before('create a dht', () => {
+      dht = new DHT({
+        _peerInfo: ourPeerInfo
+      })
+    })
+
+    afterEach(() => {
+      sinon.restore()
+    })
+
+    it('should end paths when they have no closer peers to whats already been queried', (done) => {
+      const PATHS = 5
+      sinon.stub(dht, 'disjointPaths').value(PATHS)
+      sinon.stub(dht._queryManager, 'running').value(true)
+      let querySpy = sinon.stub().callsArgWith(1, null, {})
+
+      let query = new Query(dht, targetKey.key, () => querySpy)
+
+      let run = new Run(query)
+      run.init(() => {
+        // Add the sorted peers into 5 paths. This will weight
+        // the paths with increasingly further peers
+        let sortedPeerIds = sortedPeers.map(peerInfo => peerInfo.id)
+        let peersPerPath = sortedPeerIds.length / PATHS
+        let paths = [...new Array(PATHS)].map((_, index) => {
+          let path = new Path(run, query.makePath())
+          let start = index * peersPerPath
+          let peers = sortedPeerIds.slice(start, start + peersPerPath)
+          peers.forEach(p => path.addInitialPeer(p))
+          return path
+        })
+
+        // Get the peers of the 2nd closest path, and remove the path
+        // We don't want to execute it. Just add its peers to peers we've
+        // already queried.
+        let queriedPeers = paths.splice(1, 1)[0].initialPeers
+        each(queriedPeers, (peerId, cb) => {
+          run.peersQueried.add(peerId, cb)
+        }, (err) => {
+          if (err) return done(err)
+
+          // Run the 4 paths
+          run.executePaths(paths, (err) => {
+            expect(err).to.not.exist()
+            // The resulting peers should all be from path 0 as it had the closest
+            expect(run.peersQueried.peers).to.eql(paths[0].initialPeers)
+            // The query should ONLY have been called on path 0 as it
+            // was the only path to contain closer peers that what we
+            // pre populated `run.peersQueried` with
+            expect(querySpy.callCount).to.eql(20)
+            const queriedPeers = querySpy.getCalls().map(call => call.args[0])
+            expect(queriedPeers).to.eql(paths[0].initialPeers)
+            done()
+          })
+        })
+      })
+    })
+  })
+})
+
