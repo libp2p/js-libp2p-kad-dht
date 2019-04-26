@@ -1,8 +1,15 @@
 'use strict'
 
 const each = require('async/each')
+const timeout = require('async/timeout')
 const waterfall = require('async/waterfall')
 const PeerQueue = require('../peer-queue')
+
+// TODO: Temporary until parallel dial in Switch have a proper
+// timeout. Requires async/await refactor of transports and
+// dial abort logic. This gives us 30s to complete the `queryFunc`.
+// This should help reduce the high end call times of queries
+const QUERY_FUNC_TIMEOUT = 30e3
 
 /**
  * Manages a single Path through the DHT.
@@ -16,8 +23,17 @@ class Path {
    */
   constructor (run, queryFunc) {
     this.run = run
-    this.queryFunc = queryFunc
+    this.queryFunc = timeout(queryFunc, QUERY_FUNC_TIMEOUT)
+
+    /**
+     * @type {Array<PeerId>}
+     */
     this.initialPeers = []
+
+    /**
+     * @type {PeerQueue}
+     */
+    this.peersToQuery = null
   }
 
   /**
