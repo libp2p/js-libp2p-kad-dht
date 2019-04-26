@@ -46,7 +46,6 @@ class WorkerQueue {
     // When a space opens up in the queue, add some more peers
     q.unsaturated = () => {
       if (this.running) {
-        this.log('queue:unsaturated')
         this.fill()
       }
     }
@@ -94,8 +93,6 @@ class WorkerQueue {
    * being added to the peers-to-query queue.
    */
   fill () {
-    this.log('queue:fill')
-
     // Note:
     // - queue.running(): number of items that are currently running
     // - queue.length(): the number of items that are waiting to be run
@@ -133,7 +130,9 @@ class WorkerQueue {
         return cb(err)
       }
 
-      // If we've queried enough peers, stop the queue
+      // No peer we're querying is closer stop the queue
+      // This will cause queries that may potentially result in
+      // closer nodes to be ended, but it reduces overall query time
       if (!continueQuerying) {
         this.stop()
         return cb()

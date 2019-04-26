@@ -8,6 +8,7 @@ chai.use(require('chai-checkmark'))
 const expect = chai.expect
 const sinon = require('sinon')
 const each = require('async/each')
+const PeerBook = require('peer-book')
 
 const Query = require('../../src/query')
 const Path = require('../../src/query/path')
@@ -52,7 +53,8 @@ describe('Query', () => {
 
     before('create a dht', () => {
       dht = new DHT({
-        _peerInfo: ourPeerInfo
+        _peerInfo: ourPeerInfo,
+        _peerBook: new PeerBook()
       })
     })
 
@@ -109,6 +111,64 @@ describe('Query', () => {
             expect(querySpy.callCount).to.eql(peersPerPath)
             const queriedPeers = querySpy.getCalls().map(call => call.args[0])
             expect(queriedPeers).to.eql(paths[0].initialPeers)
+            done()
+          })
+        })
+      })
+    })
+
+    it('should continue querying if the path has a closer peer', (done) => {
+      sinon.stub(dht, 'disjointPaths').value(1)
+      sinon.stub(dht._queryManager, 'running').value(true)
+
+      let querySpy = sinon.stub().callsArgWith(1, null, {})
+      let query = new Query(dht, targetKey.key, () => querySpy)
+
+      let run = new Run(query)
+      run.init(() => {
+        let sortedPeerIds = sortedPeers.map(peerInfo => peerInfo.id)
+
+        // Take the top 15 peers and peers 20 - 25 to seed `run.peersQueried`
+        // This leaves us with only 16 - 19 as closer peers
+        let queriedPeers = [
+          ...sortedPeerIds.slice(0, 15),
+          ...sortedPeerIds.slice(20, 25)
+        ]
+
+        let path = new Path(run, query.makePath())
+        // Give the path a closet peer and 15 further peers
+        let pathPeers = [
+          ...sortedPeerIds.slice(15, 16), // 1 closer
+          ...sortedPeerIds.slice(80, 95)
+        ]
+
+        pathPeers.forEach(p => path.addInitialPeer(p))
+        const returnPeers = sortedPeers.slice(16, 20)
+        // When the second query happens, which is a further peer,
+        // return peers 16 - 19
+        querySpy.onCall(1).callsArgWith(1, null, {
+          closerPeers: returnPeers
+        })
+
+        each(queriedPeers, (peerId, cb) => {
+          run.peersQueried.add(peerId, cb)
+        }, (err) => {
+          if (err) return done(err)
+
+          // Run the path
+          run.executePaths([path], (err) => {
+            expect(err).to.not.exist()
+
+            // Querying will stop after the first ALPHA peers are queried
+            expect(querySpy.callCount).to.eql(c.ALPHA)
+
+            // We'll only get the 1 closest peer from `pathPeers`.
+            // The worker will be stopped before the `returnedPeers`
+            // are processed and queried.
+            expect(run.peersQueried.peers).to.eql([
+              ...sortedPeerIds.slice(0, 16),
+              ...sortedPeerIds.slice(20, 24)
+            ])
             done()
           })
         })
