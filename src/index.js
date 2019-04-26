@@ -534,6 +534,7 @@ class KadDHT extends EventEmitter {
   provide (key, callback) {
     this._log('provide: %s', key.toBaseEncodedString())
 
+    const errors = []
     waterfall([
       (cb) => this.providers.addProvider(key, this.peerInfo.id, cb),
       (cb) => this.getClosestPeers(key.buffer, cb),
@@ -543,10 +544,21 @@ class KadDHT extends EventEmitter {
 
         each(peers, (peer, cb) => {
           this._log('putProvider %s to %s', key.toBaseEncodedString(), peer.toB58String())
-          this.network.sendMessage(peer, msg, cb)
+          this.network.sendMessage(peer, msg, (err) => {
+            if (err) errors.push(err)
+            cb()
+          })
         }, cb)
       }
-    ], (err) => callback(err))
+    ], (err) => {
+      if (errors.length) {
+        // This should be infrequent. This means a peer we previously connected
+        // to failed to exchange the provide message. If getClosestPeers was an
+        // iterator, we could continue to pull until we announce to kBucketSize peers.
+        err = errcode(`Failed to provide to ${errors.length} of ${this.kBucketSize} peers`, 'ERR_SOME_PROVIDES_FAILED', { errors })
+      }
+      callback(err)
+    })
   }
 
   /**
