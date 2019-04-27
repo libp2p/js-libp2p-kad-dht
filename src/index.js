@@ -48,6 +48,7 @@ class KadDHT extends EventEmitter {
    * @param {Switch} sw libp2p-switch instance
    * @param {object} options DHT options
    * @param {number} options.kBucketSize k-bucket size (default 20)
+   * @param {number} options.concurrency alpha concurrency of queries (default 3)
    * @param {Datastore} options.datastore datastore (default MemoryDatastore)
    * @param {object} options.validators validators object with namespace as keys and function(key, record, callback)
    * @param {object} options.selectors selectors object with namespace as keys and function(key, records)
@@ -73,6 +74,12 @@ class KadDHT extends EventEmitter {
      * @type {number}
      */
     this.kBucketSize = options.kBucketSize || c.K
+
+    /**
+     * ALPHA concurrency at which each query path with run, defaults to 6
+     * @type {number}
+     */
+    this.concurrency = options.concurrency || c.ALPHA
 
     /**
      * Number of disjoint query paths to use

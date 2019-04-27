@@ -2,7 +2,6 @@
 
 const each = require('async/each')
 const queue = require('async/queue')
-const c = require('../constants')
 
 class WorkerQueue {
   /**
@@ -19,7 +18,7 @@ class WorkerQueue {
     this.path = path
     this.log = log
 
-    this.concurrency = c.ALPHA
+    this.concurrency = this.dht.concurrency
     this.queue = this.setupQueue()
   }
 

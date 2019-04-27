@@ -2,7 +2,6 @@
 
 const mh = require('multihashes')
 
-const c = require('../constants')
 const utils = require('../utils')
 const Run = require('./run')
 
@@ -67,7 +66,7 @@ class Query {
 
     this.run = new Run(this)
 
-    this._log(`query running with K=${this.dht.kBucketSize}, A=${c.ALPHA}, D=${Math.min(this.dht.disjointPaths, peers.length)}`)
+    this._log(`query running with K=${this.dht.kBucketSize}, A=${this.dht.concurrency}, D=${Math.min(this.dht.disjointPaths, peers.length)}`)
     this.run.once('start', this._onStart)
     this.run.once('complete', this._onComplete)
     this.run.execute(peers, callback)
