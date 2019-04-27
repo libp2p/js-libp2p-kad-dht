@@ -24,6 +24,7 @@ const MIN_PEERS_KNOWN = 10 // min number of peers a node should be aware of
 const LATENCY_MIN = 100 // min time a good peer should take to respond
 const LATENCY_MAX = 10e3 // max time a good peer should take to respond
 const KValue = 20 // k Bucket size
+const ALPHA = 6 // alpha concurrency
 const QUERY_KEY = Buffer.from('a key to search for')
 const RUNS = 3 // How many times the simulation should run
 const VERBOSE = false // If true, some additional logs will run
@@ -32,17 +33,32 @@ let dhtKey
 let network
 let peers
 let ourPeerInfo
+let sortedPeers // Peers in the network sorted by closeness to QUERY_KEY
+let topIds // Closest 20 peerIds in the network
 
 // Execute the simulation
 ;(async () => {
   console.log('Starting setup...')
   await setup()
 
+  sortedPeers = await sortClosestPeerInfos(peers, dhtKey)
+  topIds = sortedPeers.slice(0, 20).map(peerInfo => peerInfo.id.toB58String())
+  const topIdFilter = (value) => topIds.includes(value)
+
   console.log('Total Nodes=%d, Dead Nodes=%d, Max Siblings per Peer=%d', NUM_PEERS, NUM_DEAD_NODES, MAX_PEERS_KNOWN)
-  console.log('Starting %d runs...', RUNS)
+  console.log('Starting %d runs with concurrency %d...', RUNS, ALPHA)
+  let topRunIds = []
   for (var i = 0; i < RUNS; i++) {
-    await GetClosestPeersSimulation()
+    const { closestPeers, runTime } = await GetClosestPeersSimulation()
+    const foundIds = closestPeers.map(peerId => peerId.toB58String())
+    const intersection = foundIds.filter(topIdFilter)
+    topRunIds.push(intersection)
+
+    console.log('Found %d of the top %d peers in %d ms', intersection.length, KValue, runTime)
   }
+
+  const commonTopIds = getCommonMembers(topRunIds)
+  console.log('All runs found %d common peers', commonTopIds.length)
 
   process.exit()
 })()
@@ -59,6 +75,15 @@ async function setup () {
   network = await MockNetwork(peers)
 }
 
+/**
+ * @typedef ClosestPeersSimResult
+ * @property {Array<PeerInfo>} closestPeers
+ * @property {number} runTime Time in ms the query took
+ */
+
+/**
+ * @returns {ClosestPeersSimResult}
+ */
 async function GetClosestPeersSimulation () {
   const dht = new DHT({
     _peerInfo: ourPeerInfo,
@@ -67,6 +92,7 @@ async function GetClosestPeersSimulation () {
     on: () => {}
   }, {
     kBucketSize: KValue,
+    concurrency: ALPHA,
     randomWalk: {
       enabled: false
     }
@@ -111,14 +137,7 @@ async function GetClosestPeersSimulation () {
   })
   const runTime = Date.now() - startTime
 
-  const actualClosest = await sortClosestPeerInfos(peers, dhtKey)
-
-  const foundIds = closestPeers.map(peerId => peerId.toB58String())
-  const topIds = actualClosest.slice(0, 20).map(peerInfo => peerInfo.id.toB58String())
-
-  const intersection = foundIds.filter(value => topIds.includes(value))
-
-  console.log('Found %d of the top %d peers in %d ms', intersection.length, KValue, runTime)
+  return { closestPeers, runTime }
 }
 
 /**
@@ -202,4 +221,23 @@ function randomMembers (list, num) {
   }
 
   return randomMembers
+}
+
+/**
+ * Finds the common members of all arrays
+ * @param {Array<Array>} arrays An array of arrays to find common members
+ * @returns {Array<any>}
+ */
+function getCommonMembers (arrays) {
+  return arrays.shift().reduce(function (accumulator, val1) {
+    if (accumulator.indexOf(val1) === -1 &&
+      arrays.every(function (val2) {
+        return val2.indexOf(val1) !== -1
+      })
+    ) {
+      accumulator.push(val1)
+    }
+
+    return accumulator
+  }, [])
 }
