@@ -76,7 +76,7 @@ class KadDHT extends EventEmitter {
     this.kBucketSize = options.kBucketSize || c.K
 
     /**
-     * ALPHA concurrency at which each query path with run, defaults to 6
+     * ALPHA concurrency at which each query path with run, defaults to 3
      * @type {number}
      */
     this.concurrency = options.concurrency || c.ALPHA

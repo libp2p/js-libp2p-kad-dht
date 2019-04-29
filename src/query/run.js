@@ -68,7 +68,6 @@ class Run extends EventEmitter {
     })
 
     // Execute the query along each disjoint path
-    // each(paths, (path, cb) => path.execute(cb), (err) => {
     this.executePaths(paths, (err) => {
       if (err) {
         return callback(err)
