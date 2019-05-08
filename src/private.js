@@ -34,7 +34,7 @@ module.exports = (dht) => ({
       }
       let ids
       try {
-        ids = dht.routingTable.closestPeers(key, dht.ncp)
+        ids = dht.routingTable.closestPeers(key, dht.kBucketSize)
       } catch (err) {
         return callback(err)
       }

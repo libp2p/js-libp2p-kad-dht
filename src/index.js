@@ -89,13 +89,6 @@ class KadDHT extends EventEmitter {
     this.disjointPaths = Math.ceil(this.kBucketSize / 2)
 
     /**
-     * Number of closest peers to return on kBucket search, default 20
-     *
-     * @type {number}
-     */
-    this.ncp = options.ncp || this.kBucketSize
-
-    /**
      * The routing table.
      *
      * @type {RoutingTable}
