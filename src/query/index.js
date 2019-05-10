@@ -97,7 +97,10 @@ class Query {
    */
   stop () {
     this._log(`query:done in ${Date.now() - this._startTime}ms`)
-    this._log(`${this._run.errors.length} of ${this._run.peersSeen.size} peers errored (${this._run.errors.length / this._run.peersSeen.size * 100}% fail rate)`)
+
+    if (this._run) {
+      this._log(`${this._run.errors.length} of ${this._run.peersSeen.size} peers errored (${this._run.errors.length / this._run.peersSeen.size * 100}% fail rate)`)
+    }
 
     if (!this.running) {
       return
