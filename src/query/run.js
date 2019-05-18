@@ -2,7 +2,6 @@
 
 const PeerDistanceList = require('../peer-distance-list')
 const EventEmitter = require('events')
-const each = require('async/each')
 const promisify = require('promisify-es6')
 const promiseToCallback = require('promise-to-callback')
 
