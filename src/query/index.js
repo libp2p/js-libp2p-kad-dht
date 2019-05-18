@@ -1,6 +1,8 @@
 'use strict'
 
 const mh = require('multihashes')
+const promisify = require('promisify-es6')
+const promiseToCallback = require('promise-to-callback')
 
 const utils = require('../utils')
 const Run = require('./run')
@@ -54,14 +56,18 @@ class Query {
    * @returns {void}
    */
   run (peers, callback) {
+    promiseToCallback(this._runAsync(peers))(callback)
+  }
+
+  async _runAsync (peers) {
     if (!this.dht._queryManager.running) {
       this._log.error('Attempt to run query after shutdown')
-      return callback(null, { finalSet: new Set(), paths: [] })
+      return { finalSet: new Set(), paths: [] }
     }
 
     if (peers.length === 0) {
       this._log.error('Running query with no peers')
-      return callback(null, { finalSet: new Set(), paths: [] })
+      return { finalSet: new Set(), paths: [] }
     }
 
     this._run = new Run(this)
@@ -69,7 +75,7 @@ class Query {
     this._log(`query running with K=${this.dht.kBucketSize}, A=${this.dht.concurrency}, D=${Math.min(this.dht.disjointPaths, peers.length)}`)
     this._run.once('start', this._onStart)
     this._run.once('complete', this._onComplete)
-    this._run.execute(peers, callback)
+    return promisify(cb => this._run.execute(peers, cb))()
   }
 
   /**
