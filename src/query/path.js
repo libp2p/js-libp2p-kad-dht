@@ -1,8 +1,6 @@
 'use strict'
 
-const each = require('async/each')
 const timeout = require('async/timeout')
-const waterfall = require('async/waterfall')
 const promisify = require('promisify-es6')
 const promiseToCallback = require('promise-to-callback')
 const PeerQueue = require('../peer-queue')
@@ -59,10 +57,10 @@ class Path {
 
   async _executeAsync () {
     // Create a queue of peers ordered by distance from the key
-    const queue = await promisify((cb) => PeerQueue.fromKey(this.run.query.key, cb))()
+    const queue = await PeerQueue._fromKeyAsync(this.run.query.key)
     // Add initial peers to the queue
     this.peersToQuery = queue
-    await promisify(cb => each(this.initialPeers, this.addPeerToQuery.bind(this), cb))()
+    await Promise.all(this.initialPeers.map(peer => this._addPeerToQueryAsync(peer)))
     await this.run._workerQueueAsync(this)
   }
 
@@ -90,7 +88,7 @@ class Path {
       return
     }
 
-    await promisify(cb => this.peersToQuery.enqueue(peer, cb))()
+    await this.peersToQuery._enqueueAsync(peer)
   }
 }
 
