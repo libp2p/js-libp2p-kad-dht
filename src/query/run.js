@@ -136,8 +136,8 @@ class Run extends EventEmitter {
   }
 
   async _workerQueueAsync (path) {
-    await promisify(cb => this.init(cb))()
-    return promisify(cb => this.startWorker(path, cb))()
+    await this._initAsync()
+    await this._startWorkerAsync(path)
   }
 
   /**
