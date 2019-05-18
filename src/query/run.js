@@ -215,6 +215,8 @@ class Run extends EventEmitter {
     // Check if any of the peers that are currently being queried are closer
     // to the key than the peers we've already queried
     const someCloser = await promisify(cb => this.peersQueried.anyCloser(running, cb))()
+    // this line affects the number of times the queryFn is called in some situation
+    await new Promise(resolve => setImmediate(resolve))
 
     // Some are closer, the worker should keep going
     if (someCloser) {
