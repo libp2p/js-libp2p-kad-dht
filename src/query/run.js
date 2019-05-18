@@ -110,8 +110,6 @@ class Run extends EventEmitter {
     this.emit('start')
     try {
       await promisify(callback => each(paths, (path, cb) => path.execute(cb), callback))()
-    } catch (err) {
-      throw err
     } finally {
       // Ensure all workers are stopped
       this.stop()
