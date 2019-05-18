@@ -3,6 +3,9 @@
 const PeerDistanceList = require('../peer-distance-list')
 const EventEmitter = require('events')
 const each = require('async/each')
+const promisify = require('promisify-es6')
+const promiseToCallback = require('promise-to-callback')
+
 const Path = require('./path')
 const WorkerQueue = require('./workerQueue')
 const utils = require('../utils')
@@ -54,6 +57,10 @@ class Run extends EventEmitter {
    * @param {function(Error, Object)} callback
    */
   execute (peers, callback) {
+    promiseToCallback(this._executeAsync(peers))(callback)
+  }
+
+  async _executeAsync (peers) {
     const paths = [] // array of states per disjoint path
 
     // Create disjoint paths
@@ -68,27 +75,23 @@ class Run extends EventEmitter {
     })
 
     // Execute the query along each disjoint path
-    this.executePaths(paths, (err) => {
-      if (err) {
-        return callback(err)
-      }
+    await this._executePathsAsync(paths)
 
-      const res = {
-        // The closest K peers we were able to query successfully
-        finalSet: new Set(this.peersQueried.peers),
-        paths: []
-      }
+    const res = {
+      // The closest K peers we were able to query successfully
+      finalSet: new Set(this.peersQueried.peers),
+      paths: []
+    }
 
-      // Collect the results from each completed path
-      for (const path of paths) {
-        if (path.res && (path.res.pathComplete || path.res.queryComplete)) {
-          path.res.success = true
-          res.paths.push(path.res)
-        }
+    // Collect the results from each completed path
+    for (const path of paths) {
+      if (path.res && (path.res.pathComplete || path.res.queryComplete)) {
+        path.res.success = true
+        res.paths.push(path.res)
       }
+    }
 
-      callback(err, res)
-    })
+    return res
   }
 
   /**
@@ -98,28 +101,29 @@ class Run extends EventEmitter {
    * @param {function(Error)} callback
    */
   executePaths (paths, callback) {
+    promiseToCallback(this._executePathsAsync(paths))(callback)
+  }
+
+  async _executePathsAsync (paths) {
     this.running = true
 
     this.emit('start')
-    each(paths, (path, cb) => path.execute(cb), (err) => {
+    try {
+      await promisify(callback => each(paths, (path, cb) => path.execute(cb), callback))()
+    } catch (err) {
+      throw err
+    } finally {
       // Ensure all workers are stopped
       this.stop()
-
       // Completed the Run
       this.emit('complete')
+    }
 
-      if (err) {
-        return callback(err)
-      }
-
-      // If all queries errored out, something is seriously wrong, so callback
-      // with an error
-      if (this.errors.length === this.peersSeen.size) {
-        return callback(this.errors[0])
-      }
-
-      callback()
-    })
+    // If all queries errored out, something is seriously wrong, so callback
+    // with an error
+    if (this.errors.length === this.peersSeen.size) {
+      throw this.errors[0]
+    }
   }
 
   /**
@@ -130,7 +134,12 @@ class Run extends EventEmitter {
    * @param {function(Error)} callback
    */
   workerQueue (path, callback) {
-    this.init(() => this.startWorker(path, callback))
+    promiseToCallback(this._workerQueueAsync(path))(callback)
+  }
+
+  async _workerQueueAsync (path) {
+    await promisify(cb => this.init(cb))()
+    return promisify(cb => this.startWorker(path, cb))()
   }
 
   /**
@@ -140,9 +149,13 @@ class Run extends EventEmitter {
    * @param {function(Error)} callback
    */
   startWorker (path, callback) {
+    promiseToCallback(this._startWorkerAsync(path))(callback)
+  }
+
+  async _startWorkerAsync (path) {
     const worker = new WorkerQueue(this.query.dht, this, path, this.query._log)
     this.workers.push(worker)
-    worker.execute(callback)
+    return promisify(cb => worker.execute(cb))()
   }
 
   /**
@@ -153,28 +166,29 @@ class Run extends EventEmitter {
    * @returns {void}
    */
   init (callback) {
-    if (this.peersQueried) {
-      return callback()
-    }
+    promiseToCallback(this._initAsync())(callback)
+  }
 
-    // We only want to initialize it once for the run, and then inform each
-    // path worker that it's ready
-    if (this.awaitingKey) {
-      this.awaitingKey.push(callback)
+  async _initAsync () {
+    if (this.peersQueried) {
       return
     }
 
-    this.awaitingKey = [callback]
+    // We only want to initialize the PeerDistanceList once for the run
+    if (this.peersQueriedPromise) {
+      await this.peersQueriedPromise
+      return
+    }
 
-    // Convert the key into a DHT key by hashing it
-    utils.convertBuffer(this.query.key, (err, dhtKey) => {
+    // This promise is temporarily stored so that others may await its completion
+    this.peersQueriedPromise = (async () => {
+      const dhtKey = await promisify(cb => utils.convertBuffer(this.query.key, cb))()
       this.peersQueried = new PeerDistanceList(dhtKey, this.query.dht.kBucketSize)
+    })()
 
-      for (const cb of this.awaitingKey) {
-        cb(err)
-      }
-      this.awaitingKey = undefined
-    })
+    // After PeerDistanceList is initialized, clean up
+    await this.peersQueriedPromise
+    delete this.peersQueriedPromise
   }
 
   /**
@@ -187,9 +201,13 @@ class Run extends EventEmitter {
    * @returns {void}
    */
   continueQuerying (worker, callback) {
+    promiseToCallback(this._continueQueryingAsync(worker))(callback)
+  }
+
+  async _continueQueryingAsync (worker) {
     // If we haven't queried K peers yet, keep going
     if (this.peersQueried.length < this.peersQueried.capacity) {
-      return callback(null, true)
+      return true
     }
 
     // Get all the peers that are currently being queried.
@@ -199,19 +217,15 @@ class Run extends EventEmitter {
 
     // Check if any of the peers that are currently being queried are closer
     // to the key than the peers we've already queried
-    this.peersQueried.anyCloser(running, (err, someCloser) => {
-      if (err) {
-        return callback(err)
-      }
+    const someCloser = await promisify(cb => this.peersQueried.anyCloser(running, cb))()
 
-      // Some are closer, the worker should keep going
-      if (someCloser) {
-        return callback(null, true)
-      }
+    // Some are closer, the worker should keep going
+    if (someCloser) {
+      return true
+    }
 
-      // None are closer, the worker can stop
-      callback(null, false)
-    })
+    // None are closer, the worker can stop
+    return false
   }
 }
 
