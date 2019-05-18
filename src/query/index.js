@@ -1,7 +1,6 @@
 'use strict'
 
 const mh = require('multihashes')
-const promisify = require('promisify-es6')
 const promiseToCallback = require('promise-to-callback')
 
 const utils = require('../utils')
@@ -75,7 +74,7 @@ class Query {
     this._log(`query running with K=${this.dht.kBucketSize}, A=${this.dht.concurrency}, D=${Math.min(this.dht.disjointPaths, peers.length)}`)
     this._run.once('start', this._onStart)
     this._run.once('complete', this._onComplete)
-    return promisify(cb => this._run.execute(peers, cb))()
+    return this._run._executeAsync(peers)
   }
 
   /**
