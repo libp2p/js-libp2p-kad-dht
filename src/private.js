@@ -7,6 +7,7 @@ const timeout = require('async/timeout')
 const PeerInfo = require('peer-info')
 const promisify = require('promisify-es6')
 const promiseToCallback = require('promise-to-callback')
+const fromEntries = require('fromentries')
 
 const errcode = require('err-code')
 
@@ -515,6 +516,11 @@ module.exports = (dht) => ({
   },
 
   async _findNProvidersAsync (key, providerTimeout, n) {
+    const { result } = await _findNProvidersWithStatsAsync(key, providerTimeout, n)
+    return result
+  },
+
+  async _findNProvidersWithStatsAsync (key, providerTimeout, n) {
     const out = new LimitedPeerList(n)
 
     const provs = await promisify(cb => dht.providers.getProviders(key, cb))()
@@ -536,19 +542,36 @@ module.exports = (dht) => ({
 
     // need more, query the network
     const paths = []
+    const pathIntroductions = []
+    const localCount = out.length
+
     const query = new Query(dht, key.buffer, (pathIndex, numPaths) => {
       // This function body runs once per disjoint path
-      const pathSize = utils.pathSize(out.length - n, numPaths)
+      const pathSize = utils.pathSize(n - localCount, numPaths)
       const pathProviders = new LimitedPeerList(pathSize)
       paths.push(pathProviders)
 
+      const introductions = {}
+      pathIntroductions.push(introductions)
+
       // Here we return the query function to use on this particular disjoint path
       return (peer, cb) => {
+        const peerId = peer.toB58String()
         waterfall([
           (cb) => dht._findProvidersSingle(peer, key, cb),
           (msg, cb) => {
             const provs = msg.providerPeers
             dht._log('(%s) found %s provider entries', dht.peerInfo.id.toB58String(), provs.length)
+
+            const peerIntros = []
+            introductions[peerId] = peerIntros
+
+            const uniqProvs = Array.from(new Set(msg.providerPeers.map(p => p.id.toB58String())))
+            const uniqClos = Array.from(new Set(msg.closerPeers.map(p => p.id.toB58String())))
+            console.log(`${peerId} introed ${msg.providerPeers.length} (${uniqProvs.length}) provs and ${msg.closerPeers.length} (${uniqClos.length}) closer`)
+
+            uniqProvs.forEach(id => peerIntros.push(id))
+            uniqClos.forEach(id => peerIntros.push(id))
 
             provs.forEach((prov) => {
               pathProviders.push(dht.peerBook.put(prov))
@@ -587,7 +610,17 @@ module.exports = (dht) => ({
       })
     })
 
-    return out.toArray()
+    const queryStats = {
+      localCount,
+      paths: query._run.paths.map((path, pathIndex) => ({
+        initialPeers: path.initialPeers.map(p => p.toB58String()),
+        introductions: pathIntroductions[pathIndex],
+      }))
+    }
+
+    const result = out.toArray()
+
+    return { result, queryStats }
   },
 
   /**
