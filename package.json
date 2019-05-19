@@ -45,6 +45,7 @@
     "cids": "~0.7.0",
     "debug": "^4.1.1",
     "err-code": "^1.1.2",
+    "fromentries": "^1.1.0",
     "hashlru": "^2.3.0",
     "heap": "~0.2.6",
     "interface-datastore": "~0.6.0",

@@ -54,7 +54,7 @@ class Run extends EventEmitter {
    * @param {function(Error, Object)} callback
    */
   execute (peers, callback) {
-    const paths = [] // array of states per disjoint path
+    const paths = this.paths = [] // array of states per disjoint path
 
     // Create disjoint paths
     const numPaths = Math.min(this.query.dht.disjointPaths, peers.length)
