@@ -66,10 +66,10 @@ class PeerQueue {
    * @returns {void}
    */
   enqueue (id, callback) {
-    promiseToCallback(this._enqueueAsync(id))(callback)
+    promiseToCallback(this.enqueueAsync(id))(callback)
   }
 
-  async _enqueueAsync (id) {
+  async enqueueAsync (id) {
     log('enqueue %s', id.toB58String())
     const key = await promisify(cb => utils.convertPeerId(id, cb))()
 

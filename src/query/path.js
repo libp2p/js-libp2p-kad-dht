@@ -88,7 +88,7 @@ class Path {
       return
     }
 
-    await this.peersToQuery._enqueueAsync(peer)
+    await this.peersToQuery.enqueueAsync(peer)
   }
 }
 
