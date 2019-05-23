@@ -108,7 +108,7 @@ class Run extends EventEmitter {
 
     this.emit('start')
     try {
-      await Promise.all(paths.map(path => path.executeAsync()))
+      await Promise.all(paths.map(path => path.execute()))
     } finally {
       // Ensure all workers are stopped
       this.stop()

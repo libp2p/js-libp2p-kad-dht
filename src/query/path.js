@@ -2,7 +2,6 @@
 
 const timeout = require('async/timeout')
 const promisify = require('promisify-es6')
-const promiseToCallback = require('promise-to-callback')
 const PeerQueue = require('../peer-queue')
 
 // TODO: Temporary until parallel dial in Switch have a proper
@@ -49,18 +48,15 @@ class Path {
   /**
    * Execute the path.
    *
-   * @param {function(Error)} callback
+   * @returns {Promise}
+   * 
    */
-  execute (callback) {
-    promiseToCallback(this.executeAsync())(callback)
-  }
-
-  async executeAsync () {
+  async execute () {
     // Create a queue of peers ordered by distance from the key
     const queue = await PeerQueue.fromKey(this.run.query.key)
     // Add initial peers to the queue
     this.peersToQuery = queue
-    await Promise.all(this.initialPeers.map(peer => this.addPeerToQueryAsync(peer)))
+    await Promise.all(this.initialPeers.map(peer => this.addPeerToQuery(peer)))
     await this.run.workerQueueAsync(this)
   }
 
@@ -68,15 +64,9 @@ class Path {
    * Add a peer to the peers to be queried.
    *
    * @param {PeerId} peer
-   * @param {function(Error)} callback
-   * @returns {void}
-   * @private
+   * @returns {Promise<void>}
    */
-  addPeerToQuery (peer, callback) {
-    promiseToCallback(this.addPeerToQueryAsync(peer))(callback)
-  }
-
-  async addPeerToQueryAsync (peer) {
+  async addPeerToQuery (peer) {
     // Don't add self
     if (this.run.query.dht._isSelf(peer)) {
       return

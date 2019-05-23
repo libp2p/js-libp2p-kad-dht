@@ -261,7 +261,7 @@ class WorkerQueue {
         }
         closer = this.dht.peerBook.put(closer)
         this.dht._peerDiscovered(closer)
-        await this.path.addPeerToQueryAsync(closer.id)
+        await this.path.addPeerToQuery(closer.id)
       }))
     }
   }
