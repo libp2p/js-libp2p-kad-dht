@@ -32,7 +32,9 @@ class WorkerQueue {
    * @returns {Object}
    */
   setupQueue () {
-    const q = queue(this.processNext.bind(this), this.concurrency)
+    const q = queue((peer, cb) => {
+      promiseToCallback(this.processNextAsync(peer))(cb)
+    }, this.concurrency)
 
     // If there's an error, stop the worker
     q.error = (err) => {

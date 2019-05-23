@@ -152,7 +152,7 @@ class Run extends EventEmitter {
   async startWorkerAsync (path) {
     const worker = new WorkerQueue(this.query.dht, this, path, this.query._log)
     this.workers.push(worker)
-    return promisify(cb => worker.execute(cb))()
+    await worker.executeAsync()
   }
 
   /**
