@@ -3,7 +3,6 @@
 const PeerDistanceList = require('../peer-distance-list')
 const EventEmitter = require('events')
 const promisify = require('promisify-es6')
-const promiseToCallback = require('promise-to-callback')
 
 const Path = require('./path')
 const WorkerQueue = require('./workerQueue')
@@ -132,7 +131,7 @@ class Run extends EventEmitter {
    * Create and start a worker queue for a particular path.
    *
    * @param {Path} path
-   * @returns {Promise<void>}   
+   * @returns {Promise<void>}
    */
   async startWorker (path) {
     const worker = new WorkerQueue(this.query.dht, this, path, this.query._log)

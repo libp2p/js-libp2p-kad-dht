@@ -49,7 +49,7 @@ class Path {
    * Execute the path.
    *
    * @returns {Promise}
-   * 
+   *
    */
   async execute () {
     // Create a queue of peers ordered by distance from the key

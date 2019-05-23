@@ -1,7 +1,6 @@
 'use strict'
 
 const mh = require('multihashes')
-const promiseToCallback = require('promise-to-callback')
 
 const utils = require('../utils')
 const Run = require('./run')
