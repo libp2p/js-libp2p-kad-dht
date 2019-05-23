@@ -18,14 +18,14 @@ describe('PeerQueue', () => {
 
     const peer = new PeerId(Buffer.from('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a31'))
 
-    const pq = await PeerQueue.fromPeerIdAsync(peer)
+    const pq = await PeerQueue.fromPeerId(peer)
 
-    await pq.enqueueAsync(p3)
-    await pq.enqueueAsync(p1)
-    await pq.enqueueAsync(p2)
-    await pq.enqueueAsync(p4)
-    await pq.enqueueAsync(p5)
-    await pq.enqueueAsync(p1)
+    await pq.enqueue(p3)
+    await pq.enqueue(p1)
+    await pq.enqueue(p2)
+    await pq.enqueue(p4)
+    await pq.enqueue(p5)
+    await pq.enqueue(p1)
 
     expect([
       pq.dequeue(),

@@ -19,14 +19,9 @@ class PeerQueue {
    * Create from a given peer id.
    *
    * @param {PeerId} id
-   * @param {function(Error, PeerQueue)} callback
-   * @returns {void}
+   * @returns {Promise<PeerQueue>}
    */
-  static fromPeerId (id, callback) {
-    promiseToCallback(this.fromPeerIdAsync(id))(callback)
-  }
-
-  static async fromPeerIdAsync (id) {
+  static async fromPeerId (id) {
     const key = await promisify(cb => utils.convertPeerId(id, cb))()
     return new PeerQueue(key)
   }
@@ -35,14 +30,9 @@ class PeerQueue {
    * Create from a given buffer.
    *
    * @param {Buffer} keyBuffer
-   * @param {function(Error, PeerQueue)} callback
-   * @returns {void}
+   * @returns {Promise<PeerQueue>}
    */
-  static fromKey (keyBuffer, callback) {
-    promiseToCallback(this.fromKeyAsync(keyBuffer))(callback)
-  }
-
-  static async fromKeyAsync (keyBuffer) {
+  static async fromKey (keyBuffer) {
     const key = await promisify(cb => utils.convertBuffer(keyBuffer, cb))()
     return new PeerQueue(key)
   }
@@ -62,14 +52,9 @@ class PeerQueue {
    * Add a new PeerId to the queue.
    *
    * @param {PeerId} id
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise}
    */
-  enqueue (id, callback) {
-    promiseToCallback(this.enqueueAsync(id))(callback)
-  }
-
-  async enqueueAsync (id) {
+  async enqueue (id) {
     log('enqueue %s', id.toB58String())
     const key = await promisify(cb => utils.convertPeerId(id, cb))()
 

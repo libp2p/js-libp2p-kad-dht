@@ -57,7 +57,7 @@ class Path {
 
   async executeAsync () {
     // Create a queue of peers ordered by distance from the key
-    const queue = await PeerQueue.fromKeyAsync(this.run.query.key)
+    const queue = await PeerQueue.fromKey(this.run.query.key)
     // Add initial peers to the queue
     this.peersToQuery = queue
     await Promise.all(this.initialPeers.map(peer => this.addPeerToQueryAsync(peer)))
@@ -88,7 +88,7 @@ class Path {
       return
     }
 
-    await this.peersToQuery.enqueueAsync(peer)
+    await this.peersToQuery.enqueue(peer)
   }
 }
 
