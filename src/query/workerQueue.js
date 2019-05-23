@@ -33,7 +33,7 @@ class WorkerQueue {
    */
   setupQueue () {
     const q = queue((peer, cb) => {
-      promiseToCallback(this.processNextAsync(peer))(cb)
+      promiseToCallback(this.processNext(peer))(cb)
     }, this.concurrency)
 
     // If there's an error, stop the worker
@@ -85,13 +85,9 @@ class WorkerQueue {
    * Use the queue from async to keep `concurrency` amount items running
    * per path.
    *
-   * @param {function(Error)} callback
+   * @return {Promise<void>}
    */
-  execute (callback) {
-    promiseToCallback(this.executeAsync())(callback)
-  }
-
-  async executeAsync () {
+  async execute () {
     this.running = true
     // store the promise resolution functions to be resolved at end of queue
     this.execution = {}
@@ -124,14 +120,9 @@ class WorkerQueue {
    * Process the next peer in the queue
    *
    * @param {PeerId} peer
-   * @param {function(Error)} cb
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  processNext (peer, cb) {
-    promiseToCallback(this.processNextAsync(peer))(cb)
-  }
-
-  async processNextAsync (peer) {
+  async processNext (peer) {
     if (!this.running) {
       return
     }
@@ -177,7 +168,7 @@ class WorkerQueue {
     this.log('queue:work')
     let state, execError
     try {
-      state = await this.execQueryAsync(peer)
+      state = await this.execQuery(peer)
     } catch (err) {
       execError = err
     }
@@ -213,15 +204,10 @@ class WorkerQueue {
    * Execute a query on the next peer.
    *
    * @param {PeerId} peer
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise<void>}
    * @private
    */
-  execQuery (peer, callback) {
-    promiseToCallback(this.execQueryAsync(peer))(callback)
-  }
-
-  async execQueryAsync (peer) {
+  async execQuery (peer) {
     let res, queryError
     try {
       res = await this.path.queryFuncAsync(peer)
