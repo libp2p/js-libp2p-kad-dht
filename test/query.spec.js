@@ -73,7 +73,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.not.exist()
       expect(res.paths[0].value).to.eql(Buffer.from('cool'))
       expect(res.paths[0].success).to.eql(true)
@@ -103,7 +103,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).not.to.exist()
 
       // Should have visited
@@ -129,7 +129,7 @@ describe('Query', () => {
     const query = (p, cb) => cb(new Error('fail'))
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.exist()
       expect(err.message).to.eql('fail')
       done()
@@ -142,7 +142,7 @@ describe('Query', () => {
     const query = (p, cb) => {}
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([]))((err, res) => {
+    promiseToCallback(q.run([]))((err, res) => {
       if (err) console.error(err)
       expect(err).to.not.exist()
 
@@ -167,7 +167,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.not.exist()
       expect(res.finalSet.size).to.eql(2)
       done()
@@ -216,7 +216,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id, peerInfos[2].id, peerInfos[3].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id, peerInfos[2].id, peerInfos[3].id]))((err, res) => {
       expect(err).to.not.exist()
 
       // Should visit all peers
@@ -257,7 +257,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.not.exist()
 
       // Should complete successfully
@@ -317,7 +317,7 @@ describe('Query', () => {
       }
 
       const q = new Query(dhtA, peer.id.id, () => query)
-      promiseToCallback(q.runAsync([peerInfos[1].id]))((err, res) => {
+      promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
         expect(err).to.not.exist()
       })
 
@@ -361,7 +361,7 @@ describe('Query', () => {
       const q = new Query(dhtA, peer.id.id, () => query)
 
       dhtA.stop(() => {
-        promiseToCallback(q.runAsync([peerInfos[1].id]))((err, res) => {
+        promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
           expect(err).to.not.exist()
 
           // Should not visit any peers
@@ -420,7 +420,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
       expect(err).to.not.exist()
 
       // We should get back the values from both paths
@@ -489,7 +489,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
       expect(err).to.not.exist()
 
       // We should only get back the value from the path 4 -> 5
@@ -568,7 +568,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
       expect(err).to.not.exist()
 
       // We should only get back the value from the path 1 -> 2 -> 3
@@ -649,7 +649,7 @@ describe('Query', () => {
         }
 
         const q = new Query(dht, peerInfos[0].id.id, () => query)
-        promiseToCallback(q.runAsync(initial))((err, res) => {
+        promiseToCallback(q.run(initial))((err, res) => {
           expect(err).to.not.exist()
 
           // Should query 19 peers, then find some peers closer to the key, and
@@ -723,7 +723,7 @@ describe('Query', () => {
       q.concurrency = 1
       // due to round-robin allocation of peers from starts, first
       // path is good, second bad
-      promiseToCallback(q.runAsync(starts))((err, res) => {
+      promiseToCallback(q.run(starts))((err, res) => {
         expect(err).to.not.exist()
         // we should reach the target node
         expect(targetVisited).to.eql(true)
@@ -749,7 +749,7 @@ describe('Query', () => {
     }
 
     const q = new Query(dht, peer.id.id, () => query)
-    promiseToCallback(q.runAsync([peerInfos[1].id]))((err, res) => {
+    promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.not.exist()
     })
 

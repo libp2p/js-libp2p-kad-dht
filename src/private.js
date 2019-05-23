@@ -572,7 +572,7 @@ module.exports = (dht) => ({
 
     try {
       await promisify(callback => timeout((cb) => {
-        promiseToCallback(query.runAsync(peers))(cb)
+        promiseToCallback(query.run(peers))(cb)
       }, providerTimeout)(callback))()
     } catch (err) {
       if (err.code !== 'ETIMEDOUT' || out.length === 0) {

@@ -377,7 +377,7 @@ class KadDHT extends EventEmitter {
 
           // run our query
           timeout((_cb) => {
-            promiseToCallback(query.runAsync(rtp))(_cb)
+            promiseToCallback(query.run(rtp))(_cb)
           }, options.timeout)((err, res) => {
             query.stop()
             cb(err, res)
@@ -439,7 +439,7 @@ class KadDHT extends EventEmitter {
         }
       })
 
-      promiseToCallback(q.runAsync(tablePeers))((err, res) => {
+      promiseToCallback(q.run(tablePeers))((err, res) => {
         if (err) {
           return callback(err)
         }
@@ -674,7 +674,7 @@ class KadDHT extends EventEmitter {
           })
 
           timeout((_cb) => {
-            promiseToCallback(query.runAsync(peers))(_cb)
+            promiseToCallback(query.run(peers))(_cb)
           }, options.timeout)((err, res) => {
             query.stop()
             cb(err, res)

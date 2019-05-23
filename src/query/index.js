@@ -51,14 +51,9 @@ class Query {
    * Run this query, start with the given list of peers first.
    *
    * @param {Array<PeerId>} peers
-   * @param {function(Error, Object)} callback
-   * @returns {void}
+   * @returns {Promise}
    */
-  run (peers, callback) {
-    promiseToCallback(this.runAsync(peers))(callback)
-  }
-
-  async runAsync (peers) {
+  async run (peers) {
     if (!this.dht._queryManager.running) {
       this._log.error('Attempt to run query after shutdown')
       return { finalSet: new Set(), paths: [] }
