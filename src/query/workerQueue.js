@@ -145,7 +145,7 @@ class WorkerQueue {
     // Check if we've queried enough peers already
     let continueQuerying, continueQueryingError
     try {
-      continueQuerying = await this.run.continueQueryingAsync(this)
+      continueQuerying = await this.run.continueQuerying(this)
     } catch (err) {
       continueQueryingError = err
     }

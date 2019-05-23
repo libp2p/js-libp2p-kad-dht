@@ -57,7 +57,7 @@ class Path {
     // Add initial peers to the queue
     this.peersToQuery = queue
     await Promise.all(this.initialPeers.map(peer => this.addPeerToQuery(peer)))
-    await this.run.workerQueueAsync(this)
+    await this.run.workerQueue(this)
   }
 
   /**

@@ -72,7 +72,7 @@ describe('Query', () => {
       let query = new Query(dht, targetKey.key, () => querySpy)
 
       let run = new Run(query)
-      promiseToCallback(run.initAsync())(() => {
+      promiseToCallback(run.init())(() => {
         // Add the sorted peers into 5 paths. This will weight
         // the paths with increasingly further peers
         let sortedPeerIds = sortedPeers.map(peerInfo => peerInfo.id)
@@ -94,10 +94,10 @@ describe('Query', () => {
         }, (err) => {
           if (err) return done(err)
 
-          const continueSpy = sinon.spy(run, 'continueQueryingAsync')
+          const continueSpy = sinon.spy(run, 'continueQuerying')
 
           // Run the 4 paths
-          promiseToCallback(run.executePathsAsync(paths))((err) => {
+          promiseToCallback(run.executePaths(paths))((err) => {
             expect(err).to.not.exist()
             // The resulting peers should all be from path 0 as it had the closest
             expect(run.peersQueried.peers).to.eql(paths[0].initialPeers)
@@ -126,7 +126,7 @@ describe('Query', () => {
       let query = new Query(dht, targetKey.key, () => querySpy)
 
       let run = new Run(query)
-      promiseToCallback(run.initAsync())(() => {
+      promiseToCallback(run.init())(() => {
         let sortedPeerIds = sortedPeers.map(peerInfo => peerInfo.id)
 
         // Take the top 15 peers and peers 20 - 25 to seed `run.peersQueried`
@@ -157,7 +157,7 @@ describe('Query', () => {
           if (err) return done(err)
 
           // Run the path
-          promiseToCallback(run.executePathsAsync([path]))((err) => {
+          promiseToCallback(run.executePaths([path]))((err) => {
             expect(err).to.not.exist()
 
             // Querying will stop after the first ALPHA peers are queried
