@@ -53,7 +53,7 @@ class Run extends EventEmitter {
    * Execute the run with the given initial set of peers.
    *
    * @param {Array<PeerId>} peers
-   * @returns {Promise<void>}
+   * @returns {Promise}
    */
 
   async execute (peers) {
