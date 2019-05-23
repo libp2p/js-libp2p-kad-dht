@@ -4,7 +4,6 @@ const Heap = require('heap')
 const distance = require('xor-distance')
 const debug = require('debug')
 const promisify = require('promisify-es6')
-const promiseToCallback = require('promise-to-callback')
 
 const utils = require('./utils')
 
