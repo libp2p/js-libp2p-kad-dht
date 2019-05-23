@@ -146,8 +146,8 @@ describe('Query', () => {
         const returnPeers = sortedPeers.slice(16, 20)
         // When the second query happens, which is a further peer,
         // return peers 16 - 19
-        querySpy.onCall(1).callsArgWith(1, null, {
-          closerPeers: returnPeers
+        querySpy.onCall(1).callsFake((_, cb) => {
+          setTimeout(() => cb(null, { closerPeers: returnPeers }), 10)
         })
 
         each(queriedPeers, (peerId, cb) => {
