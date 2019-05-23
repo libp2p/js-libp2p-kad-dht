@@ -55,10 +55,10 @@ class Query {
    * @returns {void}
    */
   run (peers, callback) {
-    promiseToCallback(this._runAsync(peers))(callback)
+    promiseToCallback(this.runAsync(peers))(callback)
   }
 
-  async _runAsync (peers) {
+  async runAsync (peers) {
     if (!this.dht._queryManager.running) {
       this._log.error('Attempt to run query after shutdown')
       return { finalSet: new Set(), paths: [] }
@@ -74,7 +74,7 @@ class Query {
     this._log(`query running with K=${this.dht.kBucketSize}, A=${this.dht.concurrency}, D=${Math.min(this.dht.disjointPaths, peers.length)}`)
     this._run.once('start', this._onStart)
     this._run.once('complete', this._onComplete)
-    return this._run._executeAsync(peers)
+    return this._run.executeAsync(peers)
   }
 
   /**

@@ -93,7 +93,7 @@ describe('Query', () => {
         }, (err) => {
           if (err) return done(err)
 
-          const continueSpy = sinon.spy(run, '_continueQueryingAsync')
+          const continueSpy = sinon.spy(run, 'continueQueryingAsync')
 
           // Run the 4 paths
           run.executePaths(paths, (err) => {

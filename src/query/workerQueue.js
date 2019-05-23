@@ -86,10 +86,10 @@ class WorkerQueue {
    * @param {function(Error)} callback
    */
   execute (callback) {
-    promiseToCallback(this._executeAsync())(callback)
+    promiseToCallback(this.executeAsync())(callback)
   }
 
-  async _executeAsync () {
+  async executeAsync () {
     this.running = true
     // store the promise resolution functions to be resolved at end of queue
     this.execution = {}
@@ -126,10 +126,10 @@ class WorkerQueue {
    * @returns {void}
    */
   processNext (peer, cb) {
-    promiseToCallback(this._processNextAsync(peer))(cb)
+    promiseToCallback(this.processNextAsync(peer))(cb)
   }
 
-  async _processNextAsync (peer) {
+  async processNextAsync (peer) {
     if (!this.running) {
       return
     }
@@ -143,7 +143,7 @@ class WorkerQueue {
     // Check if we've queried enough peers already
     let continueQuerying, continueQueryingError
     try {
-      continueQuerying = await this.run._continueQueryingAsync(this)
+      continueQuerying = await this.run.continueQueryingAsync(this)
     } catch (err) {
       continueQueryingError = err
     }
@@ -175,7 +175,7 @@ class WorkerQueue {
     this.log('queue:work')
     let state, execError
     try {
-      state = await this._execQueryAsync(peer)
+      state = await this.execQueryAsync(peer)
     } catch (err) {
       execError = err
     }
@@ -216,10 +216,10 @@ class WorkerQueue {
    * @private
    */
   execQuery (peer, callback) {
-    promiseToCallback(this._execQueryAsync(peer))(callback)
+    promiseToCallback(this.execQueryAsync(peer))(callback)
   }
 
-  async _execQueryAsync (peer) {
+  async execQueryAsync (peer) {
     let res, queryError
     try {
       res = await this.path.queryFuncAsync(peer)
@@ -259,7 +259,7 @@ class WorkerQueue {
         }
         closer = this.dht.peerBook.put(closer)
         this.dht._peerDiscovered(closer)
-        await this.path._addPeerToQueryAsync(closer.id)
+        await this.path.addPeerToQueryAsync(closer.id)
       }))
     }
   }

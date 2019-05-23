@@ -23,10 +23,10 @@ class PeerQueue {
    * @returns {void}
    */
   static fromPeerId (id, callback) {
-    promiseToCallback(this._fromPeerIdAsync(id))(callback)
+    promiseToCallback(this.fromPeerIdAsync(id))(callback)
   }
 
-  static async _fromPeerIdAsync (id) {
+  static async fromPeerIdAsync (id) {
     const key = await promisify(cb => utils.convertPeerId(id, cb))()
     return new PeerQueue(key)
   }
@@ -39,10 +39,10 @@ class PeerQueue {
    * @returns {void}
    */
   static fromKey (keyBuffer, callback) {
-    promiseToCallback(this._fromKeyAsync(keyBuffer))(callback)
+    promiseToCallback(this.fromKeyAsync(keyBuffer))(callback)
   }
 
-  static async _fromKeyAsync (keyBuffer) {
+  static async fromKeyAsync (keyBuffer) {
     const key = await promisify(cb => utils.convertBuffer(keyBuffer, cb))()
     return new PeerQueue(key)
   }

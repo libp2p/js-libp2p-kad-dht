@@ -56,10 +56,10 @@ class Run extends EventEmitter {
    * @param {function(Error, Object)} callback
    */
   execute (peers, callback) {
-    promiseToCallback(this._executeAsync(peers))(callback)
+    promiseToCallback(this.executeAsync(peers))(callback)
   }
 
-  async _executeAsync (peers) {
+  async executeAsync (peers) {
     const paths = [] // array of states per disjoint path
 
     // Create disjoint paths
@@ -74,7 +74,7 @@ class Run extends EventEmitter {
     })
 
     // Execute the query along each disjoint path
-    await this._executePathsAsync(paths)
+    await this.executePathsAsync(paths)
 
     const res = {
       // The closest K peers we were able to query successfully
@@ -100,15 +100,15 @@ class Run extends EventEmitter {
    * @param {function(Error)} callback
    */
   executePaths (paths, callback) {
-    promiseToCallback(this._executePathsAsync(paths))(callback)
+    promiseToCallback(this.executePathsAsync(paths))(callback)
   }
 
-  async _executePathsAsync (paths) {
+  async executePathsAsync (paths) {
     this.running = true
 
     this.emit('start')
     try {
-      await Promise.all(paths.map(path => path._executeAsync()))
+      await Promise.all(paths.map(path => path.executeAsync()))
     } finally {
       // Ensure all workers are stopped
       this.stop()
@@ -131,12 +131,12 @@ class Run extends EventEmitter {
    * @param {function(Error)} callback
    */
   workerQueue (path, callback) {
-    promiseToCallback(this._workerQueueAsync(path))(callback)
+    promiseToCallback(this.workerQueueAsync(path))(callback)
   }
 
-  async _workerQueueAsync (path) {
-    await this._initAsync()
-    await this._startWorkerAsync(path)
+  async workerQueueAsync (path) {
+    await this.initAsync()
+    await this.startWorkerAsync(path)
   }
 
   /**
@@ -146,10 +146,10 @@ class Run extends EventEmitter {
    * @param {function(Error)} callback
    */
   startWorker (path, callback) {
-    promiseToCallback(this._startWorkerAsync(path))(callback)
+    promiseToCallback(this.startWorkerAsync(path))(callback)
   }
 
-  async _startWorkerAsync (path) {
+  async startWorkerAsync (path) {
     const worker = new WorkerQueue(this.query.dht, this, path, this.query._log)
     this.workers.push(worker)
     return promisify(cb => worker.execute(cb))()
@@ -163,10 +163,10 @@ class Run extends EventEmitter {
    * @returns {void}
    */
   init (callback) {
-    promiseToCallback(this._initAsync())(callback)
+    promiseToCallback(this.initAsync())(callback)
   }
 
-  async _initAsync () {
+  async initAsync () {
     if (this.peersQueried) {
       return
     }
@@ -198,10 +198,10 @@ class Run extends EventEmitter {
    * @returns {void}
    */
   continueQuerying (worker, callback) {
-    promiseToCallback(this._continueQueryingAsync(worker))(callback)
+    promiseToCallback(this.continueQueryingAsync(worker))(callback)
   }
 
-  async _continueQueryingAsync (worker) {
+  async continueQueryingAsync (worker) {
     // If we haven't queried K peers yet, keep going
     if (this.peersQueried.length < this.peersQueried.capacity) {
       return true

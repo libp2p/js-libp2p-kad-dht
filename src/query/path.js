@@ -52,16 +52,16 @@ class Path {
    * @param {function(Error)} callback
    */
   execute (callback) {
-    promiseToCallback(this._executeAsync())(callback)
+    promiseToCallback(this.executeAsync())(callback)
   }
 
-  async _executeAsync () {
+  async executeAsync () {
     // Create a queue of peers ordered by distance from the key
-    const queue = await PeerQueue._fromKeyAsync(this.run.query.key)
+    const queue = await PeerQueue.fromKeyAsync(this.run.query.key)
     // Add initial peers to the queue
     this.peersToQuery = queue
-    await Promise.all(this.initialPeers.map(peer => this._addPeerToQueryAsync(peer)))
-    await this.run._workerQueueAsync(this)
+    await Promise.all(this.initialPeers.map(peer => this.addPeerToQueryAsync(peer)))
+    await this.run.workerQueueAsync(this)
   }
 
   /**
@@ -73,10 +73,10 @@ class Path {
    * @private
    */
   addPeerToQuery (peer, callback) {
-    promiseToCallback(this._addPeerToQueryAsync(peer))(callback)
+    promiseToCallback(this.addPeerToQueryAsync(peer))(callback)
   }
 
-  async _addPeerToQueryAsync (peer) {
+  async addPeerToQueryAsync (peer) {
     // Don't add self
     if (this.run.query.dht._isSelf(peer)) {
       return
