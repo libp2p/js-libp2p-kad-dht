@@ -11,6 +11,12 @@ const Record = require('libp2p-record').Record
 const setImmediate = require('async/setImmediate')
 const PeerId = require('peer-id')
 
+class TimeoutError extends Error {
+  get code () {
+    return 'ETIMEDOUT'
+  }
+}
+
 /**
  * Creates a DHT ID by hashing a given buffer.
  *
@@ -190,3 +196,30 @@ exports.logger = (id, subsystem) => {
 
   return logger
 }
+
+exports.TimeoutError = class TimeoutError extends Error {
+  get code () {
+    return 'ETIMEDOUT'
+  }
+}
+
+/**
+ * Creates an async function that calls the given `asyncFn` and Errors
+ * if it does not resolve within `time` ms
+ *
+ * @param {Function} [asyncFn]
+ * @param {Number} [time]
+ * @returns {Function}
+ *
+ * @private
+ */
+exports.withTimeout = (asyncFn, time) => {
+  return async (...args) => {
+    return Promise.race([
+      asyncFn(...args),
+      new Promise((resolve, reject) => setTimeout(() => reject(new TimeoutError()), time))
+    ])
+  }
+}
+
+exports.TimeoutError = TimeoutError

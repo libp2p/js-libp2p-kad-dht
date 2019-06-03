@@ -21,7 +21,11 @@ describe('Random Walk', () => {
   }
 
   afterEach(() => {
-    sinon.restore()
+    try {
+      sinon.restore()
+    } catch (err) {
+      console.error('sinon.restore error', err)
+    }
   })
 
   describe('configuration', () => {
