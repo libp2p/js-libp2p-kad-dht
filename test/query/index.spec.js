@@ -98,7 +98,6 @@ describe('Query', () => {
 
           // Run the 4 paths
           promiseToCallback(run.executePaths(paths))((err) => {
-            if (err) console.log(err.stack)
             expect(err).to.not.exist()
             // The resulting peers should all be from path 0 as it had the closest
             expect(run.peersQueried.peers).to.eql(paths[0].initialPeers)

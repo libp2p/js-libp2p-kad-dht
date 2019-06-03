@@ -363,7 +363,6 @@ class KadDHT extends EventEmitter {
 
               const res = { closerPeers: peers }
 
-              if (lookupErr) console.log('lookupErr', lookupErr)
               if ((rec && rec.value) || lookupErr) {
                 pathVals.push({
                   val: rec && rec.value,

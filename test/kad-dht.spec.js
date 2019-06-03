@@ -1104,7 +1104,6 @@ describe('KadDHT', () => {
           (cb) => connect(dhtA, dhtB, cb),
           (cb) => dhtA.get(Buffer.from('/v/hello'), cb)
         ], (err) => {
-          if (err) console.log(err.stack)
           expect(err).to.exist()
           expect(err.code).to.be.eql('ERR_NOT_FOUND')
 

@@ -57,7 +57,7 @@ describe('Query', () => {
     dht.switch.dial = (peer, callback) => callback()
 
     let i = 0
-    const query = async (p) => {
+    const queryFunc = async (p) => {
       if (i++ === 1) {
         expect(p.id).to.eql(peerInfos[2].id.id)
 
@@ -72,7 +72,7 @@ describe('Query', () => {
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.not.exist()
       expect(res.paths[0].value).to.eql(Buffer.from('cool'))
@@ -90,7 +90,7 @@ describe('Query', () => {
 
     let i = 0
     const visited = []
-    const query = async (p) => {
+    const queryFunc = async (p) => {
       visited.push(p)
 
       if (i++ === 1) {
@@ -102,7 +102,7 @@ describe('Query', () => {
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).not.to.exist()
 
@@ -126,9 +126,9 @@ describe('Query', () => {
     // mock this so we can dial non existing peers
     dht.switch.dial = (peer, callback) => callback()
 
-    const query = async (p) => { throw new Error('fail') }
+    const queryFunc = async (p) => { throw new Error('fail') }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.exist()
       expect(err.message).to.eql('fail')
@@ -139,9 +139,9 @@ describe('Query', () => {
   it('returns empty run if initial peer list is empty', (done) => {
     const peer = peerInfos[0]
 
-    const query = async (p) => {}
+    const queryFunc = async (p) => {}
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([]))((err, res) => {
       expect(err).to.not.exist()
 
@@ -159,13 +159,13 @@ describe('Query', () => {
     // mock this so we can dial non existing peers
     dht.switch.dial = (peer, callback) => callback()
 
-    const query = async (p) => {
+    const queryFunc = async (p) => {
       return {
         closerPeers: [peerInfos[2]]
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.not.exist()
       expect(res.finalSet.size).to.eql(2)
@@ -207,14 +207,14 @@ describe('Query', () => {
       ]
     }
 
-    const query = async (p) => {
+    const queryFunc = async (p) => {
       const closer = topology[p.toB58String()]
       return {
         closerPeers: closer || []
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id, peerInfos[2].id, peerInfos[3].id]))((err, res) => {
       expect(err).to.not.exist()
 
@@ -246,7 +246,7 @@ describe('Query', () => {
       }
     }
 
-    const query = (p) => {
+    const queryFunc = async (p) => {
       const res = topology[p.toB58String()] || {}
       return {
         closerPeers: res.closer || [],
@@ -255,7 +255,7 @@ describe('Query', () => {
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.not.exist()
 
@@ -353,14 +353,14 @@ describe('Query', () => {
         }
       }
 
-      const query = async (p) => {
+      const queryFunc = async (p) => {
         const res = topology[p.toB58String()] || {}
         return {
           closerPeers: res.closer || []
         }
       }
 
-      const q = new Query(dhtA, peer.id.id, () => query)
+      const q = new Query(dhtA, peer.id.id, () => queryFunc)
 
       dhtA.stop(() => {
         promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
@@ -410,7 +410,7 @@ describe('Query', () => {
       }
     }
 
-    const query = async (p) => {
+    const queryFunc = async (p) => {
       const res = topology[p.toB58String()] || {}
       await new Promise(resolve => setTimeout(resolve, res.delay))
       return {
@@ -420,7 +420,7 @@ describe('Query', () => {
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
       expect(err).to.not.exist()
 
@@ -475,7 +475,7 @@ describe('Query', () => {
     }
 
     const visited = []
-    const query = async (p) => {
+    const queryFunc = async (p) => {
       visited.push(p)
 
       const res = topology[p.toB58String()] || {}
@@ -488,7 +488,7 @@ describe('Query', () => {
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
       expect(err).to.not.exist()
 
@@ -551,7 +551,7 @@ describe('Query', () => {
     }
 
     const visited = []
-    const query = async (p) => {
+    const queryFunc = async (p) => {
       visited.push(p)
 
       const res = topology[p.toB58String()] || {}
@@ -566,7 +566,7 @@ describe('Query', () => {
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id, peerInfos[4].id]))((err, res) => {
       expect(err).to.not.exist()
 
@@ -639,7 +639,7 @@ describe('Query', () => {
         const peerIdToInfo = (peerId) => peerInfos.find(pi => pi.id === peerId)
 
         const visited = []
-        const query = async (peerId) => {
+        const queryFunc = async (peerId) => {
           visited.push(peerId)
           const i = peerIndex(peerId)
           const closerIndexes = topology[i] || []
@@ -647,7 +647,7 @@ describe('Query', () => {
           return { closerPeers }
         }
 
-        const q = new Query(dht, peerInfos[0].id.id, () => query)
+        const q = new Query(dht, peerInfos[0].id.id, () => queryFunc)
         promiseToCallback(q.run(initial))((err, res) => {
           expect(err).to.not.exist()
 
@@ -741,13 +741,13 @@ describe('Query', () => {
     // mock this so we can dial non existing peers
     dht.switch.dial = (peer, callback) => callback()
 
-    const query = async (p) => {
+    const queryFunc = async (p) => {
       return {
         closerPeers: [peerInfos[2]]
       }
     }
 
-    const q = new Query(dht, peer.id.id, () => query)
+    const q = new Query(dht, peer.id.id, () => queryFunc)
     promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
       expect(err).to.not.exist()
     })
