@@ -537,7 +537,7 @@ class KadDHT extends EventEmitter {
 
     const errors = []
     waterfall([
-      (cb) => this.providers.addProvider(key, this.peerInfo.id, cb),
+      (cb) => promiseToCallback(this.providers.addProvider(key, this.peerInfo.id))(err => cb(err)),
       (cb) => this.getClosestPeers(key.buffer, cb),
       (peers, cb) => {
         const msg = new Message(Message.TYPES.ADD_PROVIDER, key.buffer, 0)
