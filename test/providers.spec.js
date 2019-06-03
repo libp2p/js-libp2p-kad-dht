@@ -43,6 +43,28 @@ describe('Providers', () => {
     providers.stop()
   })
 
+  it('duplicate add of provider is deduped', async () => {
+    const providers = new Providers(new Store(), infos[2].id)
+
+    const cid = new CID('QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n')
+
+    await Promise.all([
+      providers.addProvider(cid, infos[0].id),
+      providers.addProvider(cid, infos[0].id),
+      providers.addProvider(cid, infos[1].id),
+      providers.addProvider(cid, infos[1].id),
+      providers.addProvider(cid, infos[1].id)
+    ])
+
+    const provs = await providers.getProviders(cid)
+    expect(provs).to.have.length(2)
+    const ids = new Set(provs.map((peerId) => peerId.toB58String()))
+    expect(ids.has(infos[0].id.toB58String())).to.be.eql(true)
+    expect(ids.has(infos[1].id.toB58String())).to.be.eql(true)
+
+    providers.stop()
+  })
+
   it('more providers than space in the lru cache', async () => {
     const providers = new Providers(new Store(), infos[2].id, 10)
 
