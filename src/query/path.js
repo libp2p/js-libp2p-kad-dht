@@ -22,8 +22,8 @@ class Path {
   constructor (run, queryFunc) {
     this.run = run
     this.queryFunc = utils.withTimeout(queryFunc, QUERY_FUNC_TIMEOUT)
-    if (!this.queryFunc) throw new Error('QF missing')
-    if (typeof this.queryFunc !== 'function') throw new Error('QF bad bad: ' + typeof this.queryFunc)
+    if (!this.queryFunc) throw new Error('Path requires a `queryFn` to be specified')
+    if (typeof this.queryFunc !== 'function') throw new Error('Path expected `queryFn` to be a function. Got ' + typeof this.queryFunc)
 
     /**
      * @type {Array<PeerId>}
