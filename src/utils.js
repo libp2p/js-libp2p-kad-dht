@@ -10,12 +10,7 @@ const map = require('async/map')
 const Record = require('libp2p-record').Record
 const setImmediate = require('async/setImmediate')
 const PeerId = require('peer-id')
-
-class TimeoutError extends Error {
-  get code () {
-    return 'ETIMEDOUT'
-  }
-}
+const errcode = require('err-code')
 
 /**
  * Creates a DHT ID by hashing a given buffer.
@@ -217,9 +212,11 @@ exports.withTimeout = (asyncFn, time) => {
   return async (...args) => {
     return Promise.race([
       asyncFn(...args),
-      new Promise((resolve, reject) => setTimeout(() => reject(new TimeoutError()), time))
+      new Promise((resolve, reject) => {
+        setTimeout(() => {
+          reject(errcode(new Error('Async function did not complete before timeout'), 'ETIMEDOUT'))
+        }, time)
+      })
     ])
   }
 }
-
-exports.TimeoutError = TimeoutError
