@@ -68,11 +68,14 @@ describe('Random Walk', () => {
       findPeerStub.onCall(2).callsArgWith(2, error)
       findPeerStub.callsArgWith(2, { code: 'ERR_NOT_FOUND' })
 
+      let err
       try {
         await randomWalk._walk(queries, 1e3)
-      } finally {
-        expect(findPeerStub.callCount).to.eql(5)
+      } catch (_err) {
+        err = _err
       }
+      expect(err.message).to.include('ERR_BOOM')
+      expect(findPeerStub.callCount).to.eql(5)
     })
 
     it('should ignore timeout errors and keep walking', async () => {
@@ -222,9 +225,9 @@ describe('Random Walk', () => {
         interval: 100e3
       })
       randomWalk.start()
-      expect(randomWalk._running).to.eql(true)
+      expect(randomWalk._timeoutId).to.exist()
       randomWalk.stop()
-      expect(randomWalk._running).to.eql(false)
+      expect(randomWalk._timeoutId).to.eql(undefined)
     })
 
     it('should cancel the walk if already running', (done) => {

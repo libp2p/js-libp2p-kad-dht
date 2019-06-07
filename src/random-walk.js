@@ -28,7 +28,7 @@ class RandomWalk {
     this._options = { ...c.defaultRandomWalk, ...options }
     this._kadDHT = dht
     this.log = logger(dht.peerInfo.id, 'random-walk')
-    this._running = false
+    this._timeoutId = undefined
   }
 
   /**
@@ -40,12 +40,10 @@ class RandomWalk {
    */
   start () {
     // Don't run twice
-    if (this._running || !this._options.enabled) { return }
-
-    this._running = true
+    if (this._timeoutId || !this._options.enabled) { return }
 
     // Start doing random walks after `this._options.delay`
-    setTimeout(() => {
+    this._timeoutId = setTimeout(() => {
       // Start runner immediately
       this._runPeriodically()
     }, this._options.delay)
@@ -58,7 +56,10 @@ class RandomWalk {
    * @returns {void}
    */
   stop () {
-    this._running = false
+    if (this._timeoutId) {
+      clearTimeout(this._timeoutId)
+      this._timeoutId = undefined
+    }
     this._controller && this._controller.abort()
   }
 
@@ -69,14 +70,17 @@ class RandomWalk {
    */
   async _runPeriodically () {
     while (true) {
-      if (!this._running) return
+      // exit if the walk has been stopped
+      if (!this._timeoutId) return
       try {
         await this._walk(this._options.queriesPerPeriod, this._options.timeout)
       } catch (err) {
         this._kadDHT._log.error('random-walk:error', err)
       }
       // Each subsequent walk should run on a `this._options.interval` interval
-      await new Promise(resolve => setTimeout(resolve, this._options.interval))
+      await new Promise(resolve => {
+        this._timeoutId = setTimeout(resolve, this._options.interval)
+      })
     }
   }
 
