@@ -61,8 +61,7 @@ describe('Random Walk', () => {
       expect(randomWalk._query.callCount).to.eql(queries)
     })
 
-    // all requests are made in parallel, so we cant expect a throw to interrupt
-    it.skip('should stop walking if a query errors', async () => {
+    it('should NOT stop walking if a query errors', async () => {
       const queries = 5
       const error = new Error('ERR_BOOM')
       const findPeerStub = sinon.stub(randomWalk._kadDHT, 'findPeer')
@@ -72,8 +71,7 @@ describe('Random Walk', () => {
       try {
         await randomWalk._walk(queries, 1e3)
       } finally {
-        // 2 successes and error on the 3rd
-        expect(findPeerStub.callCount).to.eql(3)
+        expect(findPeerStub.callCount).to.eql(5)
       }
     })
 
