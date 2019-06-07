@@ -19,14 +19,19 @@ const createValues = promisify(require('./utils/create-values'))
 
 describe('Providers', () => {
   let infos
+  let providers
 
   before(async function () {
     this.timeout(10 * 1000)
     infos = await createPeerInfo(3)
   })
 
+  afterEach(() => {
+    providers && providers.stop()
+  })
+
   it('simple add and get of providers', async () => {
-    const providers = new Providers(new Store(), infos[2].id)
+    providers = new Providers(new Store(), infos[2].id)
 
     const cid = new CID('QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n')
 
@@ -39,12 +44,10 @@ describe('Providers', () => {
     const ids = new Set(provs.map((peerId) => peerId.toB58String()))
     expect(ids.has(infos[0].id.toB58String())).to.be.eql(true)
     expect(ids.has(infos[1].id.toB58String())).to.be.eql(true)
-
-    providers.stop()
   })
 
   it('duplicate add of provider is deduped', async () => {
-    const providers = new Providers(new Store(), infos[2].id)
+    providers = new Providers(new Store(), infos[2].id)
 
     const cid = new CID('QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n')
 
@@ -61,12 +64,10 @@ describe('Providers', () => {
     const ids = new Set(provs.map((peerId) => peerId.toB58String()))
     expect(ids.has(infos[0].id.toB58String())).to.be.eql(true)
     expect(ids.has(infos[1].id.toB58String())).to.be.eql(true)
-
-    providers.stop()
   })
 
   it('more providers than space in the lru cache', async () => {
-    const providers = new Providers(new Store(), infos[2].id, 10)
+    providers = new Providers(new Store(), infos[2].id, 10)
 
     const hashes = await Promise.all([...new Array(100)].map((i) => {
       return multihashing(Buffer.from(`hello ${i}`), 'sha2-256')
@@ -81,12 +82,10 @@ describe('Providers', () => {
     for (const p of provs) {
       expect(p[0].id).to.be.eql(infos[0].id.id)
     }
-
-    providers.stop()
   })
 
   it('expires', async () => {
-    const providers = new Providers(new Store(), infos[2].id)
+    providers = new Providers(new Store(), infos[2].id)
     providers.cleanupInterval = 100
     providers.provideValidity = 200
 
@@ -106,7 +105,6 @@ describe('Providers', () => {
 
     const provsAfter = await providers.getProviders(cid)
     expect(provsAfter).to.have.length(0)
-    providers.stop()
   })
 
   // slooow so only run when you need to
@@ -115,7 +113,7 @@ describe('Providers', () => {
       os.tmpdir(), (Math.random() * 100).toString()
     )
     const store = new LevelStore(p)
-    const providers = new Providers(store, infos[2].id, 10)
+    providers = new Providers(store, infos[2].id, 10)
 
     console.log('starting')
     const res = await Promise.all([
