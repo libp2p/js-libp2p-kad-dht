@@ -69,9 +69,8 @@ class RandomWalk {
    * @private
    */
   async _runPeriodically () {
-    while (true) {
-      // exit if the walk has been stopped
-      if (!this._timeoutId) return
+      // run until the walk has been stopped
+      while (this._timeoutId) {
       try {
         await this._walk(this._options.queriesPerPeriod, this._options.timeout)
       } catch (err) {
