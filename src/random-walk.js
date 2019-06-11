@@ -160,7 +160,7 @@ class RandomWalk {
     this.log('query:found', peer)
 
     // wait what, there was something found? Lucky day!
-    throw errcode(new Error(`random-walk: ACTUALLY FOUND PEER: ${peer}, ${id.toB58String()}`), 'ERR_FOUND_RANDOM_PEER')
+    throw errcode(`random-walk: ACTUALLY FOUND PEER: ${peer}, ${id.toB58String()}`, 'ERR_FOUND_RANDOM_PEER')
   }
 
   /**
