@@ -612,8 +612,8 @@ module.exports = (dht) => ({
 
     const queryStats = {
       localCount,
-      paths: query._run.paths.map((path, pathIndex) => ({
-        initialPeers: path.initialPeers.map(p => p.toB58String()),
+      paths: (query._run.paths || []).map((path, pathIndex) => ({
+        initialPeers: (path.initialPeers || []).map(p => p.toB58String()),
         introductions: pathIntroductions[pathIndex],
       }))
     }
