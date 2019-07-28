@@ -576,7 +576,7 @@ module.exports = (dht) => ({
         out.push(peer)
       })
     })
-    
+
     if (out.length === 0) {
       throw errcode(new Error('no providers found'), 'ERR_NOT_FOUND')
     }
