@@ -287,7 +287,7 @@ module.exports = (dht) => ({
 
     const vals = await promisify(cb => dht.getMany(key, c.GET_MANY_RECORD_COUNT, options, cb))()
 
-    const recs = vals.map((v) => v.val)
+    const recs = vals.map((v) => v.val).filter(Boolean)
     let i = 0
 
     try {
@@ -326,7 +326,7 @@ module.exports = (dht) => ({
 
     return Promise.all(vals.map(async (v) => {
       // no need to do anything
-      if (v.val.equals(best)) {
+      if (v.val && v.val.equals(best)) {
         return
       }
 
