@@ -33,7 +33,7 @@ module.exports = (dht) => {
     const dsKey = utils.bufferToKey(cid.buffer)
 
     parallel([
-      (cb) => dht.datastore.has(dsKey, (err, exists) => {
+      (cb) => promiseToCallback(dht.datastore.has(dsKey))((err, exists) => {
         if (err) {
           log.error('Failed to check datastore existence', err)
           return cb(null, false)
