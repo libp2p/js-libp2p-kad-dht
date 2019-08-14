@@ -180,7 +180,7 @@ class Providers {
    * @param {PeerId} provider
    * @returns {Promise}
    */
-  async addProvider (cid, provider) {
+  async addProvider (cid, provider) { // eslint-disable-line require-await
     return this.syncQueue.add(async () => {
       this._log('addProvider %s', cid.toBaseEncodedString())
       const provs = await this._getProvidersMap(cid)
@@ -201,7 +201,7 @@ class Providers {
    * @param {CID} cid
    * @returns {Promise<Array<PeerId>>}
    */
-  async getProviders (cid) {
+  async getProviders (cid) { // eslint-disable-line require-await
     return this.syncQueue.add(async () => {
       this._log('getProviders %s', cid.toBaseEncodedString())
       const provs = await this._getProvidersMap(cid)
@@ -236,7 +236,7 @@ function makeProviderKey (cid) {
  *
  * @private
  */
-async function writeProviderEntry (store, cid, peer, time) {
+async function writeProviderEntry (store, cid, peer, time) { // eslint-disable-line require-await
   const dsKey = [
     makeProviderKey(cid),
     '/',

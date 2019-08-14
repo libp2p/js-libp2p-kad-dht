@@ -955,7 +955,7 @@ describe('KadDHT', () => {
         Buffer.from('hello'),
         Buffer.from('world')
       )
-      let received = new Date()
+      const received = new Date()
       received.setDate(received.getDate() - 2)
 
       record.timeReceived = received
@@ -1023,7 +1023,7 @@ describe('KadDHT', () => {
           // Simulate returning a peer id to query
           sinon.stub(dht.routingTable, 'closestPeers').returns([peerInfos[1].id]),
           // Simulate going out to the network and returning the record
-          sinon.stub(dht, '_getValueOrPeersAsync').callsFake(async () => ({ record: rec }))
+          sinon.stub(dht, '_getValueOrPeersAsync').callsFake(async () => ({ record: rec })) // eslint-disable-line require-await
         ]
 
         dht.getMany(key, 1, (err, res) => {

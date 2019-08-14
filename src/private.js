@@ -214,7 +214,7 @@ module.exports = (dht) => ({
     promiseToCallback(this._findPeerSingleAsync(peer, target))(callback)
   },
 
-  async _findPeerSingleAsync (peer, target) {
+  async _findPeerSingleAsync (peer, target) { // eslint-disable-line require-await
     dht._log('_findPeerSingle %s', peer.toB58String())
     const msg = new Message(Message.TYPES.FIND_NODE, target.id, 0)
     return promisify(callback => dht.network.sendRequest(peer, msg, callback))()
@@ -436,7 +436,7 @@ module.exports = (dht) => ({
     promiseToCallback(this._getValueSingleAsync(peer, key))(callback)
   },
 
-  async _getValueSingleAsync (peer, key) {
+  async _getValueSingleAsync (peer, key) { // eslint-disable-line require-await
     const msg = new Message(Message.TYPES.GET_VALUE, key, 0)
     return promisify(cb => dht.network.sendRequest(peer, msg, cb))()
   },
@@ -598,7 +598,7 @@ module.exports = (dht) => ({
     promiseToCallback(this._findProvidersSingleAsync(peer, key))(callback)
   },
 
-  async _findProvidersSingleAsync (peer, key) {
+  async _findProvidersSingleAsync (peer, key) { // eslint-disable-line require-await
     const msg = new Message(Message.TYPES.GET_PROVIDERS, key.buffer, 0)
     return promisify(cb => dht.network.sendRequest(peer, msg, cb))()
   }
