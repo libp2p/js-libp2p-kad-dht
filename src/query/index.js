@@ -13,14 +13,14 @@ class Query {
   /**
    * User-supplied function to set up an individual disjoint path. Per-path
    * query state should be held in this function's closure.
-   * @typedef {makePath} function
+   * @typedef {function} makePath
    * @param {number} pathNum - Numeric index from zero to numPaths - 1
    * @returns {queryFunc} - Function to call on each peer in the query
    */
 
   /**
    * Query function.
-   * @typedef {queryFunc} function
+   * @typedef {function} queryFunc
    * @param {PeerId} next - Peer to query
    * @param {function(Error, Object)} callback - Query result callback
    */

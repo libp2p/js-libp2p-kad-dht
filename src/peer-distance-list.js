@@ -5,6 +5,7 @@ const utils = require('./utils')
 const map = require('async/map')
 
 /**
+ * @class
  * Maintains a list of peerIds sorted by distance from a DHT key.
  */
 class PeerDistanceList {
@@ -21,6 +22,8 @@ class PeerDistanceList {
   }
 
   /**
+   * @method
+   * @returns {number}
    * The length of the list
    */
   get length () {
@@ -28,6 +31,9 @@ class PeerDistanceList {
   }
 
   /**
+   * @method
+   * 
+   * @returns {Array<String>}
    * The peerIds in the list, in order of distance from the origin key
    */
   get peers () {

@@ -4,6 +4,7 @@
   "description": "JavaScript implementation of the Kad-DHT for libp2p",
   "leadMaintainer": "Vasco Santos <vasco.santos@moxy.studio>",
   "main": "src/index.js",
+  "typings": "src/types.d.ts",
   "scripts": {
     "lint": "aegir lint",
     "test": "aegir test -t node",
@@ -15,7 +16,8 @@
     "release-major": "aegir release --type major --docs -t node",
     "coverage": "aegir coverage",
     "coverage-publish": "aegir-coverage publish",
-    "sim": "node test/simulation/index.js"
+    "sim": "node test/simulation/index.js",
+    "generate-typings": "./node_modules/.bin/jsdoc -c ./.jsdoc.json"
   },
   "pre-push": [
     "lint"
@@ -73,6 +75,7 @@
     "datastore-level": "~0.12.1",
     "dirty-chai": "^2.0.1",
     "interface-connection": "~0.3.3",
+    "jsdoc": "^3.6.3",
     "libp2p-mplex": "~0.8.5",
     "libp2p-switch": "~0.42.7",
     "libp2p-tcp": "~0.13.0",
@@ -80,7 +83,8 @@
     "lodash.random": "^3.2.0",
     "lodash.range": "^3.2.0",
     "peer-book": "~0.9.1",
-    "sinon": "^7.3.1"
+    "sinon": "^7.3.1",
+    "tsd-jsdoc": "^2.3.1"
   },
   "contributors": [
     "Alan Shaw <alan.shaw@protocol.ai>",
@@ -101,6 +105,7 @@
     "dirkmc <dirk@mccormick.cx>",
     "kumavis <kumavis@users.noreply.github.com>",
     "kumavis <aaron@kumavis.me>",
-    "ᴠɪᴄᴛᴏʀ ʙᴊᴇʟᴋʜᴏʟᴍ <victorbjelkholm@gmail.com>"
+    "ᴠɪᴄᴛᴏʀ ʙᴊᴇʟᴋʜᴏʟᴍ <victorbjelkholm@gmail.com>",
+    "omidiora samuel <samparsky@gmail.com>"
   ]
 }

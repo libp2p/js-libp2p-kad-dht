@@ -27,6 +27,7 @@ jobs:
         - npx aegir build --bundlesize
         - npx aegir dep-check
         - npm run lint
+        - npm run generate-typings
 
 notifications:
   email: false

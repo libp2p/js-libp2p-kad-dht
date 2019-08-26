@@ -8,7 +8,12 @@ const errcode = require('err-code')
 const Message = require('../../message')
 const utils = require('../../utils')
 
-module.exports = (dht) => {
+/**
+ * @method
+ * 
+ * @param {object} dht 
+ */
+function providers (dht) {
   const log = utils.logger(dht.peerInfo.id, 'rpc:get-providers')
 
   /**
@@ -73,3 +78,5 @@ module.exports = (dht) => {
     promiseToCallback(getProvidersAsync(peer, msg))(callback)
   }
 }
+
+module.exports = providers
