@@ -10,7 +10,7 @@ const PeerInfo = require('peer-info')
  * @param {function(Error, Array<PeerInfo>)} callback
  */
 function createPeerInfo (n, callback) {
-  times(n, (i, cb) => PeerId.create({ bits: 512 }, cb), (err, ids) => {
+  times(n, (i, cb) => PeerId.create({ bits: 512, type: 'rsa' }, cb), (err, ids) => {
     if (err) { return callback(err) }
     callback(null, ids.map((i) => new PeerInfo(i)))
   })
