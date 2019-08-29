@@ -65,8 +65,8 @@ describe('Random Walk', () => {
       const queries = 5
       const error = new Error('ERR_BOOM')
       const findPeerStub = sinon.stub(randomWalk._kadDHT, 'findPeer')
-      findPeerStub.onCall(2).callsArgWith(2, error)
-      findPeerStub.callsArgWith(2, { code: 'ERR_NOT_FOUND' })
+      findPeerStub.onCall(2).throws(error)
+      findPeerStub.throws({ code: 'ERR_NOT_FOUND' })
 
       let err
       try {
@@ -89,7 +89,7 @@ describe('Random Walk', () => {
     })
 
     it('should pass its timeout to the find peer query', async () => {
-      sinon.stub(randomWalk._kadDHT, 'findPeer').callsArgWith(2, { code: 'ERR_NOT_FOUND' })
+      sinon.stub(randomWalk._kadDHT, 'findPeer').throws({ code: 'ERR_NOT_FOUND' })
 
       await randomWalk._walk(1, 111)
       const mockCalls = randomWalk._kadDHT.findPeer.getCalls()
@@ -182,7 +182,7 @@ describe('Random Walk', () => {
       randomWalk.start()
     })
 
-    it('should run the query on interval', (done) => {
+    it('should run the query on interval', () => {
       const options = {
         enabled: true,
         delay: 0,
@@ -192,18 +192,21 @@ describe('Random Walk', () => {
       }
       const error = { code: 'ERR_NOT_FOUND' }
       const randomWalk = new RandomWalk(mockDHT, options)
-      sinon.stub(randomWalk._kadDHT, 'findPeer').callsFake((_, opts, callback) => {
+
+      sinon.stub(randomWalk._kadDHT, 'findPeer').callsFake((_, opts) => {
         expect(opts.timeout).to.eql(options.timeout).mark()
-        setTimeout(() => callback(error), 100)
+        return new Promise((resolve, reject) => setTimeout(reject(error), 100))
       })
 
-      expect(3).checks(() => {
-        randomWalk.stop()
-        expect(randomWalk._kadDHT.findPeer.callCount).to.eql(3)
-        done()
-      })
+      return new Promise((resolve) => {
+        expect(3).checks(() => {
+          randomWalk.stop()
+          expect(randomWalk._kadDHT.findPeer.callCount).to.eql(3)
+          resolve()
+        })
 
-      randomWalk.start()
+        randomWalk.start()
+      })
     })
   })
 

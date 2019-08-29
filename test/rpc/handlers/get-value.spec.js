@@ -12,7 +12,6 @@ const utils = require('../../../src/utils')
 const T = Message.TYPES.GET_VALUE
 
 const createPeerInfo = require('../../utils/create-peer-info')
-// const createValues = require('../../utils/create-values')
 const TestDHT = require('../../utils/test-dht')
 
 describe('rpc - handlers - GetValue', () => {
@@ -20,26 +19,19 @@ describe('rpc - handlers - GetValue', () => {
   let tdht
   let dht
 
-  before((done) => {
-    createPeerInfo(2, (err, res) => {
-      expect(err).to.not.exist()
-      peers = res
-      done()
-    })
+  before(async () => {
+    peers = await createPeerInfo(2)
   })
 
-  beforeEach((done) => {
+  beforeEach(async () => {
     tdht = new TestDHT()
 
-    tdht.spawn(1, (err, dhts) => {
-      expect(err).to.not.exist()
-      dht = dhts[0]
-      done()
-    })
+    const dhts = await tdht.spawn(1)
+    dht = dhts[0]
   })
 
-  afterEach((done) => {
-    tdht.teardown(done)
+  afterEach(() => {
+    return tdht.teardown()
   })
 
   it('errors when missing key', (done) => {

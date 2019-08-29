@@ -1,20 +1,20 @@
 'use strict'
 
-const times = require('async/times')
+const pTimes = require('p-times')
 const multihashing = require('multihashing-async')
-const waterfall = require('async/waterfall')
 const CID = require('cids')
 const crypto = require('libp2p-crypto')
 
-function createValues (n, callback) {
-  times(n, (i, cb) => {
+function createValues (n) {
+  return pTimes(n, async () => {
     const bytes = crypto.randomBytes(32)
+    const h = await multihashing(bytes, 'sha2-256')
 
-    waterfall([
-      (cb) => multihashing(bytes, 'sha2-256', cb),
-      (h, cb) => cb(null, { cid: new CID(h), value: bytes })
-    ], cb)
-  }, callback)
+    return {
+      cid: new CID(h),
+      value: bytes
+    }
+  })
 }
 
 module.exports = createValues

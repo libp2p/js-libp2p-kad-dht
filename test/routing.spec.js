@@ -5,7 +5,7 @@ const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
 const PeerId = require('peer-id')
-const map = require('async/map')
+const pMap = require('p-map')
 const each = require('async/each')
 const series = require('async/series')
 const range = require('lodash.range')
@@ -14,29 +14,26 @@ const random = require('lodash.random')
 const RoutingTable = require('../src/routing')
 const kadUtils = require('../src/utils')
 
-function createPeerId (n, callback) {
-  map(range(n), (i, cb) => PeerId.create({ bits: 512 }, cb), callback)
+function createPeerId (n) {
+  return pMap(range(n), () => PeerId.create({ bits: 512 }))
 }
 
 describe('Routing Table', () => {
   let table
 
-  beforeEach(function (done) {
+  beforeEach(async function () {
     this.timeout(20 * 1000)
 
-    PeerId.create({ bits: 512 }, (err, id) => {
-      expect(err).to.not.exist()
-      table = new RoutingTable(id, 20)
-      done()
-    })
+    const id = await PeerId.create({ bits: 512 })
+    table = new RoutingTable(id, 20)
   })
 
-  it('add', function (done) {
+  it('add', async function () {
     this.timeout(20 * 1000)
 
-    createPeerId(20, (err, ids) => {
-      expect(err).to.not.exist()
+    const ids = await createPeerId(20)
 
+    return new Promise((resolve) => {
       series([
         (cb) => each(range(1000), (n, cb) => {
           table.add(ids[random(ids.length - 1)], cb)
@@ -51,17 +48,17 @@ describe('Routing Table', () => {
             cb()
           })
         }, cb)
-      ], done)
+      ], resolve)
     })
   })
 
-  it('remove', function (done) {
+  it('remove', async function () {
     this.timeout(20 * 1000)
 
-    createPeerId(10, (err, peers) => {
-      expect(err).to.not.exist()
+    const peers = await createPeerId(10)
+    let k
 
-      let k
+    return new Promise((resolve) => {
       series([
         (cb) => each(peers, (peer, cbEach) => table.add(peer, cbEach), cb),
         (cb) => {
@@ -79,15 +76,16 @@ describe('Routing Table', () => {
           expect(table.size).to.be.eql(9)
           cb()
         }
-      ], done)
+      ], resolve)
     })
   })
 
-  it('closestPeer', function (done) {
+  it('closestPeer', async function () {
     this.timeout(10 * 1000)
 
-    createPeerId(4, (err, peers) => {
-      expect(err).to.not.exist()
+    const peers = await createPeerId(4)
+
+    return new Promise((resolve) => {
       series([
         (cb) => each(peers, (peer, cb) => table.add(peer, cb), cb),
         (cb) => {
@@ -98,15 +96,16 @@ describe('Routing Table', () => {
             cb()
           })
         }
-      ], done)
+      ], resolve)
     })
   })
 
-  it('closestPeers', function (done) {
+  it('closestPeers', async function () {
     this.timeout(20 * 1000)
 
-    createPeerId(18, (err, peers) => {
-      expect(err).to.not.exist()
+    const peers = await createPeerId(18)
+
+    return new Promise((resolve) => {
       series([
         (cb) => each(peers, (peer, cb) => table.add(peer, cb), cb),
         (cb) => {
@@ -117,7 +116,7 @@ describe('Routing Table', () => {
             cb()
           })
         }
-      ], done)
+      ], resolve)
     })
   })
 })

@@ -4,18 +4,17 @@
 const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
-const promisify = require('promisify-es6')
 const Store = require('interface-datastore').MemoryDatastore
 const CID = require('cids')
 const LevelStore = require('datastore-level')
 const path = require('path')
 const os = require('os')
-const multihashing = promisify(require('multihashing-async'))
+const multihashing = require('multihashing-async')
 
 const Providers = require('../src/providers')
 
-const createPeerInfo = promisify(require('./utils/create-peer-info'))
-const createValues = promisify(require('./utils/create-values'))
+const createPeerInfo = require('./utils/create-peer-info')
+const createValues = require('./utils/create-values')
 
 describe('Providers', () => {
   let infos

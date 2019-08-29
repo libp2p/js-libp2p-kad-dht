@@ -71,7 +71,6 @@ module.exports = (dht) => {
             log.error('failed to read incoming message', err)
             return
           }
-
           return msg
         }),
         pull.filter(Boolean),

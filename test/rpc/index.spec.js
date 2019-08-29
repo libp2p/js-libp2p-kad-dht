@@ -6,7 +6,7 @@ chai.use(require('dirty-chai'))
 const expect = chai.expect
 const pull = require('pull-stream')
 const lp = require('pull-length-prefixed')
-const Connection = require('interface-connection').Connection
+const { Connection } = require('interface-connection')
 const PeerBook = require('peer-book')
 const Switch = require('libp2p-switch')
 const TCP = require('libp2p-tcp')
@@ -21,15 +21,8 @@ const createPeerInfo = require('../utils/create-peer-info')
 describe('rpc', () => {
   let peerInfos
 
-  before((done) => {
-    createPeerInfo(2, (err, peers) => {
-      if (err) {
-        return done(err)
-      }
-
-      peerInfos = peers
-      done()
-    })
+  before(async () => {
+    peerInfos = await createPeerInfo(2)
   })
 
   describe('protocolHandler', () => {

@@ -24,12 +24,11 @@ const NUM_IDS = 101
 describe('Query', () => {
   let peerInfos
   let ourPeerInfo
-  before((done) => {
-    createPeerInfo(NUM_IDS, (err, peers) => {
-      ourPeerInfo = peers.shift()
-      peerInfos = peers
-      done(err)
-    })
+  before(async () => {
+    const peers = await createPeerInfo(NUM_IDS)
+
+    ourPeerInfo = peers.shift()
+    peerInfos = peers
   })
 
   describe('get closest peers', () => {

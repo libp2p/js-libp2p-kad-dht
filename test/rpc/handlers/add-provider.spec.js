@@ -5,7 +5,6 @@
 const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
-const parallel = require('async/parallel')
 const waterfall = require('async/waterfall')
 const _ = require('lodash')
 const promiseToCallback = require('promise-to-callback')
@@ -23,30 +22,25 @@ describe('rpc - handlers - AddProvider', () => {
   let tdht
   let dht
 
-  before((done) => {
-    parallel([
-      (cb) => createPeerInfo(3, cb),
-      (cb) => createValues(2, cb)
-    ], (err, res) => {
-      expect(err).to.not.exist()
-      peers = res[0]
-      values = res[1]
-      done()
-    })
+  before(async () => {
+    const res = await Promise.all([
+      createPeerInfo(3),
+      createValues(2)
+    ])
+
+    peers = res[0]
+    values = res[1]
   })
 
-  beforeEach((done) => {
+  beforeEach(async () => {
     tdht = new TestDHT()
 
-    tdht.spawn(1, (err, dhts) => {
-      expect(err).to.not.exist()
-      dht = dhts[0]
-      done()
-    })
+    const dhts = await tdht.spawn(1)
+    dht = dhts[0]
   })
 
-  afterEach((done) => {
-    tdht.teardown(done)
+  afterEach(() => {
+    return tdht.teardown()
   })
 
   describe('invalid messages', () => {

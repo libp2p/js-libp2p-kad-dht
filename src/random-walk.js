@@ -1,8 +1,7 @@
 'use strict'
 
-const promisify = require('promisify-es6')
 const crypto = require('libp2p-crypto')
-const multihashing = promisify(require('multihashing-async'))
+const multihashing = require('multihashing-async')
 const PeerId = require('peer-id')
 const assert = require('assert')
 const AbortController = require('abort-controller')
@@ -74,6 +73,7 @@ class RandomWalk {
       try {
         await this._walk(this._options.queriesPerPeriod, this._options.timeout)
       } catch (err) {
+        // TODO: Error in test logs by lack of this.peerInfo on constructor for log
         this._kadDHT._log.error('random-walk:error', err)
       }
       // Each subsequent walk should run on a `this._options.interval` interval
@@ -147,7 +147,7 @@ class RandomWalk {
 
     let peer
     try {
-      peer = await promisify(cb => this._kadDHT.findPeer(id, options, cb))()
+      peer = await this._kadDHT.findPeer(id, options)
     } catch (err) {
       if (err && err.code === 'ERR_NOT_FOUND') {
         // expected case, we asked for random stuff after all

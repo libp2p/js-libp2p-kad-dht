@@ -110,31 +110,25 @@ describe('kad utils', () => {
   })
 
   describe('keyForPublicKey', () => {
-    it('works', (done) => {
-      createPeerInfo(1, (err, peers) => {
-        expect(err).to.not.exist()
+    it('works', async () => {
+      const peers = await createPeerInfo(1)
 
-        expect(utils.keyForPublicKey(peers[0].id))
-          .to.eql(Buffer.concat([Buffer.from('/pk/'), peers[0].id.id]))
-        done()
-      })
+      expect(utils.keyForPublicKey(peers[0].id))
+        .to.eql(Buffer.concat([Buffer.from('/pk/'), peers[0].id.id]))
     })
   })
 
   describe('fromPublicKeyKey', () => {
-    it('round trips', function (done) {
+    it('round trips', async function () {
       this.timeout(40 * 1000)
 
-      createPeerInfo(50, (err, peers) => {
-        expect(err).to.not.exist()
+      const peers = await createPeerInfo(50)
 
-        peers.forEach((p, i) => {
-          const id = p.id
-          expect(utils.isPublicKeyKey(utils.keyForPublicKey(id))).to.eql(true)
-          expect(utils.fromPublicKeyKey(utils.keyForPublicKey(id)).id)
-            .to.eql(id.id)
-        })
-        done()
+      peers.forEach((p, i) => {
+        const id = p.id
+        expect(utils.isPublicKeyKey(utils.keyForPublicKey(id))).to.eql(true)
+        expect(utils.fromPublicKeyKey(utils.keyForPublicKey(id)).id)
+          .to.eql(id.id)
       })
     })
   })

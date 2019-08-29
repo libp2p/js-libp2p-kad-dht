@@ -156,11 +156,7 @@ module.exports = (dht) => ({
 
   async _verifyRecordLocallyAsync (record) {
     dht._log('verifyRecordLocally')
-    await promisify(cb => libp2pRecord.validator.verifyRecord(
-      dht.validators,
-      record,
-      cb
-    ))()
+    await libp2pRecord.validator.verifyRecord(dht.validators, record)
   },
 
   /**
@@ -285,6 +281,7 @@ module.exports = (dht) => ({
   async _getAsync (key, options) {
     dht._log('_get %b', key)
 
+    // TODO remove promisify
     const vals = await promisify(cb => dht.getMany(key, c.GET_MANY_RECORD_COUNT, options, cb))()
 
     const recs = vals.map((v) => v.val)
@@ -457,7 +454,7 @@ module.exports = (dht) => ({
   },
 
   async _verifyRecordOnlineAsync (record) {
-    await promisify(cb => libp2pRecord.validator.verifyRecord(dht.validators, record, cb))()
+    await libp2pRecord.validator.verifyRecord(dht.validators, record)
   },
 
   /**
@@ -483,7 +480,7 @@ module.exports = (dht) => ({
       throw errcode(`Node not responding with its public key: ${peer.toB58String()}`, 'ERR_INVALID_RECORD')
     }
 
-    const recPeer = await promisify(cb => PeerId.createFromPubKey(msg.record.value, cb))()
+    const recPeer = await PeerId.createFromPubKey(msg.record.value)
 
     // compare hashes of the pub key
     if (!recPeer.isEqual(peer)) {

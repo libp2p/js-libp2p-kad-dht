@@ -4,7 +4,7 @@
 const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
-const Connection = require('interface-connection').Connection
+const { Connection } = require('interface-connection')
 const pull = require('pull-stream')
 const lp = require('pull-length-prefixed')
 const series = require('async/series')
@@ -22,25 +22,19 @@ describe('Network', () => {
   let dht
   let peerInfos
 
-  before(function (done) {
+  before(async function () {
     this.timeout(10 * 1000)
-    createPeerInfo(3, (err, result) => {
-      if (err) {
-        return done(err)
-      }
 
-      peerInfos = result
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
-      dht = new KadDHT(sw)
+    peerInfos = await createPeerInfo(3)
 
-      series([
-        (cb) => sw.start(cb),
-        (cb) => dht.start(cb)
-      ], done)
-    })
+    const sw = new Switch(peerInfos[0], new PeerBook())
+    sw.transport.add('tcp', new TCP())
+    sw.connection.addStreamMuxer(Mplex)
+    sw.connection.reuse()
+    dht = new KadDHT(sw)
+
+    await sw.start()
+    await dht.start()
   })
 
   after(function (done) {

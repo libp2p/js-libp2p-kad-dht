@@ -18,36 +18,27 @@ const createPeerInfo = require('./utils/create-peer-info')
 const createDisjointTracks = require('./utils/create-disjoint-tracks')
 const kadUtils = require('../src/utils')
 
-const createDHT = (peerInfos, cb) => {
+const createDHT = async (peerInfos, cb) => {
   const sw = new Switch(peerInfos[0], new PeerBook())
   sw.transport.add('tcp', new TCP())
   sw.connection.addStreamMuxer(Mplex)
   sw.connection.reuse()
+
   const d = new DHT(sw)
-  d.start(() => cb(null, d))
+  await d.start()
+
+  return d
 }
 
 describe('Query', () => {
   let peerInfos
   let dht
 
-  before(function (done) {
+  before(async function () {
     this.timeout(5 * 1000)
-    createPeerInfo(40, (err, result) => {
-      if (err) {
-        return done(err)
-      }
 
-      peerInfos = result
-      createDHT(peerInfos, (err, d) => {
-        if (err) {
-          return done(err)
-        }
-
-        dht = d
-        done()
-      })
-    })
+    peerInfos = await createPeerInfo(40)
+    dht = await createDHT(peerInfos)
   })
 
   it('simple run', (done) => {
@@ -270,32 +261,30 @@ describe('Query', () => {
     })
   })
 
-  it('all queries stop after shutdown', (done) => {
-    createDHT(peerInfos, (err, dhtA) => {
-      if (err) {
-        return done(err)
+  it('all queries stop after shutdown', async () => {
+    const dhtA = await createDHT(peerInfos)
+    const peer = peerInfos[0]
+
+    // mock this so we can dial non existing peers
+    dhtA.switch.dial = (peer, callback) => callback()
+
+    // 1 -> 2 -> 3 -> 4
+    const topology = {
+      [peerInfos[1].id.toB58String()]: {
+        closer: [peerInfos[2]]
+      },
+      [peerInfos[2].id.toB58String()]: {
+        closer: [peerInfos[3]]
+      },
+      // Should not reach here because query gets shut down
+      [peerInfos[3].id.toB58String()]: {
+        closer: [peerInfos[4]]
       }
+    }
 
-      const peer = peerInfos[0]
+    const visited = []
 
-      // mock this so we can dial non existing peers
-      dhtA.switch.dial = (peer, callback) => callback()
-
-      // 1 -> 2 -> 3 -> 4
-      const topology = {
-        [peerInfos[1].id.toB58String()]: {
-          closer: [peerInfos[2]]
-        },
-        [peerInfos[2].id.toB58String()]: {
-          closer: [peerInfos[3]]
-        },
-        // Should not reach here because query gets shut down
-        [peerInfos[3].id.toB58String()]: {
-          closer: [peerInfos[4]]
-        }
-      }
-
-      const visited = []
+    return new Promise((resolve) => {
       const queryFunc = async (p) => {
         visited.push(p)
 
@@ -327,41 +316,38 @@ describe('Query', () => {
         // Should only visit peers up to the point where we shut down
         expect(visited).to.eql([peerInfos[1].id, peerInfos[2].id])
 
-        done()
+        resolve()
       }
     })
   })
 
-  it('queries run after shutdown return immediately', (done) => {
-    createDHT(peerInfos, (err, dhtA) => {
-      if (err) {
-        return done(err)
+  it('queries run after shutdown return immediately', async () => {
+    const dhtA = await createDHT(peerInfos)
+    const peer = peerInfos[0]
+
+    // mock this so we can dial non existing peers
+    dhtA.switch.dial = (peer, callback) => callback()
+
+    // 1 -> 2 -> 3
+    const topology = {
+      [peerInfos[1].id.toB58String()]: {
+        closer: [peerInfos[2]]
+      },
+      [peerInfos[2].id.toB58String()]: {
+        closer: [peerInfos[3]]
       }
+    }
 
-      const peer = peerInfos[0]
-
-      // mock this so we can dial non existing peers
-      dhtA.switch.dial = (peer, callback) => callback()
-
-      // 1 -> 2 -> 3
-      const topology = {
-        [peerInfos[1].id.toB58String()]: {
-          closer: [peerInfos[2]]
-        },
-        [peerInfos[2].id.toB58String()]: {
-          closer: [peerInfos[3]]
-        }
+    const queryFunc = async (p) => { // eslint-disable-line require-await
+      const res = topology[p.toB58String()] || {}
+      return {
+        closerPeers: res.closer || []
       }
+    }
 
-      const queryFunc = async (p) => { // eslint-disable-line require-await
-        const res = topology[p.toB58String()] || {}
-        return {
-          closerPeers: res.closer || []
-        }
-      }
+    const q = new Query(dhtA, peer.id.id, () => queryFunc)
 
-      const q = new Query(dhtA, peer.id.id, () => queryFunc)
-
+    return new Promise((resolve) => {
       dhtA.stop(() => {
         promiseToCallback(q.run([peerInfos[1].id]))((err, res) => {
           expect(err).to.not.exist()
@@ -370,7 +356,7 @@ describe('Query', () => {
           expect(res.paths.length).to.eql(0)
           expect(res.finalSet.size).to.eql(0)
 
-          done()
+          resolve()
         })
       })
     })

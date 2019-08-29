@@ -13,6 +13,7 @@ const crypto = require('libp2p-crypto')
 const promiseToCallback = require('promise-to-callback')
 
 const errcode = require('err-code')
+const promisify = require('promisify-es6')
 
 const RoutingTable = require('./routing')
 const utils = require('./utils')
@@ -141,6 +142,11 @@ class KadDHT extends EventEmitter {
      * @type {QueryManager}
      */
     this._queryManager = new QueryManager()
+
+    // promisify all instance methods
+    ;['start', 'stop', 'put', 'get', 'getMany', 'provide', 'findProviders', 'findPeer', 'getClosestPeers', 'getPublicKey'].forEach(method => {
+      this[method] = promisify(this[method], { context: this })
+    })
   }
 
   /**
@@ -211,7 +217,7 @@ class KadDHT extends EventEmitter {
    * @param {function(Error)} callback
    * @returns {void}
    */
-  put (key, value, options, callback) {
+  put (key, value, options = {}, callback) {
     if (typeof options === 'function') {
       callback = options
       options = {}
@@ -292,7 +298,7 @@ class KadDHT extends EventEmitter {
    * @param {function(Error, Array<{from: PeerId, val: Buffer}>)} callback
    * @returns {void}
    */
-  getMany (key, nvals, options, callback) {
+  getMany (key, nvals, options = {}, callback) {
     if (typeof options === 'function') {
       callback = options
       options = {}
