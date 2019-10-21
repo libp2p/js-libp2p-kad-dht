@@ -4,7 +4,7 @@ const cache = require('hashlru')
 const varint = require('varint')
 const PeerId = require('peer-id')
 const Key = require('interface-datastore').Key
-const Queue = require('p-queue')
+const { default: Queue } = require('p-queue')
 const promisify = require('promisify-es6')
 const toIterator = require('pull-stream-to-async-iterator')
 
