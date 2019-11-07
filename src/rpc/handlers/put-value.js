@@ -28,7 +28,7 @@ module.exports = (dht) => {
       return callback(errcode(new Error(errMsg), 'ERR_EMPTY_RECORD'))
     }
 
-    dht._verifyRecordLocally(record, (err) => {
+    promiseToCallback(dht._verifyRecordLocally(record))((err) => {
       if (err) {
         log.error(err.message)
         return callback(err)

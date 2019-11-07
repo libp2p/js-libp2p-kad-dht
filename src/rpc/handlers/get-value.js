@@ -1,7 +1,8 @@
 'use strict'
 
+const promiseToCallback = require('promise-to-callback')
 const parallel = require('async/parallel')
-const Record = require('libp2p-record').Record
+const { Record } = require('libp2p-record')
 
 const errcode = require('err-code')
 
@@ -48,9 +49,9 @@ module.exports = (dht) => {
       }
     }
 
-    parallel([
-      (cb) => dht._checkLocalDatastore(key, cb),
-      (cb) => dht._betterPeersToQuery(msg, peer, cb)
+    parallel([ // TODO
+      (cb) => promiseToCallback(dht._checkLocalDatastore(key))(cb),
+      (cb) => promiseToCallback(dht._betterPeersToQuery(msg, peer))(cb)
     ], (err, res) => {
       if (err) {
         return callback(err)

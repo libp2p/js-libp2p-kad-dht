@@ -2,7 +2,7 @@
 
 const distance = require('xor-distance')
 const utils = require('./utils')
-const map = require('async/map')
+const pMap = require('p-map')
 
 /**
  * Maintains a list of peerIds sorted by distance from a DHT key.
@@ -38,30 +38,22 @@ class PeerDistanceList {
    * Add a peerId to the list.
    *
    * @param {PeerId} peerId
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  add (peerId, callback) {
+  async add (peerId) {
     if (this.peerDistances.find(pd => pd.peerId.id.equals(peerId.id))) {
-      return callback()
+      return
     }
 
-    utils.convertPeerId(peerId, (err, dhtKey) => {
-      if (err) {
-        return callback(err)
-      }
+    const dhtKey = await utils.convertPeerId(peerId)
+    const el = {
+      peerId,
+      distance: distance(this.originDhtKey, dhtKey)
+    }
 
-      const el = {
-        peerId,
-        distance: distance(this.originDhtKey, dhtKey)
-      }
-
-      this.peerDistances.push(el)
-      this.peerDistances.sort((a, b) => distance.compare(a.distance, b.distance))
-      this.peerDistances = this.peerDistances.slice(0, this.capacity)
-
-      callback()
-    })
+    this.peerDistances.push(el)
+    this.peerDistances.sort((a, b) => distance.compare(a.distance, b.distance))
+    this.peerDistances = this.peerDistances.slice(0, this.capacity)
   }
 
   /**
@@ -69,32 +61,27 @@ class PeerDistanceList {
    * to the origin key than the furthest peerId in the PeerDistanceList.
    *
    * @param {Array<PeerId>} peerIds
-   * @param {function(Error, Boolean)} callback
-   * @returns {void}
+   * @returns {Boolean}
    */
-  anyCloser (peerIds, callback) {
+  async anyCloser (peerIds) {
     if (!peerIds.length) {
-      return callback(null, false)
+      return false
     }
 
     if (!this.length) {
-      return callback(null, true)
+      return true
     }
 
-    map(peerIds, (peerId, cb) => utils.convertPeerId(peerId, cb), (err, dhtKeys) => {
-      if (err) {
-        return callback(err)
-      }
+    const dhtKeys = await pMap(peerIds, (peerId) => utils.convertPeerId(peerId))
 
-      const furthestDistance = this.peerDistances[this.peerDistances.length - 1].distance
-      for (const dhtKey of dhtKeys) {
-        const keyDistance = distance(this.originDhtKey, dhtKey)
-        if (distance.compare(keyDistance, furthestDistance) < 0) {
-          return callback(null, true)
-        }
+    const furthestDistance = this.peerDistances[this.peerDistances.length - 1].distance
+    for (const dhtKey of dhtKeys) {
+      const keyDistance = distance(this.originDhtKey, dhtKey)
+      if (distance.compare(keyDistance, furthestDistance) < 0) {
+        return true
       }
-      return callback(null, false)
-    })
+    }
+    return false
   }
 }
 

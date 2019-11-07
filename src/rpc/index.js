@@ -2,6 +2,7 @@
 
 const pull = require('pull-stream')
 const lp = require('pull-length-prefixed')
+const promiseToCallback = require('promise-to-callback')
 
 const Message = require('../message')
 const handlers = require('./handlers')
@@ -23,8 +24,7 @@ module.exports = (dht) => {
    * @private
    */
   function handleMessage (peer, msg, callback) {
-    // update the peer
-    dht._add(peer, (err) => {
+    promiseToCallback(dht._add(peer))((err) => {
       if (err) {
         log.error('Failed to update the kbucket store')
         log.error(err)

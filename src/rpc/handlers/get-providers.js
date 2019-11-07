@@ -32,7 +32,7 @@ module.exports = (dht) => {
     const [has, peers, closer] = await Promise.all([
       dht.datastore.has(dsKey),
       dht.providers.getProviders(cid),
-      dht._betterPeersToQueryAsync(msg, peer)
+      dht._betterPeersToQuery(msg, peer)
     ])
 
     const providers = peers.map((p) => {

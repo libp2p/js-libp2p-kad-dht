@@ -4,6 +4,7 @@ const pull = require('pull-stream')
 const timeout = require('async/timeout')
 const lp = require('pull-length-prefixed')
 const setImmediate = require('async/setImmediate')
+const promisify = require('promisify-es6')
 
 const errcode = require('err-code')
 
@@ -32,20 +33,16 @@ class Network {
 
   /**
    * Start the network.
-   *
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @async
    */
-  start (callback) {
-    const cb = (err) => setImmediate(() => callback(err))
-
+  start () {
     if (this._running) {
-      return cb(errcode(new Error('Network is already running'), 'ERR_NETWORK_ALREADY_RUNNING'))
+      throw errcode(new Error('Network is already running'), 'ERR_NETWORK_ALREADY_RUNNING')
     }
 
     // TODO add a way to check if switch has started or not
     if (!this.dht.isStarted) {
-      return cb(errcode(new Error('Can not start network'), 'ERR_CANNOT_START_NETWORK'))
+      throw errcode(new Error('Can not start network'), 'ERR_CANNOT_START_NETWORK')
     }
 
     this._running = true
@@ -55,27 +52,21 @@ class Network {
 
     // handle new connections
     this.dht.switch.on('peer-mux-established', this._onPeerConnected)
-
-    cb()
   }
 
   /**
    * Stop all network activity.
    *
-   * @param {function(Error)} callback
    * @returns {void}
    */
-  stop (callback) {
-    const cb = (err) => setImmediate(() => callback(err))
-
+  stop () {
     if (!this.dht.isStarted && !this.isStarted) {
-      return cb(errcode(new Error('Network is already stopped'), 'ERR_NETWORK_ALREADY_STOPPED'))
+      throw errcode(new Error('Network is already stopped'), 'ERR_NETWORK_ALREADY_STOPPED')
     }
     this._running = false
     this.dht.switch.removeListener('peer-mux-established', this._onPeerConnected)
 
     this.dht.switch.unhandle(c.PROTOCOL_DHT)
-    cb()
   }
 
   /**
@@ -101,30 +92,21 @@ class Network {
    * Handle new connections in the switch.
    *
    * @param {PeerInfo} peer
-   * @returns {void}
+   * @returns {Promise<void>}
    * @private
    */
-  _onPeerConnected (peer) {
+  async _onPeerConnected (peer) {
     if (!this.isConnected) {
       return this._log.error('Network is offline')
     }
 
-    this.dht.switch.dial(peer, c.PROTOCOL_DHT, (err, conn) => {
-      if (err) {
-        return this._log('%s does not support protocol: %s', peer.id.toB58String(), c.PROTOCOL_DHT)
-      }
+    const conn = await promisify(cb => this.dht.switch.dial(peer, c.PROTOCOL_DHT, cb))()
 
-      // TODO: conn.close()
-      pull(pull.empty(), conn)
+    // TODO: conn.close()
+    pull(pull.empty(), conn)
 
-      this.dht._add(peer, (err) => {
-        if (err) {
-          return this._log.error('Failed to add to the routing table', err)
-        }
-
-        this._log('added to the routing table: %s', peer.id.toB58String())
-      })
-    })
+    await this.dht._add(peer)
+    this._log('added to the routing table: %s', peer.id.toB58String())
   }
 
   /**

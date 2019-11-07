@@ -1,6 +1,7 @@
 'use strict'
 
 const waterfall = require('async/waterfall')
+const promiseToCallback = require('promise-to-callback')
 
 const Message = require('../../message')
 const utils = require('../../utils')
@@ -25,7 +26,7 @@ module.exports = (dht) => {
           return cb(null, [dht.peerInfo])
         }
 
-        dht._betterPeersToQuery(msg, peer, cb)
+        promiseToCallback(dht._betterPeersToQuery(msg, peer))(cb)
       },
       (closer, cb) => {
         const response = new Message(msg.type, Buffer.alloc(0), msg.clusterLevel)
