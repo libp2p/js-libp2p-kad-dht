@@ -21,15 +21,8 @@ const createPeerInfo = require('../utils/create-peer-info')
 describe('rpc', () => {
   let peerInfos
 
-  before((done) => {
-    createPeerInfo(2, (err, peers) => {
-      if (err) {
-        return done(err)
-      }
-
-      peerInfos = peers
-      done()
-    })
+  before(async () => {
+    peerInfos = await createPeerInfo(2)
   })
 
   describe('protocolHandler', () => {

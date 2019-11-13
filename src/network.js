@@ -1,9 +1,8 @@
 'use strict'
 
 const pull = require('pull-stream')
-const timeout = require('async/timeout')
+const pTimeout = require('p-timeout')
 const lp = require('pull-length-prefixed')
-const setImmediate = require('async/setImmediate')
 const promisify = require('promisify-es6')
 
 const errcode = require('err-code')
@@ -33,7 +32,7 @@ class Network {
 
   /**
    * Start the network.
-   * @async
+   * @returns {void}
    */
   start () {
     if (this._running) {
@@ -56,7 +55,6 @@ class Network {
 
   /**
    * Stop all network activity.
-   *
    * @returns {void}
    */
   stop () {
@@ -111,26 +109,22 @@ class Network {
 
   /**
    * Send a request and record RTT for latency measurements.
-   *
+   * @async
    * @param {PeerId} to - The peer that should receive a message
    * @param {Message} msg - The message to send.
    * @param {function(Error, Message)} callback
-   * @returns {void}
+   * @returns {Promise<Message>}
    */
-  sendRequest (to, msg, callback) {
+  async sendRequest (to, msg) {
     // TODO: record latency
     if (!this.isConnected) {
-      return callback(errcode(new Error('Network is offline'), 'ERR_NETWORK_OFFLINE'))
+      throw errcode(new Error('Network is offline'), 'ERR_NETWORK_OFFLINE')
     }
 
     this._log('sending to: %s', to.toB58String())
-    this.dht.switch.dial(to, c.PROTOCOL_DHT, (err, conn) => {
-      if (err) {
-        return callback(err)
-      }
 
-      this._writeReadMessage(conn, msg.serialize(), callback)
-    })
+    const conn = await promisify(cb => this.dht.switch.dial(to, c.PROTOCOL_DHT, cb))()
+    return this._writeReadMessage(conn, msg.serialize())
   }
 
   /**
@@ -138,23 +132,17 @@ class Network {
    *
    * @param {PeerId} to
    * @param {Message} msg
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  sendMessage (to, msg, callback) {
+  async sendMessage (to, msg) {
     if (!this.isConnected) {
-      return setImmediate(() => callback(errcode(new Error('Network is offline'), 'ERR_NETWORK_OFFLINE')))
+      throw errcode(new Error('Network is offline'), 'ERR_NETWORK_OFFLINE')
     }
 
     this._log('sending to: %s', to.toB58String())
 
-    this.dht.switch.dial(to, c.PROTOCOL_DHT, (err, conn) => {
-      if (err) {
-        return callback(err)
-      }
-
-      this._writeMessage(conn, msg.serialize(), callback)
-    })
+    const conn = await promisify(cb => this.dht.switch.dial(to, c.PROTOCOL_DHT, cb))()
+    return this._writeMessage(conn, msg.serialize())
   }
 
   /**
@@ -164,15 +152,14 @@ class Network {
    *
    * @param {Connection} conn - the connection to use
    * @param {Buffer} msg - the message to send
-   * @param {function(Error, Message)} callback
-   * @returns {void}
+   * @returns {Message}
    * @private
    */
-  _writeReadMessage (conn, msg, callback) {
-    timeout(
-      writeReadMessage,
+  _writeReadMessage (conn, msg) {
+    return pTimeout(
+      writeReadMessage(conn, msg),
       this.readMessageTimeout
-    )(conn, msg, callback)
+    )
   }
 
   /**
@@ -180,45 +167,51 @@ class Network {
    *
    * @param {Connection} conn - the connection to use
    * @param {Buffer} msg - the message to send
-   * @param {function(Error)} callback
-   * @returns {void}
+   * @returns {Promise<void>}
    * @private
    */
-  _writeMessage (conn, msg, callback) {
+  _writeMessage (conn, msg) {
+    return new Promise((resolve, reject) => {
+      pull(
+        pull.values([msg]),
+        lp.encode(),
+        conn,
+        pull.onEnd((err) => {
+          if (err) return reject(err)
+          resolve()
+        })
+      )
+    })
+  }
+}
+
+function writeReadMessage (conn, msg) {
+  return new Promise((resolve, reject) => {
     pull(
       pull.values([msg]),
       lp.encode(),
       conn,
-      pull.onEnd(callback)
+      pull.filter((msg) => msg.length < c.maxMessageSize),
+      lp.decode(),
+      pull.collect((err, res) => {
+        if (err) {
+          return reject(err)
+        }
+        if (res.length === 0) {
+          return reject(errcode(new Error('No message received'), 'ERR_NO_MESSAGE_RECEIVED'))
+        }
+
+        let response
+        try {
+          response = Message.deserialize(res[0])
+        } catch (err) {
+          return reject(errcode(err, 'ERR_FAILED_DESERIALIZE_RESPONSE'))
+        }
+
+        resolve(response)
+      })
     )
-  }
-}
-
-function writeReadMessage (conn, msg, callback) {
-  pull(
-    pull.values([msg]),
-    lp.encode(),
-    conn,
-    pull.filter((msg) => msg.length < c.maxMessageSize),
-    lp.decode(),
-    pull.collect((err, res) => {
-      if (err) {
-        return callback(err)
-      }
-      if (res.length === 0) {
-        return callback(errcode(new Error('No message received'), 'ERR_NO_MESSAGE_RECEIVED'))
-      }
-
-      let response
-      try {
-        response = Message.deserialize(res[0])
-      } catch (err) {
-        return callback(errcode(err, 'ERR_FAILED_DESERIALIZE_RESPONSE'))
-      }
-
-      callback(null, response)
-    })
-  )
+  })
 }
 
 module.exports = Network

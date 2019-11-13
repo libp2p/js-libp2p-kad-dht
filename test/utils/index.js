@@ -7,19 +7,14 @@ const { sortClosestPeers } = require('../../src/utils')
  *
  * @param {Array<PeerInfo>} peers
  * @param {Buffer} target
- * @param {function(Error, Array<PeerInfo>)} callback
- * @returns {void}
+ * @returns {Array<PeerInfo>}
  */
-exports.sortClosestPeerInfos = (peers, target, callback) => {
-  sortClosestPeers(peers.map(peerInfo => peerInfo.id), target, (err, sortedPeerIds) => {
-    if (err) return callback(err)
+exports.sortClosestPeerInfos = async (peers, target) => {
+  const sortedPeerIds = await sortClosestPeers(peers.map(peerInfo => peerInfo.id), target)
 
-    const sortedPeerInfos = sortedPeerIds.map((peerId) => {
-      return peers.find((peerInfo) => {
-        return peerInfo.id.isEqual(peerId)
-      })
+  return sortedPeerIds.map((peerId) => {
+    return peers.find((peerInfo) => {
+      return peerInfo.id.isEqual(peerId)
     })
-
-    callback(null, sortedPeerInfos)
   })
 }

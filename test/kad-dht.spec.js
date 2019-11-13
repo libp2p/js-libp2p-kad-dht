@@ -7,8 +7,6 @@ chai.use(require('chai-checkmark'))
 const expect = chai.expect
 const promisify = require('promisify-es6')
 const sinon = require('sinon')
-const series = require('async/series')
-const each = require('async/each')
 const { Record } = require('libp2p-record')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
@@ -21,6 +19,7 @@ const errcode = require('err-code')
 const pMapSeries = require('p-map-series')
 const pEachSeries = require('p-each-series')
 const pRetry = require('p-retry')
+const pTimeout = require('p-timeout')
 const delay = require('delay')
 
 const KadDHT = require('../src')
@@ -65,35 +64,38 @@ const connect = async (a, b) => {
   await find(b, a)
 }
 
-// function bootstrap (dhts) {
-//   dhts.forEach((dht) => {
-//     dht.randomWalk._walk(1, 10000, () => {})
-//   })
-// }
+function bootstrap (dhts) {
+  dhts.forEach((dht) => {
+    dht.randomWalk._walk(1, 10000)
+  })
+}
 
-// function waitForWellFormedTables (dhts, minPeers, avgPeers, waitTimeout, callback) {
-//   timeout((cb) => {
-//     retry({ times: 50, interval: 200 }, (cb) => {
-//       let totalPeers = 0
+function waitForWellFormedTables (dhts, minPeers, avgPeers, waitTimeout) {
+  return pTimeout(pRetry(async () => {
+    let totalPeers = 0
 
-//       const ready = dhts.map((dht) => {
-//         const rtlen = dht.routingTable.size
-//         totalPeers += rtlen
-//         if (minPeers > 0 && rtlen < minPeers) {
-//           return false
-//         }
-//         const actualAvgPeers = totalPeers / dhts.length
-//         if (avgPeers > 0 && actualAvgPeers < avgPeers) {
-//           return false
-//         }
-//         return true
-//       })
+    const ready = dhts.map((dht) => {
+      const rtlen = dht.routingTable.size
+      totalPeers += rtlen
+      if (minPeers > 0 && rtlen < minPeers) {
+        return false
+      }
+      const actualAvgPeers = totalPeers / dhts.length
+      if (avgPeers > 0 && actualAvgPeers < avgPeers) {
+        return false
+      }
+      return true
+    })
 
-//       const done = ready.every(Boolean)
-//       cb(done ? null : new Error('not done yet'))
-//     }, cb)
-//   }, waitTimeout)(callback)
-// }
+    if (ready.every(Boolean)) {
+      return
+    }
+    await delay(200)
+    throw new Error('not done yet')
+  }, {
+    retries: 50
+  }), waitTimeout)
+}
 
 // Count how many peers are in b but are not in a
 function countDiffPeers (a, b) {
@@ -402,8 +404,7 @@ describe('KadDHT', () => {
     return tdht.teardown()
   })
 
-  // TODO
-  it.skip('put - get should fail if unrecognized key prefix in get', async function () {
+  it('put - get should fail if unrecognized key prefix in get', async function () {
     this.timeout(10 * 1000)
 
     const key = Buffer.from('/v2/hello')
@@ -416,6 +417,7 @@ describe('KadDHT', () => {
 
     try {
       await dhtA.put(key, value)
+      await dhtA.get(key)
     } catch (err) {
       expect(err).to.exist()
       return tdht.teardown()
@@ -539,34 +541,23 @@ describe('KadDHT', () => {
     return tdht.teardown()
   })
 
-  // TODO
-  it.skip('random-walk', function () {
+  it('random-walk', async function () {
     this.timeout(20 * 1000)
 
-    // const nDHTs = 20
-    // const tdht = new TestDHT()
+    const nDHTs = 20
+    const tdht = new TestDHT()
 
-    // // random walk disabled for a manual usage
-    // const dhts = await tdht.spawn(nDHTs)
+    // random walk disabled for a manual usage
+    const dhts = await tdht.spawn(nDHTs)
 
-    // return tdht.teardown()
-    // tdht.spawn(nDHTs, (err, dhts) => {
-    //   expect(err).to.not.exist()
+    await Promise.all(
+      Array.from({ length: nDHTs }).map((_, i) => connect(dhts[i], dhts[(i + 1) % nDHTs]))
+    )
 
-    //   series([
-    //     // ring connect
-    //     (cb) => times(nDHTs, (i, cb) => {
-    //       connect(dhts[i], dhts[(i + 1) % nDHTs], cb)
-    //     }, (err) => cb(err)),
-    //     (cb) => {
-    //       bootstrap(dhts)
-    //       waitForWellFormedTables(dhts, 7, 0, 20 * 1000, cb)
-    //     }
-    //   ], (err) => {
-    //     expect(err).to.not.exist()
-    //     tdht.teardown(done)
-    //   })
-    // })
+    bootstrap(dhts)
+    await waitForWellFormedTables(dhts, 7, 0, 20 * 1000)
+
+    return tdht.teardown()
   })
 
   it('layered get', async function () {
@@ -615,110 +606,83 @@ describe('KadDHT', () => {
     return tdht.teardown()
   })
 
-  it.skip('find peer query', function (done) {
+  it('find peer query', async function () {
     this.timeout(40 * 1000)
 
     // Create 101 nodes
     const nDHTs = 100
     const tdht = new TestDHT()
+    const dhts = await tdht.spawn(nDHTs)
 
-    tdht.spawn(nDHTs, (err, dhts) => {
-      expect(err).to.not.exist()
+    const dhtsById = new Map(dhts.map((d) => [d.peerInfo.id, d]))
+    const ids = [...dhtsById.keys()]
 
-      const dhtsById = new Map(dhts.map((d) => [d.peerInfo.id, d]))
-      const ids = [...dhtsById.keys()]
+    // The origin node for the FIND_PEER query
+    const guy = dhts[0]
 
-      // The origin node for the FIND_PEER query
-      const guy = dhts[0]
+    // The key
+    const val = Buffer.from('foobar')
 
-      // The key
-      const val = Buffer.from('foobar')
-      // The key as a DHT key
-      let rtval
+    // Hash the key into the DHT's key format
+    const rtval = await kadUtils.convertBuffer(val)
+    // Make connections between nodes close to each other
+    const sorted = await kadUtils.sortClosestPeers(ids, rtval)
 
-      series([
-        // Hash the key into the DHT's key format
-        (cb) => kadUtils.convertBuffer(val, (err, dhtKey) => {
-          expect(err).to.not.exist()
-          rtval = dhtKey
-          cb()
-        }),
-        // Make connections between nodes close to each other
-        (cb) => kadUtils.sortClosestPeers(ids, rtval, (err, sorted) => {
-          expect(err).to.not.exist()
-
-          const conns = []
-          const maxRightIndex = sorted.length - 1
-          for (let i = 0; i < sorted.length; i++) {
-            // Connect to 5 nodes on either side (10 in total)
-            for (const distance of [1, 3, 11, 31, 63]) {
-              let rightIndex = i + distance
-              if (rightIndex > maxRightIndex) {
-                rightIndex = maxRightIndex * 2 - (rightIndex + 1)
-              }
-              let leftIndex = i - distance
-              if (leftIndex < 0) {
-                leftIndex = 1 - leftIndex
-              }
-              conns.push([sorted[leftIndex], sorted[rightIndex]])
-            }
-          }
-
-          each(conns, (conn, _cb) => connect(dhtsById.get(conn[0]), dhtsById.get(conn[1]), _cb), cb)
-        }),
-        (cb) => {
-          // Get the alpha (3) closest peers to the key from the origin's
-          // routing table
-          const rtablePeers = guy.routingTable.closestPeers(rtval, c.ALPHA)
-          expect(rtablePeers).to.have.length(c.ALPHA)
-
-          // The set of peers used to initiate the query (the closest alpha
-          // peers to the key that the origin knows about)
-          const rtableSet = {}
-          rtablePeers.forEach((p) => {
-            rtableSet[p.toB58String()] = true
-          })
-
-          const guyIndex = ids.findIndex(i => i.id.equals(guy.peerInfo.id.id))
-          const otherIds = ids.slice(0, guyIndex).concat(ids.slice(guyIndex + 1))
-          series([
-            // Make the query
-            (cb) => guy.getClosestPeers(val, cb),
-            // Find the closest connected peers to the key
-            (cb) => kadUtils.sortClosestPeers(otherIds, rtval, cb)
-          ], (err, res) => {
-            expect(err).to.not.exist()
-
-            // Query response
-            const out = res[0]
-
-            // All connected peers in order of distance from key
-            const actualClosest = res[1]
-
-            // Expect that the response includes nodes that are were not
-            // already in the origin's routing table (ie it went out to
-            // the network to find closer peers)
-            expect(out.filter((p) => !rtableSet[p.toB58String()]))
-              .to.not.be.empty()
-
-            // Expect that there were kValue peers found
-            expect(out).to.have.length(c.K)
-
-            // The expected closest kValue peers to the key
-            const exp = actualClosest.slice(0, c.K)
-
-            // Expect the kValue peers found to be the kValue closest connected peers
-            // to the key
-            expect(countDiffPeers(exp, out)).to.eql(0)
-
-            cb()
-          })
+    const conns = []
+    const maxRightIndex = sorted.length - 1
+    for (let i = 0; i < sorted.length; i++) {
+      // Connect to 5 nodes on either side (10 in total)
+      for (const distance of [1, 3, 11, 31, 63]) {
+        let rightIndex = i + distance
+        if (rightIndex > maxRightIndex) {
+          rightIndex = maxRightIndex * 2 - (rightIndex + 1)
         }
-      ], (err) => {
-        expect(err).to.not.exist()
-        tdht.teardown(done)
-      })
+        let leftIndex = i - distance
+        if (leftIndex < 0) {
+          leftIndex = 1 - leftIndex
+        }
+        conns.push([sorted[leftIndex], sorted[rightIndex]])
+      }
+    }
+
+    await Promise.all(conns.map((conn) => connect(dhtsById.get(conn[0]), dhtsById.get(conn[1]))))
+
+    // Get the alpha (3) closest peers to the key from the origin's
+    // routing table
+    const rtablePeers = guy.routingTable.closestPeers(rtval, c.ALPHA)
+    expect(rtablePeers).to.have.length(c.ALPHA)
+
+    // The set of peers used to initiate the query (the closest alpha
+    // peers to the key that the origin knows about)
+    const rtableSet = {}
+    rtablePeers.forEach((p) => {
+      rtableSet[p.toB58String()] = true
     })
+
+    const guyIndex = ids.findIndex(i => i.id.equals(guy.peerInfo.id.id))
+    const otherIds = ids.slice(0, guyIndex).concat(ids.slice(guyIndex + 1))
+
+    // Make the query
+    const out = await guy.getClosestPeers(val)
+    const actualClosest = await kadUtils.sortClosestPeers(otherIds, rtval)
+
+    // Expect that the response includes nodes that are were not
+    // already in the origin's routing table (ie it went out to
+    // the network to find closer peers)
+    expect(out.filter((p) => !rtableSet[p.toB58String()]))
+      .to.not.be.empty()
+
+    // Expect that there were kValue peers found
+    expect(out).to.have.length(c.K)
+
+    // The expected closest kValue peers to the key
+    const exp = actualClosest.slice(0, c.K)
+
+    // Expect the kValue peers found to be the kValue closest connected peers
+    // to the key
+    expect(countDiffPeers(exp, out)).to.eql(0)
+
+    return tdht.teardown()
   })
 
   it('getClosestPeers', async function () {
@@ -738,7 +702,7 @@ describe('KadDHT', () => {
     return tdht.teardown()
   })
 
-  describe.skip('getPublicKey', () => {
+  describe('getPublicKey', () => {
     it('already known', async function () {
       this.timeout(20 * 1000)
 
@@ -751,6 +715,10 @@ describe('KadDHT', () => {
       const key = await dhts[0].getPublicKey(ids[1])
       expect(key).to.eql(dhts[1].peerInfo.id.pubKey)
 
+      // TODO: Switch not closing well, but it will be removed
+      // (invalid transition: STOPPED -> done)
+      await delay(100)
+
       return tdht.teardown()
     })
 
@@ -761,6 +729,7 @@ describe('KadDHT', () => {
       const dhts = await tdht.spawn(2)
 
       const ids = dhts.map((d) => d.peerInfo.id)
+
       await connect(dhts[0], dhts[1])
 
       // remove the pub key to be sure it is fetched
@@ -909,17 +878,22 @@ describe('KadDHT', () => {
   })
 
   describe('errors', () => {
-    it.skip('get many should fail if only has one peer', async function () {
+    it('get many should fail if only has one peer', async function () {
       this.timeout(20 * 1000)
 
       const tdht = new TestDHT()
       const dhts = await tdht.spawn(1)
+
+      // TODO: Switch not closing well, but it will be removed
+      // (invalid transition: STOPPED -> done)
+      await delay(100)
 
       try {
         await dhts[0].getMany(Buffer.from('/v/hello'), 5)
       } catch (err) {
         expect(err).to.exist()
         expect(err.code).to.be.eql('ERR_NO_PEERS_IN_ROUTING_TABLE')
+
         return tdht.teardown()
       }
       throw new Error('get many should fail if only has one peer')
@@ -1078,7 +1052,7 @@ describe('KadDHT', () => {
       expect(res[6]).to.eql(Buffer.from('world'))
     })
 
-    it.skip('put to several nodes in series with different values and get the last one in a subset of them', async function () {
+    it('put to several nodes in series with different values and get the last one in a subset of them', async function () {
       this.timeout(20 * 1000)
       const key = Buffer.from('/v/hallo')
       const result = Buffer.from('world4')
@@ -1100,7 +1074,6 @@ describe('KadDHT', () => {
       expect(res[1]).to.eql(result)
       expect(res[2]).to.eql(result)
       expect(res[3]).to.eql(result)
-      // TODO: error
     })
   })
 })

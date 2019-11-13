@@ -122,7 +122,7 @@ class RoutingTable {
    * Remove a given peer from the table.
    *
    * @param {PeerId} peer
-   * @returns {Promose<void>}
+   * @returns {Promise<void>}
    */
   async remove (peer) {
     const id = await utils.convertPeerId(peer)

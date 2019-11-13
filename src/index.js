@@ -9,7 +9,6 @@ const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const crypto = require('libp2p-crypto')
 
-const promisify = require('promisify-es6')
 const pFilter = require('p-filter')
 const pTimeout = require('p-timeout')
 
@@ -228,7 +227,7 @@ class KadDHT extends EventEmitter {
     const minPeers = options.minPeers || peers.length // Ensure we have a default `minPeers`
 
     if (minPeers > results.length) {
-      const error = errcode(new Error('Failed to put value to enough peers'), 'ERR_NOT_ENOUGH_PUT_PEERS')
+      const error = errcode(new Error(`Failed to put value to enough peers: ${results.length}/${minPeers}`), 'ERR_NOT_ENOUGH_PUT_PEERS')
       this._log.error(error)
       throw error
     }
@@ -241,7 +240,7 @@ class KadDHT extends EventEmitter {
    * @param {Buffer} key
    * @param {Object} [options] - get options
    * @param {number} [options.timeout] - optional timeout (default: 60000)
-   * @returns {Promise<void>}
+   * @returns {Promise<{from: PeerId, val: Buffer}>}
    */
   get (key, options = {}) {
     options.timeout = options.timeout || c.minute
@@ -256,7 +255,7 @@ class KadDHT extends EventEmitter {
    * @param {number} nvals
    * @param {Object} [options] - get options
    * @param {number} [options.timeout] - optional timeout (default: 60000)
-   * @returns {Promise<Array<{from: PeerId, val: Buffer}>>} // TODO structure docs
+   * @returns {Promise<Array<{from: PeerId, val: Buffer}>>}
    */
   async getMany (key, nvals, options = {}) {
     options.timeout = options.timeout || c.minute
@@ -266,7 +265,6 @@ class KadDHT extends EventEmitter {
     let vals = []
     let localRec
 
-    // TODO: should we remove this logic?
     try {
       localRec = await this._getLocal(key)
     } catch (err) {
@@ -275,7 +273,6 @@ class KadDHT extends EventEmitter {
       }
     }
 
-    // TODO: should we remove this logic?
     if (localRec) {
       vals.push({
         val: localRec.value,
@@ -425,7 +422,7 @@ class KadDHT extends EventEmitter {
       // try dht directly
       const pkKey = utils.keyForPublicKey(peer)
       const value = await this.get(pkKey)
-      pk = crypto.unmarshalPublicKey(value)
+      pk = crypto.keys.unmarshalPublicKey(value)
     }
 
     info.id = new PeerId(peer.id, null, pk)
@@ -468,7 +465,7 @@ class KadDHT extends EventEmitter {
     // Add peer as provider
     await this.providers.addProvider(key, this.peerInfo.id)
 
-    // Notice closest peers
+    // Notify closest peers
     const peers = await this.getClosestPeers(key.buffer)
     const msg = new Message(Message.TYPES.ADD_PROVIDER, key.buffer, 0)
     msg.providerPeers = [this.peerInfo]
@@ -476,7 +473,7 @@ class KadDHT extends EventEmitter {
     await Promise.all(peers.map(async (peer) => {
       this._log('putProvider %s to %s', key.toBaseEncodedString(), peer.toB58String())
       try {
-        await promisify(cb => this.network.sendMessage(peer, msg, cb))()
+        await this.network.sendMessage(peer, msg)
       } catch (err) {
         errors.push(err)
       }
@@ -551,7 +548,7 @@ class KadDHT extends EventEmitter {
       // so there are no per-path variables in this scope.
       // Just return the actual query function.
       return async (peer) => {
-        const msg = await this._findPeerSingle(peer, id) // TODO: change
+        const msg = await this._findPeerSingle(peer, id)
         const match = msg.closerPeers.find((p) => p.id.isEqual(id))
 
         // found it

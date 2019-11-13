@@ -61,7 +61,7 @@ class Providers {
   /**
    * Release any resources.
    *
-   * @returns {undefined}
+   * @returns {void}
    */
   stop () {
     if (this._cleaner) {
@@ -73,8 +73,7 @@ class Providers {
   /**
    * Check all providers if they are still valid, and if not delete them.
    *
-   * @returns {Promise}
-   *
+   * @returns {Promise<void>}
    * @private
    */
   _cleanup () {
@@ -178,7 +177,7 @@ class Providers {
    *
    * @param {CID} cid
    * @param {PeerId} provider
-   * @returns {Promise}
+   * @returns {Promise<void>}
    */
   async addProvider (cid, provider) { // eslint-disable-line require-await
     return this.syncQueue.add(async () => {
@@ -232,7 +231,7 @@ function makeProviderKey (cid) {
  * @param {CID} cid
  * @param {PeerId} peer
  * @param {number} time
- * @returns {Promise}
+ * @returns {Promise<void>}
  *
  * @private
  */

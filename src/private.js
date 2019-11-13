@@ -3,7 +3,6 @@
 const errcode = require('err-code')
 const pTimeout = require('p-timeout')
 
-const promisify = require('promisify-es6')
 const PeerId = require('peer-id')
 const libp2pRecord = require('libp2p-record')
 const PeerInfo = require('peer-info')
@@ -179,7 +178,7 @@ module.exports = (dht) => ({
     dht._log('_findPeerSingle %s', peer.toB58String())
     const msg = new Message(Message.TYPES.FIND_NODE, target.id, 0)
 
-    return promisify(cb => dht.network.sendRequest(peer, msg, cb))()
+    return dht.network.sendRequest(peer, msg)
   },
 
   /**
@@ -197,7 +196,7 @@ module.exports = (dht) => ({
     const msg = new Message(Message.TYPES.PUT_VALUE, key, 0)
     msg.record = rec
 
-    const resp = await promisify(cb => dht.network.sendRequest(target, msg, cb))()
+    const resp = await dht.network.sendRequest(target, msg)
 
     if (!resp.record.value.equals(Record.deserialize(rec).value)) {
       throw errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID')
@@ -362,7 +361,7 @@ module.exports = (dht) => ({
 
   async _getValueSingle (peer, key) { // eslint-disable-line require-await
     const msg = new Message(Message.TYPES.GET_VALUE, key, 0)
-    return promisify(cb => dht.network.sendRequest(peer, msg, cb))()
+    return dht.network.sendRequest(peer, msg)
   },
 
   /**
@@ -500,6 +499,6 @@ module.exports = (dht) => ({
    */
   async _findProvidersSingle (peer, key) { // eslint-disable-line require-await
     const msg = new Message(Message.TYPES.GET_PROVIDERS, key.buffer, 0)
-    return promisify(cb => dht.network.sendRequest(peer, msg, cb))()
+    return dht.network.sendRequest(peer, msg)
   }
 })
