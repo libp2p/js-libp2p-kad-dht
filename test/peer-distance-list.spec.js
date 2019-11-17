@@ -7,7 +7,7 @@ const expect = chai.expect
 const PeerId = require('peer-id')
 
 const kadUtils = require('../src/utils')
-const PeerDistanceList = require('../src/peer-distance-list')
+const PeerDistanceList = require('../src/peer-list/peer-distance-list')
 
 describe('PeerDistanceList', () => {
   const p1 = new PeerId(Buffer.from('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a31'))

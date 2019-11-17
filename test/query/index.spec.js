@@ -47,8 +47,10 @@ describe('Query', () => {
 
     before('create a dht', () => {
       dht = new DHT({
-        _peerInfo: ourPeerInfo,
-        _peerBook: new PeerBook()
+        sw: {
+          _peerInfo: ourPeerInfo,
+          _peerBook: new PeerBook()
+        }
       })
     })
 

@@ -30,7 +30,7 @@ describe('Network', () => {
     sw.transport.add('tcp', new TCP())
     sw.connection.addStreamMuxer(Mplex)
     sw.connection.reuse()
-    dht = new KadDHT(sw)
+    dht = new KadDHT({ sw })
 
     await sw.start()
     await dht.start()

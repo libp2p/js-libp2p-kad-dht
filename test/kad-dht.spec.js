@@ -5,24 +5,14 @@ const chai = require('chai')
 chai.use(require('dirty-chai'))
 chai.use(require('chai-checkmark'))
 const expect = chai.expect
-const promisify = require('promisify-es6')
 const sinon = require('sinon')
 const { Record } = require('libp2p-record')
-const PeerId = require('peer-id')
-const PeerInfo = require('peer-info')
-const PeerBook = require('peer-book')
-const Switch = require('libp2p-switch')
-const TCP = require('libp2p-tcp')
-const Mplex = require('libp2p-mplex')
 const errcode = require('err-code')
 
 const pMapSeries = require('p-map-series')
 const pEachSeries = require('p-each-series')
-const pRetry = require('p-retry')
-const pTimeout = require('p-timeout')
 const delay = require('delay')
 
-const KadDHT = require('../src')
 const kadUtils = require('../src/utils')
 const c = require('../src/constants')
 const Message = require('../src/message')
@@ -30,80 +20,11 @@ const Message = require('../src/message')
 const createPeerInfo = require('./utils/create-peer-info')
 const createValues = require('./utils/create-values')
 const TestDHT = require('./utils/test-dht')
-
-// connect two dhts
-const connectNoSync = async (a, b) => {
-  const publicPeerId = new PeerId(b.peerInfo.id.id, null, b.peerInfo.id.pubKey)
-  const target = new PeerInfo(publicPeerId)
-  target.multiaddrs = b.peerInfo.multiaddrs
-  await promisify(cb => a.switch.dial(target, cb))()
-}
-
-const find = (a, b) => {
-  return pRetry(async () => {
-    const match = await a.routingTable.find(b.peerInfo.id)
-
-    if (!match) {
-      await delay(100)
-      throw new Error('not found')
-    }
-
-    // TODO: p2p --> ipfs
-    // expect(a.peerBook.get(b.peerInfo).multiaddrs.toArray()[0].toString())
-    // .to.eql(b.peerInfo.multiaddrs.toArray()[0].toString())
-
-    return match
-  }, { retries: 50 })
-}
-
-// connect two dhts and wait for them to have each other
-// in their routing table
-const connect = async (a, b) => {
-  await connectNoSync(a, b)
-  await find(a, b)
-  await find(b, a)
-}
-
-function bootstrap (dhts) {
-  dhts.forEach((dht) => {
-    dht.randomWalk._walk(1, 10000)
-  })
-}
-
-function waitForWellFormedTables (dhts, minPeers, avgPeers, waitTimeout) {
-  return pTimeout(pRetry(async () => {
-    let totalPeers = 0
-
-    const ready = dhts.map((dht) => {
-      const rtlen = dht.routingTable.size
-      totalPeers += rtlen
-      if (minPeers > 0 && rtlen < minPeers) {
-        return false
-      }
-      const actualAvgPeers = totalPeers / dhts.length
-      if (avgPeers > 0 && actualAvgPeers < avgPeers) {
-        return false
-      }
-      return true
-    })
-
-    if (ready.every(Boolean)) {
-      return
-    }
-    await delay(200)
-    throw new Error('not done yet')
-  }, {
-    retries: 50
-  }), waitTimeout)
-}
-
-// Count how many peers are in b but are not in a
-function countDiffPeers (a, b) {
-  const s = new Set()
-  a.forEach((p) => s.add(p.toB58String()))
-
-  return b.filter((p) => !s.has(p.toB58String())).length
-}
+const {
+  connect,
+  countDiffPeers,
+  createDHT
+} = require('./utils')
 
 describe('KadDHT', () => {
   let peerInfos
@@ -121,585 +42,570 @@ describe('KadDHT', () => {
     values = res[1]
   })
 
-  it('create', () => {
-    const sw = new Switch(peerInfos[0], new PeerBook())
-    sw.transport.add('tcp', new TCP())
-    sw.connection.addStreamMuxer(Mplex)
-    sw.connection.reuse()
-    const dht = new KadDHT(sw, { kBucketSize: 5 })
+  describe('create', () => {
+    it('simple', () => {
+      const dht = createDHT(peerInfos[0], {
+        kBucketSize: 5
+      })
 
-    expect(dht).to.have.property('peerInfo').eql(peerInfos[0])
-    expect(dht).to.have.property('switch').eql(sw)
-    expect(dht).to.have.property('kBucketSize', 5)
-    expect(dht).to.have.property('routingTable')
-  })
+      expect(dht).to.have.property('peerInfo').eql(peerInfos[0])
+      expect(dht).to.have.property('kBucketSize', 5)
+      expect(dht).to.have.property('routingTable')
+    })
 
-  it('create with validators and selectors', () => {
-    const sw = new Switch(peerInfos[0], new PeerBook())
-    sw.transport.add('tcp', new TCP())
-    sw.connection.addStreamMuxer(Mplex)
-    sw.connection.reuse()
-    const dht = new KadDHT(sw, {
-      validators: {
-        ipns: {
-          func: (key, record, cb) => cb()
+    it('with validators and selectors', () => {
+      const dht = createDHT(peerInfos[0], {
+        validators: {
+          ipns: { func: () => { } }
+        },
+        selectors: {
+          ipns: () => 0
         }
-      },
-      selectors: {
-        ipns: (key, records) => 0
-      }
+      })
+
+      expect(dht).to.have.property('peerInfo').eql(peerInfos[0])
+      expect(dht).to.have.property('routingTable')
+      expect(dht.validators).to.have.property('ipns')
+      expect(dht.selectors).to.have.property('ipns')
     })
-
-    expect(dht).to.have.property('peerInfo').eql(peerInfos[0])
-    expect(dht).to.have.property('switch').eql(sw)
-    expect(dht).to.have.property('routingTable')
-    expect(dht.validators).to.have.property('ipns')
-    expect(dht.selectors).to.have.property('ipns')
   })
 
-  it('should be able to start and stop', async () => {
-    const sw = new Switch(peerInfos[0], new PeerBook())
-    sw.transport.add('tcp', new TCP())
-    sw.connection.addStreamMuxer(Mplex)
-    sw.connection.reuse()
-    const dht = new KadDHT(sw)
+  describe('start and stop', () => {
+    it('simple with defaults', async () => {
+      const dht = createDHT(peerInfos[0])
 
-    sinon.spy(dht.network, 'start')
-    sinon.spy(dht.randomWalk, 'start')
+      sinon.spy(dht.network, 'start')
+      sinon.spy(dht.randomWalk, 'start')
 
-    sinon.spy(dht.network, 'stop')
-    sinon.spy(dht.randomWalk, 'stop')
+      sinon.spy(dht.network, 'stop')
+      sinon.spy(dht.randomWalk, 'stop')
 
-    await dht.start()
-    expect(dht.network.start.calledOnce).to.equal(true)
-    expect(dht.randomWalk.start.calledOnce).to.equal(true)
-
-    await dht.stop()
-    expect(dht.network.stop.calledOnce).to.equal(true)
-    expect(dht.randomWalk.stop.calledOnce).to.equal(true)
-  })
-
-  it('should be able to start with random-walk disabled', async () => {
-    const sw = new Switch(peerInfos[0], new PeerBook())
-    sw.transport.add('tcp', new TCP())
-    sw.connection.addStreamMuxer(Mplex)
-    sw.connection.reuse()
-    const dht = new KadDHT(sw, { randomWalk: { enabled: false } })
-
-    sinon.spy(dht.network, 'start')
-    sinon.spy(dht.randomWalk, 'start')
-
-    sinon.spy(dht.network, 'stop')
-    sinon.spy(dht.randomWalk, 'stop')
-
-    await dht.start()
-    expect(dht.network.start.calledOnce).to.equal(true)
-    expect(dht.randomWalk._runningHandle).to.not.exist()
-
-    await dht.stop()
-    expect(dht.network.stop.calledOnce).to.equal(true)
-    expect(dht.randomWalk.stop.calledOnce).to.equal(true) // Should be always disabled, as it can be started using the instance
-  })
-
-  it('should fail to start when already started', async () => {
-    const sw = new Switch(peerInfos[0], new PeerBook())
-    sw.transport.add('tcp', new TCP())
-    sw.connection.addStreamMuxer(Mplex)
-    sw.connection.reuse()
-    const dht = new KadDHT(sw, {
-      randomWalk: {
-        enabled: false
-      }
-    })
-
-    await dht.start()
-    try {
       await dht.start()
-    } catch (err) {
-      expect(err).to.exist()
-      return
-    }
-    throw new Error('should fail to start when already registered')
-  })
+      expect(dht.network.start.calledOnce).to.equal(true)
+      expect(dht.randomWalk.start.calledOnce).to.equal(true)
 
-  it('should fail to stop when was not started', () => {
-    const sw = new Switch(peerInfos[0], new PeerBook())
-    sw.transport.add('tcp', new TCP())
-    sw.connection.addStreamMuxer(Mplex)
-    sw.connection.reuse()
-    const dht = new KadDHT(sw, {
-      randomWalk: {
-        enabled: false
-      }
+      await dht.stop()
+      expect(dht.network.stop.calledOnce).to.equal(true)
+      expect(dht.randomWalk.stop.calledOnce).to.equal(true)
     })
 
-    try {
-      dht.stop()
-    } catch (err) {
-      expect(err).to.exist()
-      return
-    }
-    throw new Error('should fail to stop when was not started')
+    it('random-walk disabled', async () => {
+      const dht = createDHT(peerInfos[0], {
+        randomWalk: { enabled: false }
+      })
+
+      sinon.spy(dht.network, 'start')
+      sinon.spy(dht.randomWalk, 'start')
+
+      sinon.spy(dht.network, 'stop')
+      sinon.spy(dht.randomWalk, 'stop')
+
+      await dht.start()
+      expect(dht.network.start.calledOnce).to.equal(true)
+      expect(dht.randomWalk._runningHandle).to.not.exist()
+
+      await dht.stop()
+      expect(dht.network.stop.calledOnce).to.equal(true)
+      expect(dht.randomWalk.stop.calledOnce).to.equal(true) // Should be always disabled, as it can be started using the instance
+    })
+
+    // TODO: not fail!
+    it('fail when already started', async () => {
+      const dht = createDHT(peerInfos[0])
+
+      await dht.start()
+      try {
+        await dht.start()
+      } catch (err) {
+        expect(err).to.exist()
+        return
+      }
+      throw new Error('should fail to start when already registered')
+    })
+
+    it('should fail to stop when was not started', () => {
+      const dht = createDHT(peerInfos[0])
+
+      try {
+        dht.stop()
+      } catch (err) {
+        expect(err).to.exist()
+        return
+      }
+      throw new Error('should fail to stop when was not started')
+    })
   })
 
-  it('put - get', async function () {
-    this.timeout(10 * 1000)
+  describe('content fetching', () => {
+    it('put - get', async function () {
+      this.timeout(10 * 1000)
 
-    const tdht = new TestDHT()
-    const key = Buffer.from('/v/hello')
-    const value = Buffer.from('world')
+      const tdht = new TestDHT()
+      const key = Buffer.from('/v/hello')
+      const value = Buffer.from('world')
 
-    const [dhtA, dhtB] = await tdht.spawn(2)
+      const [dhtA, dhtB] = await tdht.spawn(2)
 
-    // Connect nodes
-    await connect(dhtA, dhtB)
+      // Connect nodes
+      await connect(dhtA, dhtB)
 
-    // Exchange data through the dht
-    await dhtA.put(key, value)
+      // Exchange data through the dht
+      await dhtA.put(key, value)
 
-    const res = await dhtB.get(Buffer.from('/v/hello'), { timeout: 1000 })
-    expect(res).to.eql(value)
+      const res = await dhtB.get(Buffer.from('/v/hello'), { timeout: 1000 })
+      expect(res).to.eql(value)
 
-    return tdht.teardown()
-  })
+      return tdht.teardown()
+    })
 
-  it('put - should require a minimum number of peers to have successful puts', async function () {
-    this.timeout(10 * 1000)
+    it('put - should require a minimum number of peers to have successful puts', async function () {
+      this.timeout(10 * 1000)
 
-    const errCode = 'ERR_NOT_AVAILABLE'
-    const error = errcode(new Error('fake error'), errCode)
-    const key = Buffer.from('/v/hello')
-    const value = Buffer.from('world')
+      const errCode = 'ERR_NOT_AVAILABLE'
+      const error = errcode(new Error('fake error'), errCode)
+      const key = Buffer.from('/v/hello')
+      const value = Buffer.from('world')
 
-    const tdht = new TestDHT()
-    const [dhtA, dhtB, dhtC, dhtD] = await tdht.spawn(4)
+      const tdht = new TestDHT()
+      const [dhtA, dhtB, dhtC, dhtD] = await tdht.spawn(4)
 
-    // Stub verify record
-    const stub = sinon.stub(dhtD, '_verifyRecordLocally').rejects(error)
+      // Stub verify record
+      const stub = sinon.stub(dhtD, '_verifyRecordLocally').rejects(error)
 
-    await Promise.all([
-      connect(dhtA, dhtB),
-      connect(dhtA, dhtC),
-      connect(dhtA, dhtD)
-    ])
+      await Promise.all([
+        connect(dhtA, dhtB),
+        connect(dhtA, dhtC),
+        connect(dhtA, dhtD)
+      ])
 
-    // DHT operations
-    await dhtA.put(key, value, { minPeers: 2 })
-    const res = await dhtB.get(key, { timeout: 1000 })
-
-    expect(res).to.eql(value)
-    stub.restore()
-    return tdht.teardown()
-  })
-
-  it('put - should fail if not enough peers can be written to', async function () {
-    this.timeout(10 * 1000)
-
-    const errCode = 'ERR_NOT_AVAILABLE'
-    const error = errcode(new Error('fake error'), errCode)
-    const key = Buffer.from('/v/hello')
-    const value = Buffer.from('world')
-
-    const tdht = new TestDHT()
-    const [dhtA, dhtB, dhtC, dhtD] = await tdht.spawn(4)
-
-    // Stub verify record
-    const stub = sinon.stub(dhtD, '_verifyRecordLocally').rejects(error)
-    const stub2 = sinon.stub(dhtC, '_verifyRecordLocally').rejects(error)
-
-    await Promise.all([
-      connect(dhtA, dhtB),
-      connect(dhtA, dhtC),
-      connect(dhtA, dhtD)
-    ])
-
-    // DHT operations
-    try {
+      // DHT operations
       await dhtA.put(key, value, { minPeers: 2 })
-    } catch (err) {
-      expect(err).to.exist()
-      expect(err.code).to.eql('ERR_NOT_ENOUGH_PUT_PEERS')
-      stub.restore()
-      stub2.restore()
-      return tdht.teardown()
-    }
-    throw new Error('put - should fail if not enough peers can be written to')
-  })
+      const res = await dhtB.get(key, { timeout: 1000 })
 
-  it('put - should require all peers to be put to successfully if no minPeers specified', async function () {
-    this.timeout(10 * 1000)
-
-    const errCode = 'ERR_NOT_AVAILABLE'
-    const error = errcode(new Error('fake error'), errCode)
-    const key = Buffer.from('/v/hello')
-    const value = Buffer.from('world')
-
-    const tdht = new TestDHT()
-    const [dhtA, dhtB, dhtC] = await tdht.spawn(3)
-
-    // Stub verify record
-    const stub = sinon.stub(dhtC, '_verifyRecordLocally').rejects(error)
-
-    await Promise.all([
-      connect(dhtA, dhtB),
-      connect(dhtA, dhtC)
-    ])
-
-    // DHT operations
-    try {
-      await dhtA.put(key, value)
-    } catch (err) {
-      expect(err).to.exist()
-      expect(err.code).to.eql('ERR_NOT_ENOUGH_PUT_PEERS')
+      expect(res).to.eql(value)
       stub.restore()
       return tdht.teardown()
-    }
-    throw new Error('put - should require all peers to be put to successfully if no minPeers specified')
-  })
-
-  it('put - get using key with no prefix (no selector available)', async function () {
-    this.timeout(10 * 1000)
-
-    const key = Buffer.from('hello')
-    const value = Buffer.from('world')
-
-    const tdht = new TestDHT()
-    const [dhtA, dhtB] = await tdht.spawn(2)
-
-    await connect(dhtA, dhtB)
-
-    // DHT operations
-    await dhtA.put(key, value)
-    const res = await dhtB.get(key, { timeout: 1000 })
-
-    expect(res).to.eql(value)
-    return tdht.teardown()
-  })
-
-  it('put - get using key from provided validator and selector', async function () {
-    this.timeout(10 * 1000)
-
-    const key = Buffer.from('/ipns/hello')
-    const value = Buffer.from('world')
-
-    const tdht = new TestDHT()
-    const [dhtA, dhtB] = await tdht.spawn(2, {
-      validators: {
-        ipns: {
-          func: (key, record) => Promise.resolve(true)
-        }
-      },
-      selectors: {
-        ipns: (key, records) => 0
-      }
     })
 
-    await connect(dhtA, dhtB)
+    it('put - should fail if not enough peers can be written to', async function () {
+      this.timeout(10 * 1000)
 
-    // DHT operations
-    await dhtA.put(key, value)
-    const res = await dhtB.get(key, { timeout: 1000 })
+      const errCode = 'ERR_NOT_AVAILABLE'
+      const error = errcode(new Error('fake error'), errCode)
+      const key = Buffer.from('/v/hello')
+      const value = Buffer.from('world')
 
-    expect(res).to.eql(value)
-    return tdht.teardown()
-  })
+      const tdht = new TestDHT()
+      const [dhtA, dhtB, dhtC, dhtD] = await tdht.spawn(4)
 
-  it('put - get should fail if unrecognized key prefix in get', async function () {
-    this.timeout(10 * 1000)
+      // Stub verify record
+      const stub = sinon.stub(dhtD, '_verifyRecordLocally').rejects(error)
+      const stub2 = sinon.stub(dhtC, '_verifyRecordLocally').rejects(error)
 
-    const key = Buffer.from('/v2/hello')
-    const value = Buffer.from('world')
+      await Promise.all([
+        connect(dhtA, dhtB),
+        connect(dhtA, dhtC),
+        connect(dhtA, dhtD)
+      ])
 
-    const tdht = new TestDHT()
-    const [dhtA, dhtB] = await tdht.spawn(2)
+      // DHT operations
+      try {
+        await dhtA.put(key, value, { minPeers: 2 })
+      } catch (err) {
+        expect(err).to.exist()
+        expect(err.code).to.eql('ERR_NOT_ENOUGH_PUT_PEERS')
+        stub.restore()
+        stub2.restore()
+        return tdht.teardown()
+      }
+      throw new Error('put - should fail if not enough peers can be written to')
+    })
 
-    await connect(dhtA, dhtB)
+    it('put - should require all peers to be put to successfully if no minPeers specified', async function () {
+      this.timeout(10 * 1000)
 
-    try {
+      const errCode = 'ERR_NOT_AVAILABLE'
+      const error = errcode(new Error('fake error'), errCode)
+      const key = Buffer.from('/v/hello')
+      const value = Buffer.from('world')
+
+      const tdht = new TestDHT()
+      const [dhtA, dhtB, dhtC] = await tdht.spawn(3)
+
+      // Stub verify record
+      const stub = sinon.stub(dhtC, '_verifyRecordLocally').rejects(error)
+
+      await Promise.all([
+        connect(dhtA, dhtB),
+        connect(dhtA, dhtC)
+      ])
+
+      // DHT operations
+      try {
+        await dhtA.put(key, value)
+      } catch (err) {
+        expect(err).to.exist()
+        expect(err.code).to.eql('ERR_NOT_ENOUGH_PUT_PEERS')
+        stub.restore()
+        return tdht.teardown()
+      }
+      throw new Error('put - should require all peers to be put to successfully if no minPeers specified')
+    })
+
+    it('put - get using key with no prefix (no selector available)', async function () {
+      this.timeout(10 * 1000)
+
+      const key = Buffer.from('hello')
+      const value = Buffer.from('world')
+
+      const tdht = new TestDHT()
+      const [dhtA, dhtB] = await tdht.spawn(2)
+
+      await connect(dhtA, dhtB)
+
+      // DHT operations
       await dhtA.put(key, value)
-      await dhtA.get(key)
-    } catch (err) {
-      expect(err).to.exist()
+      const res = await dhtB.get(key, { timeout: 1000 })
+
+      expect(res).to.eql(value)
       return tdht.teardown()
-    }
-    throw new Error('put - get should fail if unrecognized key prefix in get')
-  })
-
-  it('put - get with update', async function () {
-    this.timeout(20 * 1000)
-
-    const key = Buffer.from('/v/hello')
-    const valueA = Buffer.from('worldA')
-    const valueB = Buffer.from('worldB')
-
-    const tdht = new TestDHT()
-    const [dhtA, dhtB] = await tdht.spawn(2)
-
-    const dhtASpy = sinon.spy(dhtA, '_putValueToPeer')
-
-    // Put before peers connected
-    await dhtA.put(key, valueA)
-    await dhtB.put(key, valueB)
-
-    // Connect peers
-    await connect(dhtA, dhtB)
-
-    // Get values
-    const resA = await dhtA.get(key, { timeout: 1000 })
-    const resB = await dhtB.get(key, { timeout: 1000 })
-
-    // First is selected
-    expect(resA).to.eql(valueA)
-    expect(resB).to.eql(valueA)
-
-    expect(dhtASpy.callCount).to.eql(1)
-    expect(dhtASpy.getCall(0).args[2].isEqual(dhtB.peerInfo.id)).to.eql(true) // inform B
-
-    return tdht.teardown()
-  })
-
-  it('provides', async function () {
-    this.timeout(20 * 1000)
-
-    const tdht = new TestDHT()
-    const dhts = await tdht.spawn(4)
-
-    // const addrs = dhts.map((d) => d.peerInfo.multiaddrs.toArray()[0])
-    const ids = dhts.map((d) => d.peerInfo.id)
-    const idsB58 = ids.map(id => id.toB58String())
-    sinon.spy(dhts[3].network, 'sendMessage')
-
-    // connect peers
-    await Promise.all([
-      connect(dhts[0], dhts[1]),
-      connect(dhts[1], dhts[2]),
-      connect(dhts[2], dhts[3])
-    ])
-
-    // provide values
-    await Promise.all(values.map((value) => dhts[3].provide(value.cid)))
-
-    // Expect an ADD_PROVIDER message to be sent to each peer for each value
-    const fn = dhts[3].network.sendMessage
-    const valuesBuffs = values.map(v => v.cid.buffer)
-    const calls = fn.getCalls().map(c => c.args)
-
-    for (const [peerId, msg] of calls) {
-      expect(idsB58).includes(peerId.toB58String())
-      expect(msg.type).equals(Message.TYPES.ADD_PROVIDER)
-      expect(valuesBuffs).includes(msg.key)
-      expect(msg.providerPeers.length).equals(1)
-      expect(msg.providerPeers[0].id.toB58String()).equals(idsB58[3])
-    }
-
-    // Expect each DHT to find the provider of each value
-    let n = 0
-    await pEachSeries(values, async (v) => {
-      n = (n + 1) % 3
-
-      const provs = await dhts[n].findProviders(v.cid, { timeout: 5000 })
-
-      expect(provs).to.have.length(1)
-      expect(provs[0].id.id).to.be.eql(ids[3].id)
-      // TODO: /ipfs => /p2p
-      // expect(
-      //   provs[0].multiaddrs.toArray()[0].toString()
-      // ).to.equal(
-      //   addrs[3].toString()
-      // )
     })
 
-    return tdht.teardown()
-  })
+    it('put - get using key from provided validator and selector', async function () {
+      this.timeout(10 * 1000)
 
-  it('find providers', async function () {
-    this.timeout(20 * 1000)
+      const key = Buffer.from('/ipns/hello')
+      const value = Buffer.from('world')
 
-    const val = values[0]
-    const tdht = new TestDHT()
-    const dhts = await tdht.spawn(3)
-
-    // Connect
-    await Promise.all([
-      connect(dhts[0], dhts[1]),
-      connect(dhts[1], dhts[2])
-    ])
-
-    await Promise.all(dhts.map((dht) => dht.provide(val.cid)))
-
-    const res0 = await dhts[0].findProviders(val.cid)
-    const res1 = await dhts[0].findProviders(val.cid, { maxNumProviders: 2 })
-
-    // find providers find all the 3 providers
-    expect(res0).to.exist()
-    expect(res0).to.have.length(3)
-
-    // find providers limited to a maxium of 2 providers
-    expect(res1).to.exist()
-    expect(res1).to.have.length(2)
-
-    return tdht.teardown()
-  })
-
-  it('random-walk', async function () {
-    this.timeout(20 * 1000)
-
-    const nDHTs = 20
-    const tdht = new TestDHT()
-
-    // random walk disabled for a manual usage
-    const dhts = await tdht.spawn(nDHTs)
-
-    await Promise.all(
-      Array.from({ length: nDHTs }).map((_, i) => connect(dhts[i], dhts[(i + 1) % nDHTs]))
-    )
-
-    bootstrap(dhts)
-    await waitForWellFormedTables(dhts, 7, 0, 20 * 1000)
-
-    return tdht.teardown()
-  })
-
-  it('layered get', async function () {
-    this.timeout(40 * 1000)
-
-    const key = Buffer.from('/v/hello')
-    const value = Buffer.from('world')
-
-    const nDHTs = 4
-    const tdht = new TestDHT()
-    const dhts = await tdht.spawn(nDHTs)
-
-    // Connect all
-    await Promise.all([
-      connect(dhts[0], dhts[1]),
-      connect(dhts[1], dhts[2]),
-      connect(dhts[2], dhts[3])
-    ])
-
-    // DHT operations
-    await dhts[3].put(key, value)
-    const res = await dhts[0].get(key, { timeout: 1000 })
-
-    expect(res).to.eql(value)
-    return tdht.teardown()
-  })
-
-  it('findPeer', async function () {
-    this.timeout(40 * 1000)
-
-    const nDHTs = 4
-    const tdht = new TestDHT()
-    const dhts = await tdht.spawn(nDHTs)
-
-    // Connect all
-    await Promise.all([
-      connect(dhts[0], dhts[1]),
-      connect(dhts[1], dhts[2]),
-      connect(dhts[2], dhts[3])
-    ])
-
-    const ids = dhts.map((d) => d.peerInfo.id)
-    const res = await dhts[0].findPeer(ids[3], { timeout: 1000 })
-    expect(res.id.isEqual(ids[3])).to.eql(true)
-
-    return tdht.teardown()
-  })
-
-  it('find peer query', async function () {
-    this.timeout(40 * 1000)
-
-    // Create 101 nodes
-    const nDHTs = 100
-    const tdht = new TestDHT()
-    const dhts = await tdht.spawn(nDHTs)
-
-    const dhtsById = new Map(dhts.map((d) => [d.peerInfo.id, d]))
-    const ids = [...dhtsById.keys()]
-
-    // The origin node for the FIND_PEER query
-    const guy = dhts[0]
-
-    // The key
-    const val = Buffer.from('foobar')
-
-    // Hash the key into the DHT's key format
-    const rtval = await kadUtils.convertBuffer(val)
-    // Make connections between nodes close to each other
-    const sorted = await kadUtils.sortClosestPeers(ids, rtval)
-
-    const conns = []
-    const maxRightIndex = sorted.length - 1
-    for (let i = 0; i < sorted.length; i++) {
-      // Connect to 5 nodes on either side (10 in total)
-      for (const distance of [1, 3, 11, 31, 63]) {
-        let rightIndex = i + distance
-        if (rightIndex > maxRightIndex) {
-          rightIndex = maxRightIndex * 2 - (rightIndex + 1)
+      const tdht = new TestDHT()
+      const [dhtA, dhtB] = await tdht.spawn(2, {
+        validators: {
+          ipns: {
+            func: (key, record) => Promise.resolve(true)
+          }
+        },
+        selectors: {
+          ipns: (key, records) => 0
         }
-        let leftIndex = i - distance
-        if (leftIndex < 0) {
-          leftIndex = 1 - leftIndex
-        }
-        conns.push([sorted[leftIndex], sorted[rightIndex]])
+      })
+
+      await connect(dhtA, dhtB)
+
+      // DHT operations
+      await dhtA.put(key, value)
+      const res = await dhtB.get(key, { timeout: 1000 })
+
+      expect(res).to.eql(value)
+      return tdht.teardown()
+    })
+
+    it('put - get should fail if unrecognized key prefix in get', async function () {
+      this.timeout(10 * 1000)
+
+      const key = Buffer.from('/v2/hello')
+      const value = Buffer.from('world')
+
+      const tdht = new TestDHT()
+      const [dhtA, dhtB] = await tdht.spawn(2)
+
+      await connect(dhtA, dhtB)
+
+      try {
+        await dhtA.put(key, value)
+        await dhtA.get(key)
+      } catch (err) {
+        expect(err).to.exist()
+        return tdht.teardown()
       }
-    }
-
-    await Promise.all(conns.map((conn) => connect(dhtsById.get(conn[0]), dhtsById.get(conn[1]))))
-
-    // Get the alpha (3) closest peers to the key from the origin's
-    // routing table
-    const rtablePeers = guy.routingTable.closestPeers(rtval, c.ALPHA)
-    expect(rtablePeers).to.have.length(c.ALPHA)
-
-    // The set of peers used to initiate the query (the closest alpha
-    // peers to the key that the origin knows about)
-    const rtableSet = {}
-    rtablePeers.forEach((p) => {
-      rtableSet[p.toB58String()] = true
+      throw new Error('put - get should fail if unrecognized key prefix in get')
     })
 
-    const guyIndex = ids.findIndex(i => i.id.equals(guy.peerInfo.id.id))
-    const otherIds = ids.slice(0, guyIndex).concat(ids.slice(guyIndex + 1))
+    it('put - get with update', async function () {
+      this.timeout(20 * 1000)
 
-    // Make the query
-    const out = await guy.getClosestPeers(val)
-    const actualClosest = await kadUtils.sortClosestPeers(otherIds, rtval)
+      const key = Buffer.from('/v/hello')
+      const valueA = Buffer.from('worldA')
+      const valueB = Buffer.from('worldB')
 
-    // Expect that the response includes nodes that are were not
-    // already in the origin's routing table (ie it went out to
-    // the network to find closer peers)
-    expect(out.filter((p) => !rtableSet[p.toB58String()]))
-      .to.not.be.empty()
+      const tdht = new TestDHT()
+      const [dhtA, dhtB] = await tdht.spawn(2)
 
-    // Expect that there were kValue peers found
-    expect(out).to.have.length(c.K)
+      const dhtASpy = sinon.spy(dhtA, '_putValueToPeer')
 
-    // The expected closest kValue peers to the key
-    const exp = actualClosest.slice(0, c.K)
+      // Put before peers connected
+      await dhtA.put(key, valueA)
+      await dhtB.put(key, valueB)
 
-    // Expect the kValue peers found to be the kValue closest connected peers
-    // to the key
-    expect(countDiffPeers(exp, out)).to.eql(0)
+      // Connect peers
+      await connect(dhtA, dhtB)
 
-    return tdht.teardown()
+      // Get values
+      const resA = await dhtA.get(key, { timeout: 1000 })
+      const resB = await dhtB.get(key, { timeout: 1000 })
+
+      // First is selected
+      expect(resA).to.eql(valueA)
+      expect(resB).to.eql(valueA)
+
+      expect(dhtASpy.callCount).to.eql(1)
+      expect(dhtASpy.getCall(0).args[2].isEqual(dhtB.peerInfo.id)).to.eql(true) // inform B
+
+      return tdht.teardown()
+    })
+
+    it('layered get', async function () {
+      this.timeout(40 * 1000)
+
+      const key = Buffer.from('/v/hello')
+      const value = Buffer.from('world')
+
+      const nDHTs = 4
+      const tdht = new TestDHT()
+      const dhts = await tdht.spawn(nDHTs)
+
+      // Connect all
+      await Promise.all([
+        connect(dhts[0], dhts[1]),
+        connect(dhts[1], dhts[2]),
+        connect(dhts[2], dhts[3])
+      ])
+
+      // DHT operations
+      await dhts[3].put(key, value)
+      const res = await dhts[0].get(key, { timeout: 1000 })
+
+      expect(res).to.eql(value)
+      return tdht.teardown()
+    })
+
+    it('getMany with nvals=1 goes out to swarm if there is no local value', async () => {
+      const key = Buffer.from('/v/hello')
+      const value = Buffer.from('world')
+      const rec = new Record(key, value)
+
+      const dht = createDHT(peerInfos[0])
+      await dht.start()
+
+      const stubs = [
+        // Simulate returning a peer id to query
+        sinon.stub(dht.routingTable, 'closestPeers').returns([peerInfos[1].id]),
+        // Simulate going out to the network and returning the record
+        sinon.stub(dht, '_getValueOrPeers').callsFake(async () => ({ record: rec })) // eslint-disable-line require-await
+      ]
+
+      const res = await dht.getMany(key, 1)
+
+      expect(res.length).to.eql(1)
+      expect(res[0].val).to.eql(value)
+
+      for (const stub of stubs) {
+        stub.restore()
+      }
+    })
   })
 
-  it('getClosestPeers', async function () {
-    this.timeout(40 * 1000)
+  describe('content routing', () => {
+    it('provides', async function () {
+      this.timeout(20 * 1000)
 
-    const nDHTs = 30
-    const tdht = new TestDHT()
-    const dhts = await tdht.spawn(nDHTs)
+      const tdht = new TestDHT()
+      const dhts = await tdht.spawn(4)
 
-    await pMapSeries(dhts, async (_, index) => {
-      await connect(dhts[index], dhts[(index + 1) % dhts.length])
+      // const addrs = dhts.map((d) => d.peerInfo.multiaddrs.toArray()[0])
+      const ids = dhts.map((d) => d.peerInfo.id)
+      const idsB58 = ids.map(id => id.toB58String())
+      sinon.spy(dhts[3].network, 'sendMessage')
+
+      // connect peers
+      await Promise.all([
+        connect(dhts[0], dhts[1]),
+        connect(dhts[1], dhts[2]),
+        connect(dhts[2], dhts[3])
+      ])
+
+      // provide values
+      await Promise.all(values.map((value) => dhts[3].provide(value.cid)))
+
+      // Expect an ADD_PROVIDER message to be sent to each peer for each value
+      const fn = dhts[3].network.sendMessage
+      const valuesBuffs = values.map(v => v.cid.buffer)
+      const calls = fn.getCalls().map(c => c.args)
+
+      for (const [peerId, msg] of calls) {
+        expect(idsB58).includes(peerId.toB58String())
+        expect(msg.type).equals(Message.TYPES.ADD_PROVIDER)
+        expect(valuesBuffs).includes(msg.key)
+        expect(msg.providerPeers.length).equals(1)
+        expect(msg.providerPeers[0].id.toB58String()).equals(idsB58[3])
+      }
+
+      // Expect each DHT to find the provider of each value
+      let n = 0
+      await pEachSeries(values, async (v) => {
+        n = (n + 1) % 3
+
+        const provs = await dhts[n].findProviders(v.cid, { timeout: 5000 })
+
+        expect(provs).to.have.length(1)
+        expect(provs[0].id.id).to.be.eql(ids[3].id)
+        // TODO: /ipfs => /p2p
+        // expect(
+        //   provs[0].multiaddrs.toArray()[0].toString()
+        // ).to.equal(
+        //   addrs[3].toString()
+        // )
+      })
+
+      return tdht.teardown()
     })
 
-    const res = await dhts[1].getClosestPeers(Buffer.from('foo'))
-    expect(res).to.have.length(c.K)
+    it('find providers', async function () {
+      this.timeout(20 * 1000)
 
-    return tdht.teardown()
+      const val = values[0]
+      const tdht = new TestDHT()
+      const dhts = await tdht.spawn(3)
+
+      // Connect
+      await Promise.all([
+        connect(dhts[0], dhts[1]),
+        connect(dhts[1], dhts[2])
+      ])
+
+      await Promise.all(dhts.map((dht) => dht.provide(val.cid)))
+
+      const res0 = await dhts[0].findProviders(val.cid)
+      const res1 = await dhts[0].findProviders(val.cid, { maxNumProviders: 2 })
+
+      // find providers find all the 3 providers
+      expect(res0).to.exist()
+      expect(res0).to.have.length(3)
+
+      // find providers limited to a maxium of 2 providers
+      expect(res1).to.exist()
+      expect(res1).to.have.length(2)
+
+      return tdht.teardown()
+    })
+  })
+
+  describe('peer routing', () => {
+    it('findPeer', async function () {
+      this.timeout(40 * 1000)
+
+      const nDHTs = 4
+      const tdht = new TestDHT()
+      const dhts = await tdht.spawn(nDHTs)
+
+      // Connect all
+      await Promise.all([
+        connect(dhts[0], dhts[1]),
+        connect(dhts[1], dhts[2]),
+        connect(dhts[2], dhts[3])
+      ])
+
+      const ids = dhts.map((d) => d.peerInfo.id)
+      const res = await dhts[0].findPeer(ids[3], { timeout: 1000 })
+      expect(res.id.isEqual(ids[3])).to.eql(true)
+
+      return tdht.teardown()
+    })
+
+    it('find peer query', async function () {
+      this.timeout(40 * 1000)
+
+      // Create 101 nodes
+      const nDHTs = 100
+      const tdht = new TestDHT()
+      const dhts = await tdht.spawn(nDHTs)
+
+      const dhtsById = new Map(dhts.map((d) => [d.peerInfo.id, d]))
+      const ids = [...dhtsById.keys()]
+
+      // The origin node for the FIND_PEER query
+      const guy = dhts[0]
+
+      // The key
+      const val = Buffer.from('foobar')
+
+      // Hash the key into the DHT's key format
+      const rtval = await kadUtils.convertBuffer(val)
+      // Make connections between nodes close to each other
+      const sorted = await kadUtils.sortClosestPeers(ids, rtval)
+
+      const conns = []
+      const maxRightIndex = sorted.length - 1
+      for (let i = 0; i < sorted.length; i++) {
+        // Connect to 5 nodes on either side (10 in total)
+        for (const distance of [1, 3, 11, 31, 63]) {
+          let rightIndex = i + distance
+          if (rightIndex > maxRightIndex) {
+            rightIndex = maxRightIndex * 2 - (rightIndex + 1)
+          }
+          let leftIndex = i - distance
+          if (leftIndex < 0) {
+            leftIndex = 1 - leftIndex
+          }
+          conns.push([sorted[leftIndex], sorted[rightIndex]])
+        }
+      }
+
+      await Promise.all(conns.map((conn) => connect(dhtsById.get(conn[0]), dhtsById.get(conn[1]))))
+
+      // Get the alpha (3) closest peers to the key from the origin's
+      // routing table
+      const rtablePeers = guy.routingTable.closestPeers(rtval, c.ALPHA)
+      expect(rtablePeers).to.have.length(c.ALPHA)
+
+      // The set of peers used to initiate the query (the closest alpha
+      // peers to the key that the origin knows about)
+      const rtableSet = {}
+      rtablePeers.forEach((p) => {
+        rtableSet[p.toB58String()] = true
+      })
+
+      const guyIndex = ids.findIndex(i => i.id.equals(guy.peerInfo.id.id))
+      const otherIds = ids.slice(0, guyIndex).concat(ids.slice(guyIndex + 1))
+
+      // Make the query
+      const out = await guy.getClosestPeers(val)
+      const actualClosest = await kadUtils.sortClosestPeers(otherIds, rtval)
+
+      // Expect that the response includes nodes that are were not
+      // already in the origin's routing table (ie it went out to
+      // the network to find closer peers)
+      expect(out.filter((p) => !rtableSet[p.toB58String()]))
+        .to.not.be.empty()
+
+      // Expect that there were kValue peers found
+      expect(out).to.have.length(c.K)
+
+      // The expected closest kValue peers to the key
+      const exp = actualClosest.slice(0, c.K)
+
+      // Expect the kValue peers found to be the kValue closest connected peers
+      // to the key
+      expect(countDiffPeers(exp, out)).to.eql(0)
+
+      return tdht.teardown()
+    })
+
+    it('getClosestPeers', async function () {
+      this.timeout(40 * 1000)
+
+      const nDHTs = 30
+      const tdht = new TestDHT()
+      const dhts = await tdht.spawn(nDHTs)
+
+      await pMapSeries(dhts, async (_, index) => {
+        await connect(dhts[index], dhts[(index + 1) % dhts.length])
+      })
+
+      const res = await dhts[1].getClosestPeers(Buffer.from('foo'))
+      expect(res).to.have.length(c.K)
+
+      return tdht.teardown()
+    })
   })
 
   describe('getPublicKey', () => {
@@ -744,95 +650,74 @@ describe('KadDHT', () => {
     })
   })
 
-  it('_nearestPeersToQuery', async () => {
-    const sw = new Switch(peerInfos[0], new PeerBook())
-    sw.transport.add('tcp', new TCP())
-    sw.connection.addStreamMuxer(Mplex)
-    sw.connection.reuse()
-    const dht = new KadDHT(sw)
+  describe('internals', () => {
+    it('_nearestPeersToQuery', async () => {
+      const dht = createDHT(peerInfos[0])
 
-    dht.peerBook.put(peerInfos[1])
-    await dht._add(peerInfos[1])
-    const res = await dht._nearestPeersToQuery({ key: 'hello' })
-    expect(res).to.be.eql([peerInfos[1]])
-  })
-
-  it('_betterPeersToQuery', async () => {
-    const sw = new Switch(peerInfos[0], new PeerBook())
-    sw.transport.add('tcp', new TCP())
-    sw.connection.addStreamMuxer(Mplex)
-    sw.connection.reuse()
-    const dht = new KadDHT(sw)
-
-    dht.peerBook.put(peerInfos[1])
-    dht.peerBook.put(peerInfos[2])
-
-    await dht._add(peerInfos[1])
-    await dht._add(peerInfos[2])
-    const res = await dht._betterPeersToQuery({ key: 'hello' }, peerInfos[1])
-
-    expect(res).to.be.eql([peerInfos[2]])
-  })
-
-  describe('_checkLocalDatastore', () => {
-    it('allow a peer record from store if recent', async () => {
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
-      const dht = new KadDHT(sw)
-
-      const record = new Record(
-        Buffer.from('hello'),
-        Buffer.from('world')
-      )
-      record.timeReceived = new Date()
-
-      await dht._putLocal(record.key, record.serialize())
-      const rec = await dht._checkLocalDatastore(record.key)
-
-      expect(rec).to.exist('Record should not have expired')
-      expect(rec.value.toString()).to.equal(record.value.toString())
+      dht.peerBook.put(peerInfos[1])
+      await dht._add(peerInfos[1])
+      const res = await dht._nearestPeersToQuery({ key: 'hello' })
+      expect(res).to.be.eql([peerInfos[1]])
     })
 
-    it('delete entries received from peers that have expired', async () => {
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
-      const dht = new KadDHT(sw)
+    it('_betterPeersToQuery', async () => {
+      const dht = createDHT(peerInfos[0])
 
-      const record = new Record(
-        Buffer.from('hello'),
-        Buffer.from('world')
-      )
-      const received = new Date()
-      received.setDate(received.getDate() - 2)
+      dht.peerBook.put(peerInfos[1])
+      dht.peerBook.put(peerInfos[2])
 
-      record.timeReceived = received
+      await dht._add(peerInfos[1])
+      await dht._add(peerInfos[2])
+      const res = await dht._betterPeersToQuery({ key: 'hello' }, peerInfos[1])
 
-      await dht._putLocal(record.key, record.serialize())
-
-      const lookup = await dht.datastore.get(kadUtils.bufferToKey(record.key))
-      expect(lookup).to.exist('Record should be in the local datastore')
-
-      const rec = await dht._checkLocalDatastore(record.key)
-      expect(rec).to.not.exist('Record should have expired')
-
-      // TODO
-      // const lookup2 = await dht.datastore.get(kadUtils.bufferToKey(record.key))
-      // expect(lookup2).to.not.exist('Record should be removed from datastore')
+      expect(res).to.be.eql([peerInfos[2]])
     })
-  })
 
-  describe('_verifyRecordLocally', () => {
-    it('valid record', () => {
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
+    describe('_checkLocalDatastore', () => {
+      it('allow a peer record from store if recent', async () => {
+        const dht = createDHT(peerInfos[0])
 
-      const dht = new KadDHT(sw)
+        const record = new Record(
+          Buffer.from('hello'),
+          Buffer.from('world')
+        )
+        record.timeReceived = new Date()
+
+        await dht.contentFetching._putLocal(record.key, record.serialize())
+        const rec = await dht._checkLocalDatastore(record.key)
+
+        expect(rec).to.exist('Record should not have expired')
+        expect(rec.value.toString()).to.equal(record.value.toString())
+      })
+
+      it('delete entries received from peers that have expired', async () => {
+        const dht = createDHT(peerInfos[0])
+
+        const record = new Record(
+          Buffer.from('hello'),
+          Buffer.from('world')
+        )
+        const received = new Date()
+        received.setDate(received.getDate() - 2)
+
+        record.timeReceived = received
+
+        await dht.contentFetching._putLocal(record.key, record.serialize())
+
+        const lookup = await dht.datastore.get(kadUtils.bufferToKey(record.key))
+        expect(lookup).to.exist('Record should be in the local datastore')
+
+        const rec = await dht._checkLocalDatastore(record.key)
+        expect(rec).to.not.exist('Record should have expired')
+
+        // TODO
+        // const lookup2 = await dht.datastore.get(kadUtils.bufferToKey(record.key))
+        // expect(lookup2).to.not.exist('Record should be removed from datastore')
+      })
+    })
+
+    it('_verifyRecordLocally', () => {
+      const dht = createDHT(peerInfos[0])
       dht.peerBook.put(peerInfos[1])
 
       const record = new Record(
@@ -842,38 +727,6 @@ describe('KadDHT', () => {
       const enc = record.serialize()
 
       return dht._verifyRecordLocally(Record.deserialize(enc))
-    })
-  })
-
-  describe('getMany', () => {
-    it('getMany with nvals=1 goes out to swarm if there is no local value', async () => {
-      const key = Buffer.from('/v/hello')
-      const value = Buffer.from('world')
-      const rec = new Record(key, value)
-
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
-
-      const dht = new KadDHT(sw)
-      await dht.start()
-
-      const stubs = [
-        // Simulate returning a peer id to query
-        sinon.stub(dht.routingTable, 'closestPeers').returns([peerInfos[1].id]),
-        // Simulate going out to the network and returning the record
-        sinon.stub(dht, '_getValueOrPeers').callsFake(async () => ({ record: rec })) // eslint-disable-line require-await
-      ]
-
-      const res = await dht.getMany(key, 1)
-
-      expect(res.length).to.eql(1)
-      expect(res[0].val).to.eql(value)
-
-      for (const stub of stubs) {
-        stub.restore()
-      }
     })
   })
 
@@ -969,111 +822,6 @@ describe('KadDHT', () => {
         return tdht.teardown()
       }
       throw new Error('get should handle correctly an invalid record error and return not found')
-    })
-  })
-
-  describe('multiple nodes', () => {
-    const n = 8
-    let tdht
-    let dhts
-
-    // spawn nodes
-    before(async function () {
-      this.timeout(10 * 1000)
-
-      tdht = new TestDHT()
-      dhts = await tdht.spawn(n)
-    })
-
-    // connect nodes
-    before(function () {
-      // all nodes except the last one
-      const range = Array.from(Array(n - 1).keys())
-
-      // connect the last one with the others one by one
-      return Promise.all(range.map((i) => connect(dhts[n - 1], dhts[i])))
-    })
-
-    after(function () {
-      this.timeout(10 * 1000)
-
-      return tdht.teardown()
-    })
-
-    it('put to "bootstrap" node and get with the others', async function () {
-      this.timeout(10 * 1000)
-      const key = Buffer.from('/v/hello0')
-      const value = Buffer.from('world')
-
-      await dhts[7].put(key, value)
-
-      const res = await Promise.all([
-        dhts[0].get(key, { maxTimeout: 1000 }),
-        dhts[1].get(key, { maxTimeout: 1000 }),
-        dhts[2].get(key, { maxTimeout: 1000 }),
-        dhts[3].get(key, { maxTimeout: 1000 }),
-        dhts[4].get(key, { maxTimeout: 1000 }),
-        dhts[5].get(key, { maxTimeout: 1000 }),
-        dhts[6].get(key, { maxTimeout: 1000 })
-      ])
-
-      expect(res[0]).to.eql(Buffer.from('world'))
-      expect(res[1]).to.eql(Buffer.from('world'))
-      expect(res[2]).to.eql(Buffer.from('world'))
-      expect(res[3]).to.eql(Buffer.from('world'))
-      expect(res[4]).to.eql(Buffer.from('world'))
-      expect(res[5]).to.eql(Buffer.from('world'))
-      expect(res[6]).to.eql(Buffer.from('world'))
-    })
-
-    it('put to a node and get with the others', async function () {
-      this.timeout(10 * 1000)
-      const key = Buffer.from('/v/hello1')
-      const value = Buffer.from('world')
-
-      await dhts[1].put(key, value)
-
-      const res = await Promise.all([
-        dhts[0].get(key, { maxTimeout: 1000 }),
-        dhts[2].get(key, { maxTimeout: 1000 }),
-        dhts[3].get(key, { maxTimeout: 1000 }),
-        dhts[4].get(key, { maxTimeout: 1000 }),
-        dhts[5].get(key, { maxTimeout: 1000 }),
-        dhts[6].get(key, { maxTimeout: 1000 }),
-        dhts[7].get(key, { maxTimeout: 1000 })
-      ])
-
-      expect(res[0]).to.eql(Buffer.from('world'))
-      expect(res[1]).to.eql(Buffer.from('world'))
-      expect(res[2]).to.eql(Buffer.from('world'))
-      expect(res[3]).to.eql(Buffer.from('world'))
-      expect(res[4]).to.eql(Buffer.from('world'))
-      expect(res[5]).to.eql(Buffer.from('world'))
-      expect(res[6]).to.eql(Buffer.from('world'))
-    })
-
-    it('put to several nodes in series with different values and get the last one in a subset of them', async function () {
-      this.timeout(20 * 1000)
-      const key = Buffer.from('/v/hallo')
-      const result = Buffer.from('world4')
-
-      await dhts[0].put(key, Buffer.from('world0'))
-      await dhts[1].put(key, Buffer.from('world1'))
-      await dhts[2].put(key, Buffer.from('world2'))
-      await dhts[3].put(key, Buffer.from('world3'))
-      await dhts[4].put(key, Buffer.from('world4'))
-
-      const res = await Promise.all([
-        dhts[3].get(key, { maxTimeout: 2000 }),
-        dhts[4].get(key, { maxTimeout: 2000 }),
-        dhts[5].get(key, { maxTimeout: 2000 }),
-        dhts[6].get(key, { maxTimeout: 2000 })
-      ])
-
-      expect(res[0]).to.eql(result)
-      expect(res[1]).to.eql(result)
-      expect(res[2]).to.eql(result)
-      expect(res[3]).to.eql(result)
     })
   })
 })

@@ -5,7 +5,7 @@ const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
 
-const LimitedPeerList = require('../src/limited-peer-list')
+const LimitedPeerList = require('../src/peer-list/limited-peer-list')
 const createPeerInfo = require('./utils/create-peer-info')
 
 describe('LimitedPeerList', () => {

@@ -1,7 +1,7 @@
 'use strict'
 
 const distance = require('xor-distance')
-const utils = require('./utils')
+const utils = require('../utils')
 const pMap = require('p-map')
 
 /**

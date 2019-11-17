@@ -1,38 +1,34 @@
 'use strict'
 
-const errcode = require('err-code')
+const assert = require('assert')
 const { EventEmitter } = require('events')
+const errcode = require('err-code')
 
 const libp2pRecord = require('libp2p-record')
 const { MemoryDatastore } = require('interface-datastore')
-const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
-const crypto = require('libp2p-crypto')
-
-const pFilter = require('p-filter')
-const pTimeout = require('p-timeout')
 
 const RoutingTable = require('./routing')
 const utils = require('./utils')
 const c = require('./constants')
-const Query = require('./query')
 const Network = require('./network')
-const privateApi = require('./private')
-const Providers = require('./providers')
+const contentFetching = require('./content-fetching')
+const contentRouting = require('./content-routing')
+const peerRouting = require('./peer-routing')
 const Message = require('./message')
+const Providers = require('./providers')
 const RandomWalk = require('./random-walk')
 const QueryManager = require('./query-manager')
-const assert = require('assert')
+
+const Record = libp2pRecord.Record
 
 /**
  * A DHT implementation modeled after Kademlia with S/Kademlia modifications.
- *
  * Original implementation in go: https://github.com/libp2p/go-libp2p-kad-dht.
  */
 class KadDHT extends EventEmitter {
   /**
    * Random walk options
-   *
    * @typedef {Object} randomWalkOptions
    * @property {boolean} enabled discovery enabled (default: true)
    * @property {number} queriesPerPeriod how many queries to run per period (default: 1)
@@ -43,22 +39,31 @@ class KadDHT extends EventEmitter {
 
   /**
    * Create a new KadDHT.
-   *
-   * @param {Switch} sw libp2p-switch instance
-   * @param {object} options DHT options
-   * @param {number} options.kBucketSize k-bucket size (default 20)
-   * @param {number} options.concurrency alpha concurrency of queries (default 3)
-   * @param {Datastore} options.datastore datastore (default MemoryDatastore)
-   * @param {object} options.validators validators object with namespace as keys and function(key, record, callback)
-   * @param {object} options.selectors selectors object with namespace as keys and function(key, records)
+   * @param {Object} props
+   * @param {Switch} props.sw libp2p-switch instance
+   * @param {PeerInfo} props.peerInfo peer's peerInfo
+   * @param {Object} props.registrar registrar for libp2p protocols
+   * @param {function} props.registrar.handle
+   * @param {function} props.registrar.register
+   * @param {function} props.registrar.unregister
+   * @param {number} props.kBucketSize k-bucket size (default 20)
+   * @param {number} props.concurrency alpha concurrency of queries (default 3)
+   * @param {Datastore} props.datastore datastore (default MemoryDatastore)
+   * @param {object} props.validators validators object with namespace as keys and function(key, record, callback)
+   * @param {object} props.selectors selectors object with namespace as keys and function(key, records)
    * @param {randomWalkOptions} options.randomWalk randomWalk options
    */
-  constructor (sw, options) {
+  constructor ({
+    sw,
+    datastore = new MemoryDatastore(),
+    kBucketSize = c.K,
+    concurrency = c.ALPHA,
+    validators = {},
+    selectors = {},
+    randomWalk = {}
+  }) {
     super()
     assert(sw, 'libp2p-kad-dht requires a instance of Switch')
-    options = options || {}
-    options.validators = options.validators || {}
-    options.selectors = options.selectors || {}
 
     /**
      * Local reference to the libp2p-switch instance
@@ -68,17 +73,17 @@ class KadDHT extends EventEmitter {
     this.switch = sw
 
     /**
-     * k-bucket size, defaults to 20
+     * k-bucket size
      *
      * @type {number}
      */
-    this.kBucketSize = options.kBucketSize || c.K
+    this.kBucketSize = kBucketSize
 
     /**
      * ALPHA concurrency at which each query path with run, defaults to 3
      * @type {number}
      */
-    this.concurrency = options.concurrency || c.ALPHA
+    this.concurrency = concurrency
 
     /**
      * Number of disjoint query paths to use
@@ -99,7 +104,7 @@ class KadDHT extends EventEmitter {
      *
      * @type {Datastore}
      */
-    this.datastore = options.datastore || new MemoryDatastore()
+    this.datastore = datastore
 
     /**
      * Provider management
@@ -110,28 +115,24 @@ class KadDHT extends EventEmitter {
 
     this.validators = {
       pk: libp2pRecord.validator.validators.pk,
-      ...options.validators
+      ...validators
     }
 
     this.selectors = {
       pk: libp2pRecord.selection.selectors.pk,
-      ...options.selectors
+      ...selectors
     }
 
     this.network = new Network(this)
 
     this._log = utils.logger(this.peerInfo.id)
 
-    // Inject private apis so we don't clutter up this file
-    const pa = privateApi(this)
-    Object.keys(pa).forEach((name) => { this[name] = pa[name] })
-
     /**
      * Random walk management
      *
      * @type {RandomWalk}
      */
-    this.randomWalk = new RandomWalk(this, options.randomWalk)
+    this.randomWalk = new RandomWalk(this, randomWalk)
 
     /**
      * Keeps track of running queries
@@ -139,11 +140,15 @@ class KadDHT extends EventEmitter {
      * @type {QueryManager}
      */
     this._queryManager = new QueryManager()
+
+    // DHT components
+    this.contentFetching = contentFetching(this)
+    this.contentRouting = contentRouting(this)
+    this.peerRouting = peerRouting(this)
   }
 
   /**
    * Is this DHT running.
-   *
    * @type {bool}
    */
   get isStarted () {
@@ -151,9 +156,23 @@ class KadDHT extends EventEmitter {
   }
 
   /**
+   * Local peer (yourself)
+   * @type {PeerInfo}
+   */
+  get peerInfo () {
+    return this.switch._peerInfo
+  }
+
+  /**
+   * Peerbook
+   * @type {PeerBook}
+   */
+  get peerBook () {
+    return this.switch._peerBook
+  }
+
+  /**
    * Start listening to incoming connections.
-   *
-   * @param {function(Error)} callback
    * @returns {Promise<void>}
    */
   async start () {
@@ -168,8 +187,6 @@ class KadDHT extends EventEmitter {
   /**
    * Stop accepting incoming connections and sending outgoing
    * messages.
-   *
-   * @param {function(Error)} callback
    * @returns {Promise<void>}
    */
   stop () {
@@ -181,331 +198,65 @@ class KadDHT extends EventEmitter {
   }
 
   /**
-   * Local peer (yourself)
-   *
-   * @type {PeerInfo}
-   */
-  get peerInfo () {
-    return this.switch._peerInfo
-  }
-
-  get peerBook () {
-    return this.switch._peerBook
-  }
-
-  /**
    * Store the given key/value  pair in the DHT.
-   *
    * @param {Buffer} key
    * @param {Buffer} value
    * @param {Object} [options] - put options
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
    * @returns {Promise<void>}
    */
-  async put (key, value, options = {}) {
-    this._log('PutValue %b', key)
-
-    // create record in the dht format
-    const record = await utils.createPutRecord(key, value)
-
-    // store the record locally
-    await this._putLocal(key, record)
-
-    // put record to the closest peers
-    const peers = await this.getClosestPeers(key, { shallow: true })
-    const results = await pFilter(peers, async (peer) => {
-      try {
-        await this._putValueToPeer(key, record, peer)
-        return true
-      } catch (err) {
-        this._log.error('Failed to put to peer (%b): %s', peer.id, err)
-        return false
-      }
-    })
-
-    // verify if we were able to put to enough peers
-    const minPeers = options.minPeers || peers.length // Ensure we have a default `minPeers`
-
-    if (minPeers > results.length) {
-      const error = errcode(new Error(`Failed to put value to enough peers: ${results.length}/${minPeers}`), 'ERR_NOT_ENOUGH_PUT_PEERS')
-      this._log.error(error)
-      throw error
-    }
+  async put (key, value, options = {}) { // eslint-disable-line require-await
+    return this.contentFetching.put(key, value, options)
   }
 
   /**
    * Get the value to the given key.
    * Times out after 1 minute by default.
-   *
    * @param {Buffer} key
    * @param {Object} [options] - get options
    * @param {number} [options.timeout] - optional timeout (default: 60000)
    * @returns {Promise<{from: PeerId, val: Buffer}>}
    */
-  get (key, options = {}) {
-    options.timeout = options.timeout || c.minute
-
-    return this._get(key, options)
+  async get (key, options = {}) { // eslint-disable-line require-await
+    return this.contentFetching.get(key, options)
   }
 
   /**
    * Get the `n` values to the given key without sorting.
-   *
    * @param {Buffer} key
    * @param {number} nvals
    * @param {Object} [options] - get options
    * @param {number} [options.timeout] - optional timeout (default: 60000)
    * @returns {Promise<Array<{from: PeerId, val: Buffer}>>}
    */
-  async getMany (key, nvals, options = {}) {
-    options.timeout = options.timeout || c.minute
-
-    this._log('getMany %b (%s)', key, nvals)
-
-    let vals = []
-    let localRec
-
-    try {
-      localRec = await this._getLocal(key)
-    } catch (err) {
-      if (nvals === 0) {
-        throw err
-      }
-    }
-
-    if (localRec) {
-      vals.push({
-        val: localRec.value,
-        from: this.peerInfo.id
-      })
-    }
-
-    if (vals.length >= nvals) {
-      return vals
-    }
-
-    const paths = []
-    const id = await utils.convertBuffer(key)
-    const rtp = this.routingTable.closestPeers(id, this.kBucketSize)
-
-    this._log('peers in rt: %d', rtp.length)
-
-    if (rtp.length === 0) {
-      const errMsg = 'Failed to lookup key! No peers from routing table!'
-
-      this._log.error(errMsg)
-      throw errcode(new Error(errMsg), 'ERR_NO_PEERS_IN_ROUTING_TABLE')
-    }
-
-    // we have peers, lets do the actual query to them
-    const query = new Query(this, key, (pathIndex, numPaths) => {
-      // This function body runs once per disjoint path
-      const pathSize = utils.pathSize(nvals - vals.length, numPaths)
-      const pathVals = []
-      paths.push(pathVals)
-
-      // Here we return the query function to use on this particular disjoint path
-      return async (peer) => {
-        let rec, peers, lookupErr
-        try {
-          const results = await this._getValueOrPeers(peer, key)
-          rec = results.record
-          peers = results.peers
-        } catch (err) {
-          // If we have an invalid record we just want to continue and fetch a new one.
-          if (err.code !== 'ERR_INVALID_RECORD') {
-            throw err
-          }
-          lookupErr = err
-        }
-
-        const res = { closerPeers: peers }
-
-        if ((rec && rec.value) || lookupErr) {
-          pathVals.push({
-            val: rec && rec.value,
-            from: peer
-          })
-        }
-
-        // enough is enough
-        if (pathVals.length >= pathSize) {
-          res.pathComplete = true
-        }
-
-        return res
-      }
-    })
-
-    let error
-    try {
-      await pTimeout(query.run(rtp), options.timeout)
-    } catch (err) {
-      error = err
-    }
-    query.stop()
-
-    // combine vals from each path
-    vals = [].concat.apply(vals, paths).slice(0, nvals)
-
-    if (error && vals.length === 0) {
-      throw error
-    }
-
-    return vals
-  }
-
-  /**
-   * Kademlia 'node lookup' operation.
-   *
-   * @param {Buffer} key
-   * @param {Object} [options]
-   * @param {boolean} [options.shallow] shallow query (default: false)
-   * @returns {Promise<Array<PeerId>>}
-   */
-  async getClosestPeers (key, options = { shallow: false }) {
-    this._log('getClosestPeers to %b', key)
-
-    const id = await utils.convertBuffer(key)
-    const tablePeers = this.routingTable.closestPeers(id, this.kBucketSize)
-
-    const q = new Query(this, key, () => {
-      // There is no distinction between the disjoint paths,
-      // so there are no per-path variables in this scope.
-      // Just return the actual query function.
-      return async (peer) => {
-        const closer = await this._closerPeersSingle(key, peer)
-
-        return {
-          closerPeers: closer,
-          pathComplete: options.shallow ? true : undefined
-        }
-      }
-    })
-
-    const res = await q.run(tablePeers)
-    if (!res || !res.finalSet) {
-      return []
-    }
-
-    const sorted = await utils.sortClosestPeers(Array.from(res.finalSet), id)
-    return sorted.slice(0, this.kBucketSize)
-  }
-
-  /**
-   * Get the public key for the given peer id.
-   *
-   * @param {PeerId} peer
-   * @returns {Promise<PubKey>}
-   */
-  async getPublicKey (peer) {
-    this._log('getPublicKey %s', peer.toB58String())
-
-    // local check
-    let info
-    if (this.peerBook.has(peer)) {
-      info = this.peerBook.get(peer)
-
-      if (info && info.id.pubKey) {
-        this._log('getPublicKey: found local copy')
-        return info.id.pubKey
-      }
-    } else {
-      info = this.peerBook.put(new PeerInfo(peer))
-    }
-
-    // try the node directly
-    let pk
-    try {
-      pk = await this._getPublicKeyFromNode(peer)
-    } catch (err) {
-      // try dht directly
-      const pkKey = utils.keyForPublicKey(peer)
-      const value = await this.get(pkKey)
-      pk = crypto.keys.unmarshalPublicKey(value)
-    }
-
-    info.id = new PeerId(peer.id, null, pk)
-    this.peerBook.put(info)
-
-    return pk
-  }
-
-  /**
-   * Look if we are connected to a peer with the given id.
-   * Returns the `PeerInfo` for it, if found, otherwise `undefined`.
-   *
-   * @param {PeerId} peer
-   * @returns {Promise<PeerInfo>}
-   */
-  async findPeerLocal (peer) {
-    this._log('findPeerLocal %s', peer.toB58String())
-    const p = await this.routingTable.find(peer)
-
-    if (!p || !this.peerBook.has(p)) {
-      return
-    }
-
-    return this.peerBook.get(p)
+  async getMany (key, nvals, options = {}) { // eslint-disable-line require-await
+    return this.contentFetching.getMany(key, nvals, options)
   }
 
   // ----------- Content Routing
 
   /**
    * Announce to the network that we can provide given key's value.
-   *
    * @param {CID} key
    * @returns {Promise<void>}
    */
-  async provide (key) {
-    this._log('provide: %s', key.toBaseEncodedString())
-
-    const errors = []
-
-    // Add peer as provider
-    await this.providers.addProvider(key, this.peerInfo.id)
-
-    // Notify closest peers
-    const peers = await this.getClosestPeers(key.buffer)
-    const msg = new Message(Message.TYPES.ADD_PROVIDER, key.buffer, 0)
-    msg.providerPeers = [this.peerInfo]
-
-    await Promise.all(peers.map(async (peer) => {
-      this._log('putProvider %s to %s', key.toBaseEncodedString(), peer.toB58String())
-      try {
-        await this.network.sendMessage(peer, msg)
-      } catch (err) {
-        errors.push(err)
-      }
-    }))
-
-    if (errors.length) {
-      // TODO:
-      // This should be infrequent. This means a peer we previously connected
-      // to failed to exchange the provide message. If getClosestPeers was an
-      // iterator, we could continue to pull until we announce to kBucketSize peers.
-      throw errcode(`Failed to provide to ${errors.length} of ${this.kBucketSize} peers`, 'ERR_SOME_PROVIDES_FAILED', { errors })
-    }
+  async provide (key) { // eslint-disable-line require-await
+    return this.contentRouting.provide(key)
   }
 
   /**
    * Search the dht for up to `K` providers of the given CID.
-   *
    * @param {CID} key
    * @param {Object} options - findProviders options
    * @param {number} options.timeout - how long the query should maximally run, in milliseconds (default: 60000)
    * @param {number} options.maxNumProviders - maximum number of providers to find
    * @returns {Promise<PeerInfo>}
    */
-  findProviders (key, options = {}) {
-    options.timeout = options.timeout || c.minute
-    options.maxNumProviders = options.maxNumProviders || c.K
-
-    this._log('findProviders %s', key.toBaseEncodedString())
-    return this._findNProviders(key, options.timeout, options.maxNumProviders)
+  async findProviders (key, options = {}) { // eslint-disable-line require-await
+    return this.contentRouting.findProviders(key, options)
   }
 
-  // ----------- Peer Routing
+  // ----------- Peer Routing -----------
 
   /**
    * Search for a peer with the given ID.
@@ -515,82 +266,254 @@ class KadDHT extends EventEmitter {
    * @param {number} options.timeout - how long the query should maximally run, in milliseconds (default: 60000)
    * @returns {Promise<PeerInfo>}
    */
-  async findPeer (id, options = {}) {
-    options.timeout = options.timeout || c.minute
-    this._log('findPeer %s', id.toB58String())
-
-    // Try to find locally
-    const pi = await this.findPeerLocal(id)
-
-    // already got it
-    if (pi != null) {
-      this._log('found local')
-      return pi
-    }
-
-    const key = await utils.convertPeerId(id)
-    const peers = this.routingTable.closestPeers(key, this.kBucketSize)
-
-    if (peers.length === 0) {
-      throw errcode(new Error('Peer lookup failed'), 'ERR_LOOKUP_FAILED')
-    }
-
-    // sanity check
-    const match = peers.find((p) => p.isEqual(id))
-    if (match && this.peerBook.has(id)) {
-      this._log('found in peerbook')
-      return this.peerBook.get(id)
-    }
-
-    // query the network
-    const query = new Query(this, id.id, () => {
-      // There is no distinction between the disjoint paths,
-      // so there are no per-path variables in this scope.
-      // Just return the actual query function.
-      return async (peer) => {
-        const msg = await this._findPeerSingle(peer, id)
-        const match = msg.closerPeers.find((p) => p.id.isEqual(id))
-
-        // found it
-        if (match) {
-          return {
-            peer: match,
-            queryComplete: true
-          }
-        }
-
-        return {
-          closerPeers: msg.closerPeers
-        }
-      }
-    })
-
-    let error, result
-    try {
-      result = await pTimeout(query.run(peers), options.timeout)
-    } catch (err) {
-      error = err
-    }
-    query.stop()
-    if (error) throw error
-
-    let success = false
-    result.paths.forEach((result) => {
-      if (result.success) {
-        success = true
-        this.peerBook.put(result.peer)
-      }
-    })
-    this._log('findPeer %s: %s', id.toB58String(), success)
-
-    if (!success) {
-      throw errcode(new Error('No peer found'), 'ERR_NOT_FOUND')
-    }
-    return this.peerBook.get(id)
+  async findPeer (id, options = {}) { // eslint-disable-line require-await
+    return this.peerRouting.findPeer(id, options)
   }
+
+  /**
+   * Kademlia 'node lookup' operation.
+   * @param {Buffer} key
+   * @param {Object} [options]
+   * @param {boolean} [options.shallow] shallow query (default: false)
+   * @returns {Promise<Array<PeerId>>}
+   */
+  async getClosestPeers (key, options = { shallow: false }) { // eslint-disable-line require-await
+    return this.peerRouting.getClosestPeers(key, options)
+  }
+
+  /**
+   * Get the public key for the given peer id.
+   * @param {PeerId} peer
+   * @returns {Promise<PubKey>}
+   */
+  async getPublicKey (peer) { // eslint-disable-line require-await
+    return this.peerRouting.getPublicKey(peer)
+  }
+
+  // ----------- Discovery -----------
 
   _peerDiscovered (peerInfo) {
     this.emit('peer', peerInfo)
+  }
+
+  // ----------- Internals -----------
+
+  /**
+   * Returns the routing tables closest peers, for the key of
+   * the message.
+   *
+   * @param {Message} msg
+   * @returns {Promose<Array<PeerInfo>>}
+   * @private
+   */
+  async _nearestPeersToQuery (msg) {
+    const key = await utils.convertBuffer(msg.key)
+
+    const ids = this.routingTable.closestPeers(key, this.kBucketSize)
+
+    return ids.map((p) => {
+      if (this.peerBook.has(p)) {
+        return this.peerBook.get(p)
+      }
+      return this.peerBook.put(new PeerInfo(p))
+    })
+  }
+
+  /**
+   * Get the nearest peers to the given query, but iff closer
+   * than self.
+   *
+   * @param {Message} msg
+   * @param {PeerInfo} peer
+   * @returns {Promise<Array<PeerInfo>>}
+   * @private
+   */
+
+  async _betterPeersToQuery (msg, peer) {
+    this._log('betterPeersToQuery')
+    const closer = await this._nearestPeersToQuery(msg)
+
+    return closer.filter((closer) => {
+      if (this._isSelf(closer.id)) {
+        // Should bail, not sure
+        this._log.error('trying to return self as closer')
+        return false
+      }
+
+      return !closer.id.isEqual(peer.id)
+    })
+  }
+
+  /**
+   * Try to fetch a given record by from the local datastore.
+   * Returns the record iff it is still valid, meaning
+   * - it was either authored by this node, or
+   * - it was received less than `MAX_RECORD_AGE` ago.
+   *
+   * @param {Buffer} key
+   * @returns {Promise<Record>}
+   * @private
+   */
+
+  async _checkLocalDatastore (key) {
+    this._log('checkLocalDatastore: %b', key)
+    const dsKey = utils.bufferToKey(key)
+
+    // Fetch value from ds
+    let rawRecord
+    try {
+      rawRecord = await this.datastore.get(dsKey)
+    } catch (err) {
+      if (err.code === 'ERR_NOT_FOUND') {
+        return undefined
+      }
+      throw err
+    }
+
+    // Create record from the returned bytes
+    const record = Record.deserialize(rawRecord)
+
+    if (!record) {
+      throw errcode('Invalid record', 'ERR_INVALID_RECORD')
+    }
+
+    // Check validity: compare time received with max record age
+    if (record.timeReceived == null ||
+      utils.now() - record.timeReceived > c.MAX_RECORD_AGE) {
+      // If record is bad delete it and return
+      await this.datastore.delete(dsKey)
+      return undefined
+    }
+
+    // Record is valid
+    return record
+  }
+
+  /**
+   * Add the peer to the routing table and update it in the peerbook.
+   *
+   * @param {PeerInfo} peer
+   * @returns {Promise<void>}
+   * @private
+   */
+
+  async _add (peer) {
+    peer = this.peerBook.put(peer)
+    await this.routingTable.add(peer.id)
+  }
+
+  /**
+   * Verify a record without searching the DHT.
+   *
+   * @param {Record} record
+   * @returns {Promise<void>}
+   * @private
+   */
+
+  async _verifyRecordLocally (record) {
+    this._log('verifyRecordLocally')
+
+    await libp2pRecord.validator.verifyRecord(this.validators, record)
+  }
+
+  /**
+   * Is the given peer id our PeerId?
+   *
+   * @param {PeerId} other
+   * @returns {bool}
+   *
+   * @private
+   */
+
+  _isSelf (other) {
+    return other && this.peerInfo.id.id.equals(other.id)
+  }
+
+  /**
+   * Store the given key/value pair at the peer `target`.
+   *
+   * @param {Buffer} key
+   * @param {Buffer} rec - encoded record
+   * @param {PeerId} target
+   * @returns {Promise<void>}
+   *
+   * @private
+   */
+
+  async _putValueToPeer (key, rec, target) {
+    const msg = new Message(Message.TYPES.PUT_VALUE, key, 0)
+    msg.record = rec
+
+    const resp = await this.network.sendRequest(target, msg)
+
+    if (!resp.record.value.equals(Record.deserialize(rec).value)) {
+      throw errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID')
+    }
+  }
+
+  /**
+   * Query a particular peer for the value for the given key.
+   * It will either return the value or a list of closer peers.
+   *
+   * Note: The peerbook is updated with new addresses found for the given peer.
+   *
+   * @param {PeerId} peer
+   * @param {Buffer} key
+   * @returns {Promise<{Record, Array<PeerInfo}>} // TODO: define obj
+   * @private
+   */
+
+  async _getValueOrPeers (peer, key) {
+    const msg = await this._getValueSingle(peer, key)
+
+    const peers = msg.closerPeers
+    const record = msg.record
+
+    if (record) {
+      // We have a record
+      try {
+        await this._verifyRecordOnline(record)
+      } catch (err) {
+        const errMsg = 'invalid record received, discarded'
+        this._log(errMsg)
+        throw errcode(new Error(errMsg), 'ERR_INVALID_RECORD')
+      }
+
+      return { record, peers }
+    }
+
+    if (peers.length > 0) {
+      return { peers }
+    }
+
+    throw errcode(new Error('Not found'), 'ERR_NOT_FOUND')
+  }
+
+  /**
+   * Get a value via rpc call for the given parameters.
+   *
+   * @param {PeerId} peer
+   * @param {Buffer} key
+   * @returns {Promise<Message>}
+   * @private
+   */
+
+  async _getValueSingle (peer, key) { // eslint-disable-line require-await
+    const msg = new Message(Message.TYPES.GET_VALUE, key, 0)
+    return this.network.sendRequest(peer, msg)
+  }
+
+  /**
+   * Verify a record, fetching missing public keys from the network.
+   * Calls back with an error if the record is invalid.
+   *
+   * @param {Record} record
+   * @returns {Promise<void>}
+   * @private
+   */
+
+  async _verifyRecordOnline (record) {
+    await libp2pRecord.validator.verifyRecord(this.validators, record)
   }
 }
 

@@ -45,7 +45,10 @@ class TestDHT {
     sw.connection.addStreamMuxer(Mplex)
     sw.connection.reuse()
 
-    const dht = new KadDHT(sw, options)
+    const dht = new KadDHT({
+      sw,
+      ...options
+    })
 
     dht.validators.v = {
       func (key, publicKey) {

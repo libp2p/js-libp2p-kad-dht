@@ -4,7 +4,7 @@ const Heap = require('heap')
 const distance = require('xor-distance')
 const debug = require('debug')
 
-const utils = require('./utils')
+const utils = require('../utils')
 
 const log = debug('libp2p:dht:peer-queue')
 

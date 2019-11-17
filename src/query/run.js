@@ -1,6 +1,6 @@
 'use strict'
 
-const PeerDistanceList = require('../peer-distance-list')
+const PeerDistanceList = require('../peer-list/peer-distance-list')
 const EventEmitter = require('events')
 
 const Path = require('./path')

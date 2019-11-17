@@ -23,7 +23,7 @@ const createDHT = async (peerInfos) => {
   sw.transport.add('tcp', new TCP())
   sw.connection.addStreamMuxer(Mplex)
   sw.connection.reuse()
-  const d = new DHT(sw)
+  const d = new DHT({ sw })
 
   await d.start()
   return d

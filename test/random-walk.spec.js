@@ -10,6 +10,13 @@ const RandomWalk = require('../src/random-walk')
 const { defaultRandomWalk } = require('../src/constants')
 const { AssertionError } = require('assert')
 
+const TestDHT = require('./utils/test-dht')
+const {
+  bootstrap,
+  connect,
+  waitForWellFormedTables
+} = require('./utils')
+
 describe('Random Walk', () => {
   const mockDHT = {
     peerInfo: {
@@ -253,5 +260,24 @@ describe('Random Walk', () => {
 
       randomWalk.start()
     })
+  })
+
+  it('manual operation', async function () {
+    this.timeout(20 * 1000)
+
+    const nDHTs = 20
+    const tdht = new TestDHT()
+
+    // random walk disabled for a manual usage
+    const dhts = await tdht.spawn(nDHTs)
+
+    await Promise.all(
+      Array.from({ length: nDHTs }).map((_, i) => connect(dhts[i], dhts[(i + 1) % nDHTs]))
+    )
+
+    bootstrap(dhts)
+    await waitForWellFormedTables(dhts, 7, 0, 20 * 1000)
+
+    return tdht.teardown()
   })
 })

@@ -31,7 +31,10 @@ describe('rpc', () => {
       sw.transport.add('tcp', new TCP())
       sw.connection.addStreamMuxer(Mplex)
       sw.connection.reuse()
-      const dht = new KadDHT(sw, { kBucketSize: 5 })
+      const dht = new KadDHT({
+        sw,
+        kBucketSize: 5
+      })
 
       dht.peerBook.put(peerInfos[1])
 
