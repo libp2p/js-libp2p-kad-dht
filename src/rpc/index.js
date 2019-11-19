@@ -1,7 +1,9 @@
 'use strict'
 
-const pull = require('pull-stream')
-const lp = require('pull-length-prefixed')
+const pipe = require('it-pipe')
+const lp = require('it-length-prefixed')
+const paramap = require('paramap-it')
+const PeerInfo = require('peer-info')
 
 const Message = require('../message')
 const handlers = require('./handlers')
@@ -14,23 +16,22 @@ module.exports = (dht) => {
 
   /**
    * Process incoming DHT messages.
-   *
    * @param {PeerInfo} peer
    * @param {Message} msg
    * @returns {Promise<Message>}
    *
    * @private
    */
-  async function handleMessage (peer, msg) {
+  async function handleMessage (peer, msg) { // eslint-disable-line
+    // get handler & exectue it
+    const handler = getMessageHandler(msg.type)
+
     try {
       await dht._add(peer)
     } catch (err) {
       log.error('Failed to update the kbucket store')
       log.error(err)
     }
-
-    // get handler & exectue it
-    const handler = getMessageHandler(msg.type)
 
     if (!handler) {
       log.error(`no handler found for message type: ${msg.type}`)
@@ -41,63 +42,43 @@ module.exports = (dht) => {
   }
 
   /**
-   * Handle incoming streams from the Switch, on the dht protocol.
-   *
-   * @param {string} protocol
-   * @param {Connection} conn
-   * @returns {void}
+   * Handle incoming streams on the dht protocol.
+   * @param {Object} props
+   * @param {string} props.protocol
+   * @param {DuplexStream} props.stream
+   * @param {Connection} props.connection connection
+   * @returns {Promise<void>}
    */
-  return function protocolHandler (protocol, conn) {
-    conn.getPeerInfo((err, peer) => {
-      if (err) {
-        log.error('Failed to get peer info')
-        log.error(err)
-        return
-      }
+  return async function onIncomingStream ({ protocol, stream, connection }) {
+    const peerInfo = await PeerInfo.create(connection.remotePeer)
+    peerInfo.protocols.add(protocol)
 
-      log('from: %s', peer.id.toB58String())
+    try {
+      await dht._add(peerInfo)
+    } catch (err) {
+      log.error(err)
+    }
 
-      pull(
-        conn,
-        lp.decode(),
-        pull.filter((msg) => msg.length < c.maxMessageSize),
-        pull.map((rawMsg) => {
-          let msg
-          try {
-            msg = Message.deserialize(rawMsg)
-          } catch (err) {
-            log.error('failed to read incoming message', err)
-            return
-          }
+    const idB58Str = peerInfo.id.toB58String()
+    log('from: %s', idB58Str)
 
-          return msg
-        }),
-        pull.filter(Boolean),
-        pull.asyncMap(async (msg, cb) => {
-          let response
-          try {
-            response = await handleMessage(peer, msg)
-          } catch (err) {
-            cb(err)
-          }
-          cb(null, response)
-        }),
-        // Not all handlers will return a response
-        pull.filter(Boolean),
-        pull.map((response) => {
-          let msg
-          try {
-            msg = response.serialize()
-          } catch (err) {
-            log.error('failed to send message', err)
-            return
-          }
-          return msg
-        }),
-        pull.filter(Boolean),
-        lp.encode(),
-        conn
-      )
-    })
+    await pipe(
+      stream.source,
+      lp.decode(),
+      utils.itFilter(
+        (msg) => msg.length < c.maxMessageSize
+      ),
+      source => paramap(source, rawMsg => {
+        const msg = Message.deserialize(rawMsg.slice())
+        return handleMessage(peerInfo, msg)
+      }),
+      // Not all handlers will return a response
+      utils.itFilter(Boolean),
+      source => paramap(source, response => {
+        return response.serialize()
+      }),
+      lp.encode(),
+      stream.sink
+    )
   }
 }

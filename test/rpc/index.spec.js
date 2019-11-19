@@ -4,69 +4,82 @@
 const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
-const pull = require('pull-stream')
-const lp = require('pull-length-prefixed')
-const Connection = require('interface-connection').Connection
-const PeerBook = require('peer-book')
-const Switch = require('libp2p-switch')
-const TCP = require('libp2p-tcp')
-const Mplex = require('libp2p-mplex')
+const pDefer = require('p-defer')
+const pipe = require('it-pipe')
+const lp = require('it-length-prefixed')
 
 const Message = require('../../src/message')
-const KadDHT = require('../../src')
 const rpc = require('../../src/rpc')
 
 const createPeerInfo = require('../utils/create-peer-info')
+const TestDHT = require('../utils/test-dht')
 
 describe('rpc', () => {
   let peerInfos
+  let tdht
 
   before(async () => {
     peerInfos = await createPeerInfo(2)
+    tdht = new TestDHT()
   })
 
-  describe('protocolHandler', () => {
-    it('calls back with the response', (done) => {
-      const sw = new Switch(peerInfos[0], new PeerBook())
-      sw.transport.add('tcp', new TCP())
-      sw.connection.addStreamMuxer(Mplex)
-      sw.connection.reuse()
-      const dht = new KadDHT({
-        sw,
-        kBucketSize: 5
-      })
+  it('calls back with the response', async () => {
+    const defer = pDefer()
+    const [dht] = await tdht.spawn(1)
 
-      dht.peerBook.put(peerInfos[1])
+    dht.peerStore.put(peerInfos[1])
 
-      const msg = new Message(Message.TYPES.GET_VALUE, Buffer.from('hello'), 5)
+    const msg = new Message(Message.TYPES.GET_VALUE, Buffer.from('hello'), 5)
 
-      const conn = makeConnection(msg, peerInfos[1], (err, res) => {
-        expect(err).to.not.exist()
-        expect(res).to.have.length(1)
-        const msg = Message.deserialize(res[0])
-        expect(msg).to.have.property('key').eql(Buffer.from('hello'))
-        expect(msg).to.have.property('closerPeers').eql([])
+    const validateMessage = (res) => {
+      const msg = Message.deserialize(res[0])
+      expect(msg).to.have.property('key').eql(Buffer.from('hello'))
+      expect(msg).to.have.property('closerPeers').eql([])
+      defer.resolve()
+    }
 
-        done()
-      })
+    const data = []
+    await pipe(
+      [msg.serialize()],
+      lp.encode(),
+      async source => {
+        for await (const chunk of source) {
+          data.push(chunk.slice())
+        }
+      }
+    )
 
-      rpc(dht)('protocol', conn)
+    const duplexStream = {
+      source: function * () {
+        const array = data
+
+        while (array.length) {
+          yield array.shift()
+        }
+      },
+      sink: async (source) => {
+        const res = []
+        await pipe(
+          source,
+          lp.decode(),
+          async source => {
+            for await (const chunk of source) {
+              res.push(chunk.slice())
+            }
+          }
+        )
+        validateMessage(res)
+      }
+    }
+
+    rpc(dht)({
+      protocol: 'protocol',
+      stream: duplexStream,
+      connection: {
+        remotePeer: peerInfos[1].id
+      }
     })
+
+    return defer.promise
   })
 })
-
-function makeConnection (msg, info, callback) {
-  const rawConn = {
-    source: pull(
-      pull.values([msg.serialize()]),
-      lp.encode()
-    ),
-    sink: pull(
-      lp.decode(),
-      pull.collect(callback)
-    )
-  }
-  const conn = new Connection(rawConn)
-  conn.setPeerInfo(info)
-  return conn
-}
