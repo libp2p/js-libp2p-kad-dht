@@ -303,7 +303,7 @@ class KadDHT extends EventEmitter {
    * the message.
    *
    * @param {Message} msg
-   * @returns {Promose<Array<PeerInfo>>}
+   * @returns {Promise<Array<PeerInfo>>}
    * @private
    */
   async _nearestPeersToQuery (msg) {
@@ -459,7 +459,7 @@ class KadDHT extends EventEmitter {
    *
    * @param {PeerId} peer
    * @param {Buffer} key
-   * @returns {Promise<{Record, Array<PeerInfo}>} // TODO: define obj
+   * @returns {Promise<{Record, Array<PeerInfo}>}
    * @private
    */
 

@@ -411,7 +411,6 @@ describe('KadDHT', () => {
       const tdht = new TestDHT()
       const dhts = await tdht.spawn(4)
 
-      // const addrs = dhts.map((d) => d.peerInfo.multiaddrs.toArray()[0])
       const ids = dhts.map((d) => d.peerInfo.id)
       const idsB58 = ids.map(id => id.toB58String())
       sinon.spy(dhts[3].network, 'sendMessage')
@@ -448,12 +447,6 @@ describe('KadDHT', () => {
 
         expect(provs).to.have.length(1)
         expect(provs[0].id.id).to.be.eql(ids[3].id)
-        // TODO: /ipfs => /p2p
-        // expect(
-        //   provs[0].multiaddrs.toArray()[0].toString()
-        // ).to.equal(
-        //   addrs[3].toString()
-        // )
       })
 
       return tdht.teardown()

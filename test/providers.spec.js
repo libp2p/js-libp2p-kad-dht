@@ -108,8 +108,6 @@ describe('Providers', () => {
 
   // slooow so only run when you need to
   it.skip('many', async function () {
-    this.timeout(100 * 1000)
-
     const p = path.join(
       os.tmpdir(), (Math.random() * 100).toString()
     )

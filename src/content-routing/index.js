@@ -71,7 +71,7 @@ module.exports = (dht) => {
      * @param {number} options.maxNumProviders - maximum number of providers to find
      * @returns {Promise<PeerInfo>}
      */
-    async findProviders (key, options = {}) { // eslint-disable-line require-await
+    async findProviders (key, options = {}) {
       const providerTimeout = options.timeout || c.minute
       const n = options.maxNumProviders || c.K
 
