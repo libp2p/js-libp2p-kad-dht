@@ -27,6 +27,7 @@ class TestDHT {
 
   async _spawnOne (index, options = {}) {
     const regRecord = {}
+    const peerStore = new PeerBook()
 
     // Disable random walk by default for more controlled testing
     options = {
@@ -41,7 +42,7 @@ class TestDHT {
 
     p.multiaddrs.add(`/ip4/127.0.0.1/tcp/${port}/p2p/${p.id.toB58String()}`)
 
-    const dial = async (peer, protocol) => {
+    const connectToPeer = async (peer) => {
       const remotePeerB58 = peer.toB58String()
       const remoteDht = this.nodes.find(
         (node) => node.peerInfo.id.toB58String() === remotePeerB58
@@ -58,7 +59,7 @@ class TestDHT {
       await remoteOnConnect(p, c0)
 
       await remoteHandler({
-        protocol: protocol,
+        protocol: PROTOCOL_DHT,
         stream: c0.stream,
         connection: {
           remotePeer: p.id
@@ -66,17 +67,18 @@ class TestDHT {
       })
 
       return {
-        stream: c1.stream
+        newStream: () => {
+          return { stream: c1.stream }
+        }
       }
     }
 
     const dht = new KadDHT({
       dialer: {
-        dial,
-        dialProtocol: dial
+        connectToPeer
       },
       registrar: createMockRegistrar(regRecord),
-      peerStore: new PeerBook(),
+      peerStore,
       peerInfo: p,
       validators: {
         v: {

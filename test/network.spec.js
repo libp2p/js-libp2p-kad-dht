@@ -32,11 +32,11 @@ describe('Network', () => {
       const msg = new Message(Message.TYPES.PING, Buffer.from('hello'), 0)
 
       // mock dial
-      dht.dialer.dialProtocol = (peer, protocol) => {
-        expect(protocol).to.eql('/ipfs/kad/1.0.0')
-
+      dht.dialer.connectToPeer = () => {
         return {
-          stream: pair() // {source, sink} streams that are internally connected
+          newStream: () => {
+            return { stream: pair() } // {source, sink} streams that are internally connected
+          }
         }
       }
 
@@ -56,8 +56,7 @@ describe('Network', () => {
       const msg = new Message(Message.TYPES.PING, Buffer.from('hello'), 0)
 
       // mock it
-      dht.dialer.dialProtocol = async (peer, protocol) => {
-        expect(protocol).to.eql('/ipfs/kad/1.0.0')
+      dht.dialer.connectToPeer = async () => {
         const msg = new Message(Message.TYPES.FIND_NODE, Buffer.from('world'), 0)
 
         const data = []
@@ -95,7 +94,9 @@ describe('Network', () => {
         }
 
         return {
-          stream: { source, sink }
+          newStream: () => {
+            return { stream: { source, sink } }
+          }
         }
       }
 
@@ -119,9 +120,7 @@ describe('Network', () => {
       const msg = new Message(Message.TYPES.PING, Buffer.from('hello'), 0)
 
       // mock it
-      dht.dialer.dialProtocol = (peer, protocol) => {
-        expect(protocol).to.eql('/ipfs/kad/1.0.0')
-
+      dht.dialer.connectToPeer = () => {
         const source = (async function * () { // eslint-disable-line require-yield
           await delay(1000)
         })()
@@ -142,7 +141,9 @@ describe('Network', () => {
         }
 
         return {
-          stream: { source, sink }
+          newStream: () => {
+            return { stream: { source, sink } }
+          }
         }
       }
 

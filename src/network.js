@@ -117,9 +117,11 @@ class Network {
       throw errcode(new Error('Network is offline'), 'ERR_NETWORK_OFFLINE')
     }
 
-    this._log('sending to: %s', to.toB58String())
+    const id = to.toB58String()
+    this._log('sending to: %s', id)
 
-    const { stream } = await this.dht.dialer.dialProtocol(to, c.PROTOCOL_DHT)
+    const conn = await this.dht.dialer.connectToPeer(to)
+    const { stream } = await conn.newStream(c.PROTOCOL_DHT)
 
     return this._writeReadMessage(stream, msg.serialize())
   }
@@ -136,9 +138,12 @@ class Network {
       throw errcode(new Error('Network is offline'), 'ERR_NETWORK_OFFLINE')
     }
 
-    this._log('sending to: %s', to.toB58String())
+    const id = to.toB58String()
+    this._log('sending to: %s', id)
 
-    const { stream } = await this.dht.dialer.dialProtocol(to, c.PROTOCOL_DHT)
+    const conn = await this.dht.dialer.connectToPeer(to)
+    const { stream } = await conn.newStream(c.PROTOCOL_DHT)
+
     return this._writeMessage(stream, msg.serialize())
   }
 
