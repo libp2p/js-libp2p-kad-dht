@@ -48,10 +48,7 @@ describe('Query', () => {
     before('create a dht', () => {
       const peerStore = new PeerBook()
       dht = new DHT({
-        dialer: {
-          _peerInfo: ourPeerInfo,
-          _peerBook: peerStore
-        },
+        dialer: {},
         peerStore,
         peerInfo: ourPeerInfo
       })

@@ -7,12 +7,14 @@ const expect = chai.expect
 const pDefer = require('p-defer')
 const pipe = require('it-pipe')
 const lp = require('it-length-prefixed')
+const { collect } = require('streaming-iterables')
 
 const Message = require('../../src/message')
 const rpc = require('../../src/rpc')
 
 const createPeerInfo = require('../utils/create-peer-info')
 const TestDHT = require('../utils/test-dht')
+const toBuffer = require('../utils/to-buffer')
 
 describe('rpc', () => {
   let peerInfos
@@ -38,35 +40,20 @@ describe('rpc', () => {
       defer.resolve()
     }
 
-    const data = []
-    await pipe(
+    const source = await pipe(
       [msg.serialize()],
       lp.encode(),
-      async source => {
-        for await (const chunk of source) {
-          data.push(chunk.slice())
-        }
-      }
+      collect
     )
 
     const duplexStream = {
-      source: function * () {
-        const array = data
-
-        while (array.length) {
-          yield array.shift()
-        }
-      },
+      source,
       sink: async (source) => {
-        const res = []
-        await pipe(
+        const res = await pipe(
           source,
           lp.decode(),
-          async source => {
-            for await (const chunk of source) {
-              res.push(chunk.slice())
-            }
-          }
+          toBuffer, // Ensure we have buffers here for validateMessage to consume
+          collect
         )
         validateMessage(res)
       }

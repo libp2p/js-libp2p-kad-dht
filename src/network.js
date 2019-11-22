@@ -40,7 +40,6 @@ class Network {
       return
     }
 
-    // TODO remove: add a way to check if switch has started or not
     if (!this.dht.isStarted) {
       throw errcode(new Error('Can not start network'), 'ERR_CANNOT_START_NETWORK')
     }
@@ -52,7 +51,7 @@ class Network {
 
     // register protocol with topology
     const topology = new MulticodecTopology({
-      multicodecs: c.PROTOCOL_DHT,
+      multicodecs: [c.PROTOCOL_DHT],
       handlers: {
         onConnect: this._onPeerConnected,
         onDisconnect: () => {}
@@ -98,15 +97,11 @@ class Network {
    * Registrar notifies a connection successfully with dht protocol.
    * @private
    * @param {PeerInfo} peerInfo remote peer info
-   * @param {Connection} conn connection to the peer
    * @returns {Promise<void>}
    */
-  async _onPeerConnected (peerInfo, conn) {
+  async _onPeerConnected (peerInfo) {
     await this.dht._add(peerInfo)
     this._log('added to the routing table: %s', peerInfo.id.toB58String())
-
-    // Open a stream with the connected peer
-    await conn.newStream(c.PROTOCOL_DHT)
   }
 
   /**
@@ -152,40 +147,40 @@ class Network {
    * If no response is received after the specified timeout
    * this will error out.
    *
-   * @param {Connection} conn - the connection to use
+   * @param {DuplexIterable} stream - the stream to use
    * @param {Buffer} msg - the message to send
    * @returns {Promise<Message>}
    * @private
    */
-  async _writeReadMessage (conn, msg) { // eslint-disable-line require-await
+  async _writeReadMessage (stream, msg) { // eslint-disable-line require-await
     return pTimeout(
-      writeReadMessage(conn, msg),
+      writeReadMessage(stream, msg),
       this.readMessageTimeout
     )
   }
 
   /**
-   * Write a message to the given connection.
+   * Write a message to the given stream.
    *
-   * @param {Connection} conn - the connection to use
+   * @param {DuplexIterable} stream - the stream to use
    * @param {Buffer} msg - the message to send
    * @returns {Promise<void>}
    * @private
    */
-  _writeMessage (conn, msg) {
+  _writeMessage (stream, msg) {
     return pipe(
       [msg],
       lp.encode(),
-      conn
+      stream
     )
   }
 }
 
-async function writeReadMessage (conn, msg) {
+async function writeReadMessage (stream, msg) {
   const res = await pipe(
     [msg],
     lp.encode(),
-    conn,
+    stream,
     utils.itFilter(
       (msg) => msg.length < c.maxMessageSize
     ),

@@ -3,7 +3,7 @@
 const delay = require('delay')
 const pRetry = require('p-retry')
 const pTimeout = require('p-timeout')
-const DuplexPair = require('it-pair/duplex')
+const duplexPair = require('it-pair/duplex')
 
 const { sortClosestPeers } = require('../../src/utils')
 
@@ -35,7 +35,7 @@ const createMockRegistrar = (registrarRecord) => ({
 exports.createMockRegistrar = createMockRegistrar
 
 const ConnectionPair = () => {
-  const [d0, d1] = DuplexPair()
+  const [d0, d1] = duplexPair()
 
   return [
     {

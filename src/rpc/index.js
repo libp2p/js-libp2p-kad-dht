@@ -2,7 +2,6 @@
 
 const pipe = require('it-pipe')
 const lp = require('it-length-prefixed')
-const paramap = require('paramap-it')
 const PeerInfo = require('peer-info')
 
 const Message = require('../message')
@@ -22,15 +21,14 @@ module.exports = (dht) => {
    *
    * @private
    */
-  async function handleMessage (peer, msg) { // eslint-disable-line
-    // get handler & exectue it
+  async function handleMessage (peer, msg) {
+    // get handler & execute it
     const handler = getMessageHandler(msg.type)
 
     try {
       await dht._add(peer)
     } catch (err) {
-      log.error('Failed to update the kbucket store')
-      log.error(err)
+      log.error('Failed to update the kbucket store', err)
     }
 
     if (!handler) {
@@ -44,14 +42,12 @@ module.exports = (dht) => {
   /**
    * Handle incoming streams on the dht protocol.
    * @param {Object} props
-   * @param {string} props.protocol
    * @param {DuplexStream} props.stream
    * @param {Connection} props.connection connection
    * @returns {Promise<void>}
    */
-  return async function onIncomingStream ({ protocol, stream, connection }) {
+  return async function onIncomingStream ({ stream, connection }) {
     const peerInfo = await PeerInfo.create(connection.remotePeer)
-    peerInfo.protocols.add(protocol)
 
     try {
       await dht._add(peerInfo)
@@ -65,18 +61,21 @@ module.exports = (dht) => {
     await pipe(
       stream.source,
       lp.decode(),
-      utils.itFilter(
-        (msg) => msg.length < c.maxMessageSize
-      ),
-      source => paramap(source, rawMsg => {
-        const msg = Message.deserialize(rawMsg.slice())
-        return handleMessage(peerInfo, msg)
-      }),
-      // Not all handlers will return a response
-      utils.itFilter(Boolean),
-      source => paramap(source, response => {
-        return response.serialize()
-      }),
+      source => (async function * () {
+        for await (const msg of source) {
+          // Check message size
+          if (msg.length < c.maxMessageSize) {
+            // handle the message
+            const desMessage = Message.deserialize(msg.slice())
+            const res = await handleMessage(peerInfo, desMessage)
+
+            // Not all handlers will return a response
+            if (res) {
+              yield res.serialize()
+            }
+          }
+        }
+      })(),
       lp.encode(),
       stream.sink
     )

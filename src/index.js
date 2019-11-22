@@ -67,7 +67,7 @@ class KadDHT extends EventEmitter {
     randomWalk = {}
   }) {
     super()
-    assert(dialer, 'libp2p-kad-dht requires a instance of Dialer')
+    assert(dialer, 'libp2p-kad-dht requires an instance of Dialer')
 
     /**
      * Local reference to the libp2p dialer instance
@@ -82,7 +82,7 @@ class KadDHT extends EventEmitter {
     this.peerInfo = peerInfo
 
     /**
-     * Local peer info
+     * Local PeerStore
      * @type {PeerStore}
      */
     this.peerStore = peerStore
