@@ -35,8 +35,8 @@ module.exports = (dht) => {
     ])
 
     const providers = peers.map((p) => {
-      if (dht.peerStore.has(p)) {
-        return dht.peerStore.get(p)
+      if (dht.peerStore.has(p.toB58String())) {
+        return dht.peerStore.get(p.toB58String())
       }
 
       return dht.peerStore.put(new PeerInfo(p))

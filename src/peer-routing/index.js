@@ -24,11 +24,11 @@ module.exports = (dht) => {
     dht._log('findPeerLocal %s', peer.toB58String())
     const p = await dht.routingTable.find(peer)
 
-    if (!p || !dht.peerStore.has(p)) {
+    if (!p || !dht.peerStore.has(p.toB58String())) {
       return
     }
 
-    return dht.peerStore.get(p)
+    return dht.peerStore.get(p.toB58String())
   }
 
   /**
@@ -128,9 +128,9 @@ module.exports = (dht) => {
 
       // sanity check
       const match = peers.find((p) => p.isEqual(id))
-      if (match && dht.peerStore.has(id)) {
+      if (match && dht.peerStore.has(id.toB58String())) {
         dht._log('found in peerStore')
-        return dht.peerStore.get(id)
+        return dht.peerStore.get(id.toB58String())
       }
 
       // query the network
@@ -177,7 +177,7 @@ module.exports = (dht) => {
       if (!success) {
         throw errcode(new Error('No peer found'), 'ERR_NOT_FOUND')
       }
-      return dht.peerStore.get(id)
+      return dht.peerStore.get(id.toB58String())
     },
 
     /**
@@ -229,8 +229,8 @@ module.exports = (dht) => {
 
       // local check
       let info
-      if (dht.peerStore.has(peer)) {
-        info = dht.peerStore.get(peer)
+      if (dht.peerStore.has(peer.toB58String())) {
+        info = dht.peerStore.get(peer.toB58String())
 
         if (info && info.id.pubKey) {
           dht._log('getPublicKey: found local copy')

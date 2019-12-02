@@ -81,8 +81,8 @@ module.exports = (dht) => {
 
       provs.forEach((id) => {
         let info
-        if (dht.peerStore.has(id)) {
-          info = dht.peerStore.get(id)
+        if (dht.peerStore.has(id.toB58String())) {
+          info = dht.peerStore.get(id.toB58String())
         } else {
           info = dht.peerStore.put(new PeerInfo(id))
         }

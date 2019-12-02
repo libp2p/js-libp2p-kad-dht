@@ -35,8 +35,8 @@ module.exports = (dht) => {
 
       if (dht._isSelf(id)) {
         info = dht.peerInfo
-      } else if (dht.peerStore.has(id)) {
-        info = dht.peerStore.get(id)
+      } else if (dht.peerStore.has(id.toB58String())) {
+        info = dht.peerStore.get(id.toB58String())
       }
 
       if (info && info.id.pubKey) {

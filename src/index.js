@@ -323,8 +323,8 @@ class KadDHT extends EventEmitter {
     const ids = this.routingTable.closestPeers(key, this.kBucketSize)
 
     return ids.map((p) => {
-      if (this.peerStore.has(p)) {
-        return this.peerStore.get(p)
+      if (this.peerStore.has(p.toB58String())) {
+        return this.peerStore.get(p.toB58String())
       }
       return this.peerStore.put(new PeerInfo(p))
     })
