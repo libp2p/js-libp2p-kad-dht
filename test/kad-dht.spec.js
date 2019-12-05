@@ -496,7 +496,6 @@ describe('KadDHT', () => {
       // Find provider
       const res = await all(dht.findProviders(val.cid, { maxNumProviders: 1 }))
 
-      // find providers find all the 3 providers
       expect(res).to.exist()
       expect(res).to.have.length(1)
 
