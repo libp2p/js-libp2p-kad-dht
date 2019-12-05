@@ -484,6 +484,24 @@ describe('KadDHT', () => {
 
       return tdht.teardown()
     })
+
+    it('find one provider locally', async function () {
+      this.timeout(20 * 1000)
+      const val = values[0]
+      const tdht = new TestDHT()
+      const [dht] = await tdht.spawn(1)
+
+      sinon.stub(dht.providers, 'getProviders').returns([dht.peerInfo.id])
+
+      // Find provider
+      const res = await all(dht.findProviders(val.cid, { maxNumProviders: 1 }))
+
+      // find providers find all the 3 providers
+      expect(res).to.exist()
+      expect(res).to.have.length(1)
+
+      return tdht.teardown()
+    })
   })
 
   describe('peer routing', () => {
