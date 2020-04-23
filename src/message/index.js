@@ -99,7 +99,7 @@ Message.CONNECTION_TYPES = CONNECTION_TYPE
 function toPbPeer (peer) {
   return {
     id: peer.id.id,
-    addrs: (peer.multiaddrs || []).map((m) => m && m.buffer),
+    addrs: (peer.multiaddrs || []).map((m) => m.buffer),
     connection: CONNECTION_TYPE.CONNECTED
   }
 }
