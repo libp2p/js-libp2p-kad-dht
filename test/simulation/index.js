@@ -7,7 +7,7 @@ const PeerBook = require('peer-book')
 const PeerId = require('peer-id')
 const PeerInfo = require('peer-info')
 const multihashes = require('multihashes')
-
+const { Buffer } = require('buffer')
 const RoutingTable = require('../../src/routing')
 const Message = require('../../src/message')
 const { convertBuffer } = require('../../src/utils')

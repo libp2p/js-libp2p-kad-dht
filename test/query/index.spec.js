@@ -9,6 +9,7 @@ const expect = chai.expect
 const sinon = require('sinon')
 const delay = require('delay')
 const PeerBook = require('peer-book')
+const { Buffer } = require('buffer')
 
 const Query = require('../../src/query')
 const Path = require('../../src/query/path')

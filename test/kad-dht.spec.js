@@ -6,6 +6,8 @@ chai.use(require('dirty-chai'))
 chai.use(require('chai-checkmark'))
 const expect = chai.expect
 const sinon = require('sinon')
+
+const { Buffer } = require('buffer')
 const { Record } = require('libp2p-record')
 const errcode = require('err-code')
 

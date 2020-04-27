@@ -6,6 +6,7 @@ const chai = require('chai')
 chai.use(require('dirty-chai'))
 const expect = chai.expect
 const _ = require('lodash')
+const { Buffer } = require('buffer')
 
 const Message = require('../../../src/message')
 const handler = require('../../../src/rpc/handlers/add-provider')
