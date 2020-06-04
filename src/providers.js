@@ -59,6 +59,20 @@ class Providers {
   }
 
   /**
+   * Start the provider cleanup service
+   */
+  start () {
+    if (this._cleaner) {
+      clearInterval(this._cleaner)
+    }
+
+    this._cleaner = setInterval(
+      () => this._cleanup(),
+      this.cleanupInterval
+    )
+  }
+
+  /**
    * Release any resources.
    *
    * @returns {void}
@@ -153,23 +167,6 @@ class Providers {
       this.providers.set(cacheKey, provs)
     }
     return provs
-  }
-
-  get cleanupInterval () {
-    return this._cleanupInterval
-  }
-
-  set cleanupInterval (val) {
-    this._cleanupInterval = val
-
-    if (this._cleaner) {
-      clearInterval(this._cleaner)
-    }
-
-    this._cleaner = setInterval(
-      () => this._cleanup(),
-      this.cleanupInterval
-    )
   }
 
   /**
