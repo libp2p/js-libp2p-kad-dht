@@ -60,12 +60,9 @@ class Providers {
 
   /**
    * Start the provider cleanup service
+   * @returns {void}
    */
   start () {
-    if (this._cleaner) {
-      clearInterval(this._cleaner)
-    }
-
     this._cleaner = setInterval(
       () => this._cleanup(),
       this.cleanupInterval
@@ -74,14 +71,11 @@ class Providers {
 
   /**
    * Release any resources.
-   *
    * @returns {void}
    */
   stop () {
-    if (this._cleaner) {
-      clearInterval(this._cleaner)
-      this._cleaner = null
-    }
+    clearInterval(this._cleaner)
+    this._cleaner = null
   }
 
   /**
