@@ -836,10 +836,10 @@ describe('KadDHT', () => {
 
         const lookup = await dht.datastore.get(kadUtils.bufferToKey(record.key))
         expect(lookup).to.exist('Record should be in the local datastore')
-        
+
         let eventResponse
         dht.onRemove = (record) => {
-            eventResponse = { record }
+          eventResponse = { record }
         }
 
         const rec = await dht._checkLocalDatastore(record.key)
