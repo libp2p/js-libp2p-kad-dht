@@ -182,6 +182,9 @@ class KadDHT extends EventEmitter {
     this.contentFetching = contentFetching(this)
     this.contentRouting = contentRouting(this)
     this.peerRouting = peerRouting(this)
+
+    this.onPut = (record, peerId) => {}
+    this.onRemove = (record) => {}
   }
 
   /**
@@ -411,6 +414,7 @@ class KadDHT extends EventEmitter {
       utils.now() - record.timeReceived > c.MAX_RECORD_AGE) {
       // If record is bad delete it and return
       await this.datastore.delete(dsKey)
+      this.onRemove(record)
       return undefined
     }
 
