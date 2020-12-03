@@ -54,6 +54,8 @@ class KadDHT extends EventEmitter {
    * @param {object} props.validators validators object with namespace as keys and function(key, record, callback)
    * @param {object} props.selectors selectors object with namespace as keys and function(key, records)
    * @param {randomWalkOptions} options.randomWalk randomWalk options
+   * @param {function(record: Record, peerId: PeerId)} [props.onPut = () => {}] Called when an entry is added to or changed in the datastore
+   * @param {function(record: Record)} [props.onRemove = () => {}] Called when an entry is removed from the datastore
    */
   constructor ({
     libp2p,
@@ -67,7 +69,9 @@ class KadDHT extends EventEmitter {
     concurrency = c.ALPHA,
     validators = {},
     selectors = {},
-    randomWalk = {}
+    randomWalk = {},
+    onPut = () => {},
+    onRemove = () => {}
   }) {
     super()
 
@@ -183,8 +187,9 @@ class KadDHT extends EventEmitter {
     this.contentRouting = contentRouting(this)
     this.peerRouting = peerRouting(this)
 
-    this.onPut = (record, peerId) => {}
-    this.onRemove = (record) => {}
+    // datastore events
+    this.onPut = onPut
+    this.onRemove = onRemove
   }
 
   /**
