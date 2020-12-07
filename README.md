@@ -42,6 +42,29 @@
 const KadDHT = require('libp2p-kad-dht')
 ```
 
+### Usage
+
+```js
+/**
+ * @param {Libp2p} libp2p
+ */
+function addDHT(libp2p) {
+    const customDHT = new KadDHT({
+        libp2p,
+        dialer: libp2p.dialer,
+        peerId: libp2p.peerId,
+        peerStore: libp2p.peerStore,
+        registrar: libp2p.registrar,
+        protocol: '/custom/kad/1.0.0'
+    })
+    customDHT.start()
+    customDHT.on('peer', libp2p._onDiscoveryPeer)
+    return customDHT
+}
+```
+
+Note that you may want to supply your own peer discovery function and datastore
+
 ## API
 
 See https://libp2p.github.io/js-libp2p-kad-dht for the auto generated docs.
