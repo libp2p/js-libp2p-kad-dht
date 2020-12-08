@@ -961,13 +961,13 @@ describe('KadDHT', () => {
     it('should not find peers with different protocols', async function () {
       this.timeout(40 * 1000)
 
-      const protocol1 = '/test/1.0.0'
-      const protocol2 = '/test/2.0.0'
+      const protocol1 = '/test1'
+      const protocol2 = '/test2'
 
       const tdht = new TestDHT()
       const dhts = []
-      dhts.push(...await tdht.spawn(2, { protocol: protocol1 }))
-      dhts.push(...await tdht.spawn(2, { protocol: protocol2 }))
+      dhts.push(...await tdht.spawn(2, { protocolPrefix: protocol1 }))
+      dhts.push(...await tdht.spawn(2, { protocolPrefix: protocol2 }))
 
       // Connect all
       await Promise.all([
@@ -985,6 +985,18 @@ describe('KadDHT', () => {
         return tdht.teardown()
       }
       throw new Error('seperate protocols should have their own topologies and communication streams')
+    })
+
+    it('force legacy protocol', async function () {
+      this.timeout(40 * 1000)
+
+      const protocol = '/test/dht/0.0.0'
+
+      const tdht = new TestDHT()
+      const [dht] = await tdht.spawn(1, { protocolPrefix: protocol, forceProtocolLegacy: true })
+
+      expect(dht.protocol).to.eql(protocol)
+      return tdht.teardown()
     })
   })
 })

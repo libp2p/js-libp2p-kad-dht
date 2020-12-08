@@ -42,7 +42,13 @@
 const KadDHT = require('libp2p-kad-dht')
 ```
 
-### Usage
+## API
+
+See https://libp2p.github.io/js-libp2p-kad-dht for the auto generated docs.
+
+The libp2p-kad-dht module offers 3 APIs: Peer Routing, Content Routing and Peer Discovery.
+
+### Custom secondary DHT in libp2p
 
 ```js
 /**
@@ -55,7 +61,7 @@ function addDHT(libp2p) {
         peerId: libp2p.peerId,
         peerStore: libp2p.peerStore,
         registrar: libp2p.registrar,
-        protocol: '/custom/kad/1.0.0'
+        protocolPrefix: '/custom'
     })
     customDHT.start()
     customDHT.on('peer', libp2p._onDiscoveryPeer)
@@ -64,13 +70,6 @@ function addDHT(libp2p) {
 ```
 
 Note that you may want to supply your own peer discovery function and datastore
-
-## API
-
-See https://libp2p.github.io/js-libp2p-kad-dht for the auto generated docs.
-
-The libp2p-kad-dht module offers 3 APIs: Peer Routing, Content Routing and Peer Discovery.
-
 ### Peer Routing
 
 [![](https://raw.githubusercontent.com/libp2p/js-libp2p-interfaces/master/src/peer-routing/img/badge.png)](https://github.com/libp2p/js-libp2p-interfaces/tree/master/src/peer-routing)
