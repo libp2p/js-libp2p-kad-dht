@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>libp2p-kad-dht 0.20.2 | Documentation</title>
+  <title>libp2p-kad-dht 0.20.3 | Documentation</title>
   <meta name='description' content='JavaScript implementation of the Kad-DHT for libp2p'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>libp2p-kad-dht</h3>
-          <div class='mb1'><code>0.20.2</code></div>
+          <div class='mb1'><code>0.20.3</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -69,6 +69,12 @@
                         href='#kaddhtregistrar'
                         class='regular pre-open'>
                         #registrar
+                      </a></li>
+                      
+                      <li><a
+                        href='#kaddhtprotocol'
+                        class='regular pre-open'>
+                        #protocol
                       </a></li>
                       
                       <li><a
@@ -1183,7 +1189,7 @@
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L28-L553'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L28-L563'>
       <span>src/index.js</span>
       </a>
     
@@ -1268,6 +1274,26 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
               
                 <tr>
   <td class='break-word'><span class='code bold'>$0.registrar</span> <code class='quiet'>any</code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>$0.protocolPrefix</span> <code class='quiet'>any</code>
+  
+    (default <code>&#39;/ipfs&#39;</code>)
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>$0.forceProtocolLegacy</span> <code class='quiet'>any</code>
+  
+    (default <code>false</code>)
   </td>
   <td class='break-word'><span></span></td>
 </tr>
@@ -1410,7 +1436,7 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L86-L86'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L90-L90'>
       <span>src/index.js</span>
       </a>
     
@@ -1473,7 +1499,7 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L92-L92'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L96-L96'>
       <span>src/index.js</span>
       </a>
     
@@ -1536,7 +1562,7 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L98-L98'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L102-L102'>
       <span>src/index.js</span>
       </a>
     
@@ -1599,7 +1625,7 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L104-L104'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L108-L108'>
       <span>src/index.js</span>
       </a>
     
@@ -1662,7 +1688,7 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L110-L110'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L114-L114'>
       <span>src/index.js</span>
       </a>
     
@@ -1676,6 +1702,69 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
     <p>
       Type:
       Registrar
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='kaddhtprotocol'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>protocol</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L120-L120'>
+      <span>src/index.js</span>
+      </a>
+    
+  </div>
+  
+
+  <p>Registrar protocol</p>
+
+    <div class='pre p1 fill-light mt0'>protocol</div>
+  
+    <p>
+      Type:
+      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>
     </p>
   
   
@@ -1725,7 +1814,7 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L117-L117'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L127-L127'>
       <span>src/index.js</span>
       </a>
     
@@ -1788,7 +1877,7 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L125-L125'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L135-L135'>
       <span>src/index.js</span>
       </a>
     
@@ -1851,7 +1940,7 @@ Original implementation in go: <a href="https://github.com/libp2p/go-libp2p-kad-
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L132-L132'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L142-L142'>
       <span>src/index.js</span>
       </a>
     
@@ -1915,7 +2004,7 @@ This is set to <code>kBucketSize</code>/2 per the S/Kademlia paper</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L139-L139'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L149-L149'>
       <span>src/index.js</span>
       </a>
     
@@ -1978,7 +2067,7 @@ This is set to <code>kBucketSize</code>/2 per the S/Kademlia paper</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L146-L146'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L156-L156'>
       <span>src/index.js</span>
       </a>
     
@@ -2041,7 +2130,7 @@ This is set to <code>kBucketSize</code>/2 per the S/Kademlia paper</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L153-L153'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L163-L163'>
       <span>src/index.js</span>
       </a>
     
@@ -2104,7 +2193,7 @@ This is set to <code>kBucketSize</code>/2 per the S/Kademlia paper</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L174-L174'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L184-L184'>
       <span>src/index.js</span>
       </a>
     
@@ -2167,7 +2256,7 @@ This is set to <code>kBucketSize</code>/2 per the S/Kademlia paper</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L181-L181'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L191-L191'>
       <span>src/index.js</span>
       </a>
     
@@ -2230,7 +2319,7 @@ This is set to <code>kBucketSize</code>/2 per the S/Kademlia paper</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L199-L201'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L209-L211'>
       <span>src/index.js</span>
       </a>
     
@@ -2293,7 +2382,7 @@ This is set to <code>kBucketSize</code>/2 per the S/Kademlia paper</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L207-L215'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L217-L225'>
       <span>src/index.js</span>
       </a>
     
@@ -2359,7 +2448,7 @@ This is set to <code>kBucketSize</code>/2 per the S/Kademlia paper</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L222-L228'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L232-L238'>
       <span>src/index.js</span>
       </a>
     
@@ -2426,7 +2515,7 @@ messages.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L238-L240'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L248-L250'>
       <span>src/index.js</span>
       </a>
     
@@ -2548,7 +2637,7 @@ messages.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L250-L252'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L260-L262'>
       <span>src/index.js</span>
       </a>
     
@@ -2663,7 +2752,7 @@ Times out after 1 minute by default.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L262-L264'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L272-L274'>
       <span>src/index.js</span>
       </a>
     
@@ -2785,7 +2874,7 @@ Times out after 1 minute by default.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L273-L275'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L283-L285'>
       <span>src/index.js</span>
       </a>
     
@@ -2864,7 +2953,7 @@ Times out after 1 minute by default.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L285-L289'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L295-L299'>
       <span>src/index.js</span>
       </a>
     
@@ -2987,7 +3076,7 @@ Times out after 1 minute by default.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L301-L303'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L311-L313'>
       <span>src/index.js</span>
       </a>
     
@@ -3101,7 +3190,7 @@ Times out after 1 minute by default.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L312-L316'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L322-L326'>
       <span>src/index.js</span>
       </a>
     
@@ -3214,7 +3303,7 @@ Times out after 1 minute by default.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/index.js#L323-L325'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/index.js#L333-L335'>
       <span>src/index.js</span>
       </a>
     
@@ -3301,7 +3390,7 @@ Times out after 1 minute by default.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/routing.js#L11-L132'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/routing.js#L11-L132'>
       <span>src/routing.js</span>
       </a>
     
@@ -3375,7 +3464,7 @@ retrival for peers.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/routing.js#L66-L68'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/routing.js#L66-L68'>
       <span>src/routing.js</span>
       </a>
     
@@ -3438,7 +3527,7 @@ retrival for peers.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/routing.js#L76-L83'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/routing.js#L76-L83'>
       <span>src/routing.js</span>
       </a>
     
@@ -3517,7 +3606,7 @@ retrival for peers.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/routing.js#L91-L96'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/routing.js#L91-L96'>
       <span>src/routing.js</span>
       </a>
     
@@ -3596,7 +3685,7 @@ retrival for peers.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/routing.js#L105-L107'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/routing.js#L105-L107'>
       <span>src/routing.js</span>
       </a>
     
@@ -3683,7 +3772,7 @@ retrival for peers.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/routing.js#L115-L119'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/routing.js#L115-L119'>
       <span>src/routing.js</span>
       </a>
     
@@ -3762,7 +3851,7 @@ retrival for peers.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/routing.js#L127-L131'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/routing.js#L127-L131'>
       <span>src/routing.js</span>
       </a>
     
@@ -3849,7 +3938,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L23-L25'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L23-L25'>
       <span>src/utils.js</span>
       </a>
     
@@ -3924,7 +4013,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L33-L35'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L33-L35'>
       <span>src/utils.js</span>
       </a>
     
@@ -3999,7 +4088,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L43-L45'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L43-L45'>
       <span>src/utils.js</span>
       </a>
     
@@ -4074,7 +4163,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L53-L58'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L53-L58'>
       <span>src/utils.js</span>
       </a>
     
@@ -4149,7 +4238,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L73-L75'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L73-L75'>
       <span>src/utils.js</span>
       </a>
     
@@ -4211,7 +4300,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L82-L85'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L82-L85'>
       <span>src/utils.js</span>
       </a>
     
@@ -4286,7 +4375,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L92-L95'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L92-L95'>
       <span>src/utils.js</span>
       </a>
     
@@ -4361,7 +4450,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L104-L115'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L104-L115'>
       <span>src/utils.js</span>
       </a>
     
@@ -4444,7 +4533,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L124-L126'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L124-L126'>
       <span>src/utils.js</span>
       </a>
     
@@ -4527,7 +4616,7 @@ retrival for peers.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L136-L138'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L136-L138'>
       <span>src/utils.js</span>
       </a>
     
@@ -4612,7 +4701,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/utils.js#L147-L152'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/utils.js#L147-L152'>
       <span>src/utils.js</span>
       </a>
     
@@ -4695,7 +4784,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/network.js#L20-L194'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/network.js#L20-L194'>
       <span>src/network.js</span>
       </a>
     
@@ -4760,7 +4849,7 @@ This ensures that we look for at least one result per path.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/network.js#L39-L65'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/network.js#L39-L65'>
       <span>src/network.js</span>
       </a>
     
@@ -4826,7 +4915,7 @@ This ensures that we look for at least one result per path.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/network.js#L71-L79'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/network.js#L71-L79'>
       <span>src/network.js</span>
       </a>
     
@@ -4892,7 +4981,7 @@ This ensures that we look for at least one result per path.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/network.js#L86-L88'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/network.js#L86-L88'>
       <span>src/network.js</span>
       </a>
     
@@ -4955,7 +5044,7 @@ This ensures that we look for at least one result per path.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/network.js#L95-L98'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/network.js#L95-L98'>
       <span>src/network.js</span>
       </a>
     
@@ -5018,7 +5107,7 @@ This ensures that we look for at least one result per path.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/network.js#L118-L135'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/network.js#L118-L135'>
       <span>src/network.js</span>
       </a>
     
@@ -5107,7 +5196,7 @@ This ensures that we look for at least one result per path.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/network.js#L144-L159'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/network.js#L144-L159'>
       <span>src/network.js</span>
       </a>
     
@@ -5202,7 +5291,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/rpc/index.js#L47-L77'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/rpc/index.js#L47-L77'>
       <span>src/rpc/index.js</span>
       </a>
     
@@ -5310,7 +5399,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/rpc/handlers/get-value.js#L20-L66'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/rpc/handlers/get-value.js#L20-L66'>
       <span>src/rpc/handlers/get-value.js</span>
       </a>
     
@@ -5393,7 +5482,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/rpc/handlers/put-value.js#L16-L38'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/rpc/handlers/put-value.js#L16-L38'>
       <span>src/rpc/handlers/put-value.js</span>
       </a>
     
@@ -5476,7 +5565,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/rpc/handlers/find-node.js#L17-L38'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/rpc/handlers/find-node.js#L17-L38'>
       <span>src/rpc/handlers/find-node.js</span>
       </a>
     
@@ -5559,7 +5648,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/rpc/handlers/add-provider.js#L17-L60'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/rpc/handlers/add-provider.js#L17-L60'>
       <span>src/rpc/handlers/add-provider.js</span>
       </a>
     
@@ -5642,7 +5731,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/rpc/handlers/get-providers.js#L19-L57'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/rpc/handlers/get-providers.js#L19-L57'>
       <span>src/rpc/handlers/get-providers.js</span>
       </a>
     
@@ -5725,7 +5814,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/rpc/handlers/ping.js#L15-L18'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/rpc/handlers/ping.js#L15-L18'>
       <span>src/rpc/handlers/ping.js</span>
       </a>
     
@@ -5808,7 +5897,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/content-fetching/index.js#L99-L130'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/content-fetching/index.js#L99-L130'>
       <span>src/content-fetching/index.js</span>
       </a>
     
@@ -5926,7 +6015,7 @@ This ensures that we look for at least one result per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/content-fetching/index.js#L141-L169'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/content-fetching/index.js#L141-L169'>
       <span>src/content-fetching/index.js</span>
       </a>
     
@@ -6037,7 +6126,7 @@ Times out after 1 minute by default.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/content-fetching/index.js#L180-L279'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/content-fetching/index.js#L180-L279'>
       <span>src/content-fetching/index.js</span>
       </a>
     
@@ -6155,7 +6244,7 @@ Times out after 1 minute by default.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/index.js#L12-L116'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/index.js#L12-L116'>
       <span>src/query/index.js</span>
       </a>
     
@@ -6239,7 +6328,7 @@ Within each path, query peers from closest to farthest away.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/index.js#L55-L73'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/index.js#L55-L73'>
       <span>src/query/index.js</span>
       </a>
     
@@ -6318,7 +6407,7 @@ Within each path, query peers from closest to farthest away.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/index.js#L78-L85'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/index.js#L78-L85'>
       <span>src/query/index.js</span>
       </a>
     
@@ -6376,7 +6465,7 @@ Within each path, query peers from closest to farthest away.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/index.js#L90-L93'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/index.js#L90-L93'>
       <span>src/query/index.js</span>
       </a>
     
@@ -6434,7 +6523,7 @@ Within each path, query peers from closest to farthest away.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/index.js#L98-L115'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/index.js#L98-L115'>
       <span>src/query/index.js</span>
       </a>
     
@@ -6500,7 +6589,7 @@ Within each path, query peers from closest to farthest away.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/run.js#L13-L200'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/run.js#L13-L200'>
       <span>src/query/run.js</span>
       </a>
     
@@ -6572,7 +6661,7 @@ Within each path, query peers from closest to farthest away.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/run.js#L39-L48'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/run.js#L39-L48'>
       <span>src/query/run.js</span>
       </a>
     
@@ -6630,7 +6719,7 @@ Within each path, query peers from closest to farthest away.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/run.js#L57-L89'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/run.js#L57-L89'>
       <span>src/query/run.js</span>
       </a>
     
@@ -6709,7 +6798,7 @@ Within each path, query peers from closest to farthest away.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/run.js#L97-L115'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/run.js#L97-L115'>
       <span>src/query/run.js</span>
       </a>
     
@@ -6788,7 +6877,7 @@ Within each path, query peers from closest to farthest away.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/run.js#L124-L127'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/run.js#L124-L127'>
       <span>src/query/run.js</span>
       </a>
     
@@ -6868,7 +6957,7 @@ given path.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/run.js#L135-L139'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/run.js#L135-L139'>
       <span>src/query/run.js</span>
       </a>
     
@@ -6947,7 +7036,7 @@ given path.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/run.js#L147-L167'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/run.js#L147-L167'>
       <span>src/query/run.js</span>
       </a>
     
@@ -7014,7 +7103,7 @@ paths in the run.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/run.js#L177-L199'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/run.js#L177-L199'>
       <span>src/query/run.js</span>
       </a>
     
@@ -7103,7 +7192,7 @@ stop querying on that <code>worker</code>.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-distance-list.js#L11-L87'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-distance-list.js#L11-L87'>
       <span>src/peer-list/peer-distance-list.js</span>
       </a>
     
@@ -7178,7 +7267,7 @@ stop querying on that <code>worker</code>.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-distance-list.js#L27-L29'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-distance-list.js#L27-L29'>
       <span>src/peer-list/peer-distance-list.js</span>
       </a>
     
@@ -7236,7 +7325,7 @@ stop querying on that <code>worker</code>.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-distance-list.js#L34-L36'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-distance-list.js#L34-L36'>
       <span>src/peer-list/peer-distance-list.js</span>
       </a>
     
@@ -7294,7 +7383,7 @@ stop querying on that <code>worker</code>.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-distance-list.js#L44-L58'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-distance-list.js#L44-L58'>
       <span>src/peer-list/peer-distance-list.js</span>
       </a>
     
@@ -7373,7 +7462,7 @@ stop querying on that <code>worker</code>.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-distance-list.js#L67-L86'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-distance-list.js#L67-L86'>
       <span>src/peer-list/peer-distance-list.js</span>
       </a>
     
@@ -7461,7 +7550,7 @@ to the origin key than the furthest peerId in the PeerDistanceList.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/path.js#L15-L82'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/path.js#L15-L82'>
       <span>src/query/path.js</span>
       </a>
     
@@ -7534,7 +7623,7 @@ to the origin key than the furthest peerId in the PeerDistanceList.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/path.js#L31-L31'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/path.js#L31-L31'>
       <span>src/query/path.js</span>
       </a>
     
@@ -7596,7 +7685,7 @@ to the origin key than the furthest peerId in the PeerDistanceList.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/path.js#L36-L36'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/path.js#L36-L36'>
       <span>src/query/path.js</span>
       </a>
     
@@ -7658,7 +7747,7 @@ to the origin key than the furthest peerId in the PeerDistanceList.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/path.js#L43-L45'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/path.js#L43-L45'>
       <span>src/query/path.js</span>
       </a>
     
@@ -7729,7 +7818,7 @@ to the origin key than the furthest peerId in the PeerDistanceList.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/path.js#L53-L60'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/path.js#L53-L60'>
       <span>src/query/path.js</span>
       </a>
     
@@ -7795,7 +7884,7 @@ to the origin key than the furthest peerId in the PeerDistanceList.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/path.js#L68-L81'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/path.js#L68-L81'>
       <span>src/query/path.js</span>
       </a>
     
@@ -7882,7 +7971,7 @@ to the origin key than the furthest peerId in the PeerDistanceList.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-queue.js#L15-L83'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-queue.js#L15-L83'>
       <span>src/peer-list/peer-queue.js</span>
       </a>
     
@@ -7947,7 +8036,7 @@ xor distance to the inital provided key.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-queue.js#L22-L26'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-queue.js#L22-L26'>
       <span>src/peer-list/peer-queue.js</span>
       </a>
     
@@ -8026,7 +8115,7 @@ xor distance to the inital provided key.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-queue.js#L34-L38'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-queue.js#L34-L38'>
       <span>src/peer-list/peer-queue.js</span>
       </a>
     
@@ -8113,7 +8202,7 @@ xor distance to the inital provided key.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-queue.js#L57-L67'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-queue.js#L57-L67'>
       <span>src/peer-list/peer-queue.js</span>
       </a>
     
@@ -8192,7 +8281,7 @@ xor distance to the inital provided key.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/peer-queue.js#L74-L78'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/peer-queue.js#L74-L78'>
       <span>src/peer-list/peer-queue.js</span>
       </a>
     
@@ -8266,7 +8355,7 @@ xor distance to the inital provided key.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/workerQueue.js#L15-L26'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/workerQueue.js#L15-L26'>
       <span>src/query/workerQueue.js</span>
       </a>
     
@@ -8357,7 +8446,7 @@ xor distance to the inital provided key.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/workerQueue.js#L33-L60'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/workerQueue.js#L33-L60'>
       <span>src/query/workerQueue.js</span>
       </a>
     
@@ -8419,7 +8508,7 @@ xor distance to the inital provided key.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/workerQueue.js#L68-L81'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/workerQueue.js#L68-L81'>
       <span>src/query/workerQueue.js</span>
       </a>
     
@@ -8487,7 +8576,7 @@ callback.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/workerQueue.js#L89-L98'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/workerQueue.js#L89-L98'>
       <span>src/query/workerQueue.js</span>
       </a>
     
@@ -8550,7 +8639,7 @@ per path.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/workerQueue.js#L108-L116'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/workerQueue.js#L108-L116'>
       <span>src/query/workerQueue.js</span>
       </a>
     
@@ -8609,7 +8698,7 @@ being added to the peers-to-query queue.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query/workerQueue.js#L124-L200'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query/workerQueue.js#L124-L200'>
       <span>src/query/workerQueue.js</span>
       </a>
     
@@ -8684,7 +8773,7 @@ being added to the peers-to-query queue.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/content-routing/index.js#L33-L65'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/content-routing/index.js#L33-L65'>
       <span>src/content-routing/index.js</span>
       </a>
     
@@ -8759,7 +8848,7 @@ being added to the peers-to-query queue.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/content-routing/index.js#L75-L158'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/content-routing/index.js#L75-L158'>
       <span>src/content-routing/index.js</span>
       </a>
     
@@ -8878,7 +8967,7 @@ being added to the peers-to-query queue.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/limited-peer-list.js#L8-L31'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/limited-peer-list.js#L8-L31'>
       <span>src/peer-list/limited-peer-list.js</span>
       </a>
     
@@ -8950,7 +9039,7 @@ being added to the peers-to-query queue.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/limited-peer-list.js#L25-L30'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/limited-peer-list.js#L25-L30'>
       <span>src/peer-list/limited-peer-list.js</span>
       </a>
     
@@ -9037,7 +9126,7 @@ being added to the peers-to-query queue.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/index.js#L6-L62'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/index.js#L6-L62'>
       <span>src/peer-list/index.js</span>
       </a>
     
@@ -9089,7 +9178,7 @@ being added to the peers-to-query queue.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/index.js#L17-L23'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/index.js#L17-L23'>
       <span>src/peer-list/index.js</span>
       </a>
     
@@ -9168,7 +9257,7 @@ being added to the peers-to-query queue.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/index.js#L31-L34'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/index.js#L31-L34'>
       <span>src/peer-list/index.js</span>
       </a>
     
@@ -9247,7 +9336,7 @@ being added to the peers-to-query queue.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/index.js#L41-L43'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/index.js#L41-L43'>
       <span>src/peer-list/index.js</span>
       </a>
     
@@ -9313,7 +9402,7 @@ being added to the peers-to-query queue.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/index.js#L50-L52'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/index.js#L50-L52'>
       <span>src/peer-list/index.js</span>
       </a>
     
@@ -9379,7 +9468,7 @@ being added to the peers-to-query queue.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-list/index.js#L59-L61'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-list/index.js#L59-L61'>
       <span>src/peer-list/index.js</span>
       </a>
     
@@ -9450,7 +9539,7 @@ being added to the peers-to-query queue.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-routing/index.js#L22-L34'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-routing/index.js#L22-L34'>
       <span>src/peer-routing/index.js</span>
       </a>
     
@@ -9526,7 +9615,7 @@ Returns its id and addresses, if found, otherwise <code>undefined</code>.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-routing/index.js#L115-L200'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-routing/index.js#L115-L200'>
       <span>src/peer-routing/index.js</span>
       </a>
     
@@ -9636,7 +9725,7 @@ Returns its id and addresses, if found, otherwise <code>undefined</code>.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-routing/index.js#L209-L239'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-routing/index.js#L209-L239'>
       <span>src/peer-routing/index.js</span>
       </a>
     
@@ -9745,7 +9834,7 @@ Returns its id and addresses, if found, otherwise <code>undefined</code>.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/peer-routing/index.js#L246-L273'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/peer-routing/index.js#L246-L273'>
       <span>src/peer-routing/index.js</span>
       </a>
     
@@ -9820,7 +9909,7 @@ Returns its id and addresses, if found, otherwise <code>undefined</code>.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/message/index.js#L15-L93'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/message/index.js#L15-L93'>
       <span>src/message/index.js</span>
       </a>
     
@@ -9899,7 +9988,7 @@ Returns its id and addresses, if found, otherwise <code>undefined</code>.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/message/index.js#L80-L92'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/message/index.js#L80-L92'>
       <span>src/message/index.js</span>
       </a>
     
@@ -9986,7 +10075,7 @@ Returns its id and addresses, if found, otherwise <code>undefined</code>.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/message/index.js#L37-L44'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/message/index.js#L37-L44'>
       <span>src/message/index.js</span>
       </a>
     
@@ -10048,7 +10137,7 @@ Returns its id and addresses, if found, otherwise <code>undefined</code>.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/message/index.js#L54-L72'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/message/index.js#L54-L72'>
       <span>src/message/index.js</span>
       </a>
     
@@ -10122,7 +10211,7 @@ Returns its id and addresses, if found, otherwise <code>undefined</code>.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/providers.js#L23-L202'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/providers.js#L23-L202'>
       <span>src/providers.js</span>
       </a>
     
@@ -10211,7 +10300,7 @@ access is fast there is an LRU cache in front of that.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/providers.js#L39-L39'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/providers.js#L39-L39'>
       <span>src/providers.js</span>
       </a>
     
@@ -10274,7 +10363,7 @@ access is fast there is an LRU cache in front of that.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/providers.js#L46-L46'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/providers.js#L46-L46'>
       <span>src/providers.js</span>
       </a>
     
@@ -10337,7 +10426,7 @@ access is fast there is an LRU cache in front of that.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/providers.js#L53-L53'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/providers.js#L53-L53'>
       <span>src/providers.js</span>
       </a>
     
@@ -10400,7 +10489,7 @@ access is fast there is an LRU cache in front of that.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/providers.js#L64-L69'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/providers.js#L64-L69'>
       <span>src/providers.js</span>
       </a>
     
@@ -10466,7 +10555,7 @@ access is fast there is an LRU cache in front of that.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/providers.js#L75-L78'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/providers.js#L75-L78'>
       <span>src/providers.js</span>
       </a>
     
@@ -10532,7 +10621,7 @@ access is fast there is an LRU cache in front of that.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/providers.js#L172-L185'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/providers.js#L172-L185'>
       <span>src/providers.js</span>
       </a>
     
@@ -10619,7 +10708,7 @@ access is fast there is an LRU cache in front of that.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/providers.js#L193-L201'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/providers.js#L193-L201'>
       <span>src/providers.js</span>
       </a>
     
@@ -10706,7 +10795,7 @@ access is fast there is an LRU cache in front of that.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/random-walk.js#L24-L37'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/random-walk.js#L24-L37'>
       <span>src/random-walk.js</span>
       </a>
     
@@ -10844,7 +10933,7 @@ access is fast there is an LRU cache in front of that.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/random-walk.js#L46-L55'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/random-walk.js#L46-L55'>
       <span>src/random-walk.js</span>
       </a>
     
@@ -10908,7 +10997,7 @@ healthy over time.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/random-walk.js#L63-L69'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/random-walk.js#L63-L69'>
       <span>src/random-walk.js</span>
       </a>
     
@@ -10971,7 +11060,7 @@ queries will be aborted.</p>
     </h3>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query-manager.js#L6-L50'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query-manager.js#L6-L50'>
       <span>src/query-manager.js</span>
       </a>
     
@@ -11023,7 +11112,7 @@ queries will be aborted.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query-manager.js#L20-L22'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query-manager.js#L20-L22'>
       <span>src/query-manager.js</span>
       </a>
     
@@ -11094,7 +11183,7 @@ queries will be aborted.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query-manager.js#L29-L31'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query-manager.js#L29-L31'>
       <span>src/query-manager.js</span>
       </a>
     
@@ -11165,7 +11254,7 @@ queries will be aborted.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query-manager.js#L36-L38'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query-manager.js#L36-L38'>
       <span>src/query-manager.js</span>
       </a>
     
@@ -11223,7 +11312,7 @@ queries will be aborted.</p>
   <div class='clearfix'>
     
     
-      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/efd5e0f740c4a94177ab7916cf6ea346f056734c/src/query-manager.js#L43-L49'>
+      <a class='fr fill-darken0 round round pad1x quiet h5' href='https://github.com/libp2p/js-libp2p-kad-dht/blob/ba029caf6fa9f3dfb38202e4381a2a7a127e3518/src/query-manager.js#L43-L49'>
       <span>src/query-manager.js</span>
       </a>
     
