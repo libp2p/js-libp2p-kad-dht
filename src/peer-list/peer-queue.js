@@ -2,7 +2,7 @@
 
 const Heap = require('heap')
 const { isNode } = require('ipfs-utils/src/env')
-const distance = isNode ? require('xor-distance') : require('xor-distance-typedarray') 
+const distance = isNode ? require('xor-distance') : require('xor-distance-typedarray')
 const debug = require('debug')
 
 const utils = require('../utils')
