@@ -273,6 +273,24 @@ class KadDHT extends EventEmitter {
     return this.contentFetching.getMany(key, nvals, options)
   }
 
+  /**
+   * Remove the given key from the local datastore.
+   * @param {Uint8Array} key
+   */
+  async removeLocal (key) {
+    this._log('removeLocal: %b', key)
+    const dsKey = utils.bufferToKey(key)
+
+    try {
+      await this.datastore.delete(dsKey)
+    } catch (err) {
+      if (err.code === 'ERR_NOT_FOUND') {
+        return undefined
+      }
+      throw err
+    }
+  }
+
   // ----------- Content Routing
 
   /**
