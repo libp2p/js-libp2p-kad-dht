@@ -276,6 +276,7 @@ class KadDHT extends EventEmitter {
   /**
    * Remove the given key from the local datastore.
    * @param {Uint8Array} key
+   * @returns {Promise<void>}
    */
   async removeLocal (key) {
     this._log('removeLocal: %b', key)
