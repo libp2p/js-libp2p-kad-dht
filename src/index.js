@@ -79,7 +79,7 @@ class KadDHT extends EventEmitter {
     forceProtocolLegacy = false,
     datastore = new MemoryDatastore(),
     kBucketSize = c.K,
-    clientMode = false,
+    clientMode = true,
     concurrency = c.ALPHA,
     validators = {},
     selectors = {},
@@ -163,7 +163,7 @@ class KadDHT extends EventEmitter {
      *
      * @type {number}
      */
-    this.disjointPaths = Math.ceil(this.kBucketSize / 2)
+    this.disjointPaths = 1
 
     /**
      * The routing table.
@@ -490,15 +490,6 @@ class KadDHT extends EventEmitter {
 
     // Record is valid
     return record
-  }
-
-  /**
-   * Add the peer to the routing table and update it in the peerStore.
-   *
-   * @param {PeerId} peerId
-   */
-  async _add (peerId) {
-    await this.routingTable.add(peerId)
   }
 
   /**

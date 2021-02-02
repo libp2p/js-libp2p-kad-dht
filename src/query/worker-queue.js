@@ -249,6 +249,8 @@ class WorkerQueue {
     }
 
     if (queryError) {
+      // TODO: The query errored, track the peer and remove them at the end
+      this.dht.routingTable.remove(peer)
       this.run.errors.push(queryError)
       return
     }
@@ -259,6 +261,9 @@ class WorkerQueue {
     if (!res) {
       return
     }
+
+    // TODO: this may be better if it happens after the full Lookup is done
+    this.dht.routingTable.updateLastSuccessfulOutboundQueryAt(peer)
 
     // If the query indicates that this path or the whole query is complete
     // set the path result and bail out

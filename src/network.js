@@ -104,13 +104,15 @@ class Network {
   }
 
   /**
-   * Registrar notifies a connection successfully with dht protocol.
+   * A DHT server peer was discovered, attempt to add it to our RT
+   * as a replaceable peer. This is currently ONLY useful for bootstrapping.
+   * TODO: We should probably get rid of this for performance in favor
+   * of an actual bootstrap phase.
    *
    * @param {PeerId} peerId - remote peer id
    */
   async _onPeerConnected (peerId) {
-    await this.dht._add(peerId)
-    this._log('added to the routing table: %s', peerId.toB58String())
+    return this.dht.routingTable.add(peerId, false, true)
   }
 
   /**

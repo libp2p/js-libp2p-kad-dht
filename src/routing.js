@@ -4,13 +4,18 @@
 const KBucket = require('k-bucket')
 
 const utils = require('./utils')
+const log = utils.logger(undefined, 'rt')
 
 /**
  * @typedef {import('peer-id')} PeerId
  *
  * @typedef {object} KBucketPeer
  * @property {Uint8Array} id
- * @property {PeerId} peer
+ * @property {PeerId} peerId
+ * @property {number} lastUsefulAt
+ * @property {number} lastSuccessfulOutboundQueryAt
+ * @property {number} addedAt
+ * @property {boolean} replaceable
  */
 
 /**
@@ -25,6 +30,8 @@ class RoutingTable {
   constructor (self, kBucketSize) {
     this.self = self
     this._onPing = this._onPing.bind(this)
+
+    // this.maxLatency = ?
 
     this._onInit(kBucketSize)
   }
@@ -42,6 +49,9 @@ class RoutingTable {
     })
 
     this.kb.on('ping', this._onPing)
+    this.kb.on('removed', /** @param {KBucketPeer} c */(c) => log('peer removed %j', c))
+    this.kb.on('added', /** @param {KBucketPeer} c */(c) => log('peer added (%s total peers): %j', this.kb.count(), c))
+    this.kb.on('updated', this._onUpdated)
   }
 
   /**
@@ -55,16 +65,25 @@ class RoutingTable {
    * @param {KBucketPeer} newContact
    */
   _onPing (oldContacts, newContact) {
-    // just use the first one (k-bucket sorts from oldest to newest)
-    const oldest = oldContacts[0]
-
-    if (oldest) {
-      // remove the oldest one
-      this.kb.remove(oldest.id)
+    // Check the old contacts for a replaceable peer
+    // If we have none, we cant add the new contact
+    for (const contact of oldContacts) {
+      if (contact.replaceable) {
+        log('replaceable peer found, evicting', contact)
+        this.kb.remove(contact.id)
+        this.kb.add(newContact)
+        return
+      }
     }
+  }
 
-    // add the new one
-    this.kb.add(newContact)
+  /**
+   *
+   * @param {KBucketPeer} oldContact
+   * @param {KBucketPeer} newContact
+   */
+  _onUpdated (oldContact, newContact) {
+    log('peer updated', newContact)
   }
 
   // -- Public Interface
@@ -113,18 +132,73 @@ class RoutingTable {
     /** @type {KBucketPeer[]} */
     const closest = this.kb.closest(key, count)
 
-    return closest.map(p => p.peer)
+    return closest.map(p => p.peerId)
   }
 
   /**
    * Add or update the routing table with the given peer.
    *
    * @param {PeerId} peer
+   * @param {boolean} queryPeer We queried it, or it queried us
+   * @param {boolean} isReplaceable Should be set to true if bootstrapping
+   * @returns {Promise<void>}
    */
-  async add (peer) {
-    const id = await utils.convertPeerId(peer)
+  async add (peer, queryPeer = false, isReplaceable = false) {
+    const dhtId = await utils.convertPeerId(peer)
+    const now = Date.now()
+    let lastUsefulAt
 
-    this.kb.add({ id: id, peer: peer })
+    // A query happened, mark it useful
+    if (queryPeer) {
+      lastUsefulAt = now
+    }
+
+    const existingPeer = this.kb.get(dhtId)
+    if (existingPeer) {
+      // On first query of an existing peer, bump its usefulness
+      if (queryPeer && !existingPeer.lastUsefulAt) {
+        existingPeer.LastUsefulAt = lastUsefulAt
+        existingPeer.replaceable = isReplaceable
+        this.kb.add(existingPeer)
+      }
+      // We're done, return
+      return
+    }
+
+    // TODO: Check peer latency, if greater than RT maxLatency DONT add it
+
+    // TODO: Run the diversity filter check
+
+    // We can attempt to add now, k-bucket will give us onPing if the bucket is full
+    this.kb.add({
+      id: dhtId,
+      peerId: peer,
+      lastUsefulAt,
+      lastSuccessfulOutboundQueryAt: now, // For new peers, this can be inbound
+      addedAt: now,
+      replaceable: isReplaceable
+    })
+  }
+
+  /**
+   * Updates the updateLastSuccessfulOutboundQueryAt time for the
+   * given peer. If the peer is not in the routing table we'll attempt
+   * to add it.
+   *
+   * @param {PeerId} peer
+   * @returns {Promise<void>}
+   */
+  async updateLastSuccessfulOutboundQueryAt (peer) {
+    const id = await utils.convertPeerId(peer)
+    const contact = this.kb.get(id)
+
+    // New peer
+    if (!contact) {
+      return this.add(peer, true, false)
+    }
+
+    contact.isReplaceable = false // TODO: this
+    contact.lastSuccessfulOutboundQueryAt = Date.now() // TODO: verify this updates
   }
 
   /**

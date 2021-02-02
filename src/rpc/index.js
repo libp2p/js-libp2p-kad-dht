@@ -30,7 +30,7 @@ module.exports = (dht) => {
     const handler = getMessageHandler(msg.type)
 
     try {
-      await dht._add(peerId)
+      await dht.routingTable.add(peerId, true, false)
     } catch (err) {
       log.error('Failed to update the kbucket store', err)
     }
@@ -40,6 +40,7 @@ module.exports = (dht) => {
       return
     }
 
+    // TODO: Verify this was successful before adding the peer
     return handler(peerId, msg)
   }
 
@@ -52,12 +53,6 @@ module.exports = (dht) => {
    */
   async function onIncomingStream ({ stream, connection }) {
     const peerId = connection.remotePeer
-
-    try {
-      await dht._add(peerId)
-    } catch (err) {
-      log.error(err)
-    }
 
     const idB58Str = peerId.toB58String()
     log('from: %s', idB58Str)
