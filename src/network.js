@@ -111,7 +111,7 @@ class Network {
    *
    * @param {PeerId} peerId - remote peer id
    */
-  async _onPeerConnected (peerId) {
+  _onPeerConnected (peerId) {
     return this.dht.routingTable.add(peerId, false, true)
   }
 
