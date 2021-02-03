@@ -46,7 +46,7 @@ describe('rpc - handlers - FindNode', () => {
     const msg = new Message(T, uint8ArrayFromString('hello'), 0)
     const other = peerIds[1]
 
-    await dht._add(other)
+    await dht.routingTable.add(other)
     const response = await handler(dht)(peerIds[2].id, msg)
 
     expect(response.closerPeers).to.have.length(1)

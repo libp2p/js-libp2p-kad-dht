@@ -7,11 +7,9 @@ const expect = chai.expect
 const PeerId = require('peer-id')
 const random = require('lodash.random')
 
-const KBucket = require('k-bucket')
 const RoutingTable = require('../src/routing')
 const kadUtils = require('../src/utils')
 const createPeerId = require('./utils/create-peer-id')
-const uint8arraysToString = require('uint8arrays/to-string')
 
 describe('Routing Table', () => {
   let table

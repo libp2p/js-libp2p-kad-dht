@@ -69,7 +69,7 @@ describe('rpc - handlers - GetProviders', () => {
     const prov = peerIds[1]
     const closer = peerIds[2]
 
-    await dht._add(closer)
+    await dht.routingTable.add(closer)
     await dht.providers.addProvider(v.cid, prov)
     const response = await handler(dht)(peerIds[0], msg)
 

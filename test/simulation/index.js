@@ -98,7 +98,7 @@ async function GetClosestPeersSimulation () {
   // Add random peers to our table
   const ourPeers = randomMembers(peers, randomInteger(MIN_PEERS_KNOWN, MAX_PEERS_KNOWN))
   for (const peer of ourPeers) {
-    await dht._add(peer.id)
+    await dht.routingTable.add(peer.id)
   }
 
   dht.network.sendRequest = (to, message, callback) => {

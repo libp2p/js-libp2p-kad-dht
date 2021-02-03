@@ -1,4 +1,5 @@
 'use strict'
+/* eslint no-console: ["error", { allow: ["log"] }] */
 /**
  * TODO
  * Create a live network test to evaluate routing table performance.

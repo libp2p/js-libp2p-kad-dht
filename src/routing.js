@@ -81,7 +81,7 @@ class RoutingTable {
 
   bucketsToArray () {
     const buckets = []
-    for (const nodes = [ this.kb.root ]; nodes.length > 0;) {
+    for (const nodes = [this.kb.root]; nodes.length > 0;) {
       const node = nodes.pop()
       if (node.contacts === null) nodes.push(node.right, node.left)
       else buckets.push(node)
@@ -90,18 +90,10 @@ class RoutingTable {
   }
 
   /**
-<<<<<<< HEAD
-   * Called on the `ping` event from `k-bucket`.
-   * Currently this just removes the oldest contact from
-   * the list, without actually pinging the individual peers.
-   * This is the same as go does, but should probably
-   * be upgraded to actually ping the individual peers.
-=======
    * Called when a peer is trying to be added to a full bucket.
    * If a peer is replaceable, it is removed and the new peer is added.
    * If a peer's last useful time is older than TBD, it should be
    * removed and the new peer should be added.
->>>>>>> feat(wip): add last useful timestamps
    *
    * @param {KBucketPeer[]} oldContacts
    * @param {KBucketPeer} newContact
@@ -181,8 +173,8 @@ class RoutingTable {
    * Add or update the routing table with the given peer.
    *
    * @param {PeerId} peer
-   * @param {boolean} queryPeer We queried it, or it queried us
-   * @param {boolean} isReplaceable Should be set to true if bootstrapping
+   * @param {boolean} queryPeer - We queried it, or it queried us
+   * @param {boolean} isReplaceable - Should be set to true if bootstrapping
    * @returns {Promise<void>}
    */
   async add (peer, queryPeer = false, isReplaceable = false) {

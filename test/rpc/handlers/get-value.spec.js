@@ -63,7 +63,7 @@ describe('rpc - handlers - GetValue', () => {
     const msg = new Message(T, key, 0)
     const other = peerIds[1]
 
-    await dht._add(other)
+    await dht.routingTable.add(other)
     const response = await handler(dht)(peerIds[0], msg)
 
     expect(response.closerPeers).to.have.length(1)
@@ -90,7 +90,7 @@ describe('rpc - handlers - GetValue', () => {
       dht.peerStore.addressBook.add(other, [])
       dht.peerStore.keyBook.set(other, other.pubKey)
 
-      await dht._add(other)
+      await dht.routingTable.add(other)
       const response = await handler(dht)(peerIds[0], msg)
       expect(response.record).to.exist()
       expect(response.record.value).to.eql(other.pubKey.bytes)

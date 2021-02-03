@@ -800,7 +800,7 @@ describe('KadDHT', () => {
     it('_nearestPeersToQuery', async () => {
       const [dht] = await tdht.spawn(1)
 
-      await dht._add(peerIds[1])
+      await dht.routingTable.add(peerIds[1])
       const res = await dht._nearestPeersToQuery({ key: 'hello' })
       expect(res).to.be.eql([{
         id: peerIds[1],
@@ -811,8 +811,8 @@ describe('KadDHT', () => {
     it('_betterPeersToQuery', async () => {
       const [dht] = await tdht.spawn(1)
 
-      await dht._add(peerIds[1])
-      await dht._add(peerIds[2])
+      await dht.routingTable.add(peerIds[1])
+      await dht.routingTable.add(peerIds[2])
       const res = await dht._betterPeersToQuery({ key: 'hello' }, peerIds[1])
 
       expect(res[0].id).to.be.eql(peerIds[2])
