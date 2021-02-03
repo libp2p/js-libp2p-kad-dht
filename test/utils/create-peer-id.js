@@ -11,7 +11,7 @@ const PeerId = require('peer-id')
 function createPeerId (length) {
   return Promise.all(
     Array.from({ length }).map(async () => {
-      const id = await PeerId.create({ bits: 512 })
+      const id = await PeerId.create({ keyType: 'ed25519' })
       return id
     })
   )

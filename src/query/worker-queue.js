@@ -264,6 +264,8 @@ class WorkerQueue {
 
     // TODO: this may be better if it happens after the full Lookup is done
     this.dht.routingTable.updateLastSuccessfulOutboundQueryAt(peer)
+    // TODO: this needs to be done after, so we can account for the time each peer took to respond
+    this.dht.routingTable.updateLastUsefulAt(peer)
 
     // If the query indicates that this path or the whole query is complete
     // set the path result and bail out
