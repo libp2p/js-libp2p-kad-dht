@@ -57,18 +57,18 @@ async function main () {
     node.dial('/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa')
   ])
 
-  setInterval(() => {
-    const buckets = node._dht.routingTable.bucketsToArray()
-    console.log('DHT (%d peers):\t\t\t', node._dht.routingTable.size)
-    for (let i = 0; i < buckets.length; i++) {
-      console.log('  Bucket %d (%d peers)\t\t\t', i, buckets[i].contacts.length)
-      console.log('    Peer\t\t\t\t\t\t\tlast useful\tlast queried\tAgent Version')
-      for (const contact of buckets[i].contacts) {
-        const state = ' ' // should be '@' if peer is connected
-        console.log('  %s %s\t%s\t%s\t%s', state, contact.peerId.toB58String(), contact.lastUsefulAt, contact.lastSuccessfulOutboundQueryAt, '-')
-      }
-    }
-  }, 10e3)
+  // setInterval(() => {
+  //   const buckets = node._dht.routingTable.bucketsToArray()
+  //   console.log('DHT (%d peers):\t\t\t', node._dht.routingTable.size)
+  //   for (let i = 0; i < buckets.length; i++) {
+  //     console.log('  Bucket %d (%d peers)\t\t\t', i, buckets[i].contacts.length)
+  //     console.log('    Peer\t\t\t\t\t\t\tlast useful\tlast queried\tAgent Version')
+  //     for (const contact of buckets[i].contacts) {
+  //       const state = ' ' // should be '@' if peer is connected
+  //       console.log('  %s %s\t%s\t%s\t%s', state, contact.peerId.toB58String(), contact.lastUsefulAt, contact.lastSuccessfulOutboundQueryAt, '-')
+  //     }
+  //   }
+  // }, 10e3)
 }
 
 main()

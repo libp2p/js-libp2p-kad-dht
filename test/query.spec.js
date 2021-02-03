@@ -578,7 +578,7 @@ describe('Query', () => {
       return { closerPeers }
     }
 
-    const q = new Query(dht, dht.peerId.id, () => queryFunc)
+    const q = new Query(dht, peerZeroDhtKey, () => queryFunc)
     const res = await q.run(initial)
 
     // Should query 19 peers, then find some peers closer to the key, and

@@ -1,9 +1,17 @@
 'use strict'
 
 const mh = require('multihashing-async').multihash
-
 const utils = require('../utils')
 const Run = require('./run')
+
+/**
+ * To trace a Lookup we want:
+ * - Associate an individual query to a Lookup (targetId)
+ * - Start and Finish time of the query
+ * - Know the PeerId being queried (so we can check xor distance to targetId)
+ * - Know wether it succeeded or failed
+ * - Know the closer PeerId's we found
+ */
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -106,10 +114,20 @@ class Query {
    * Stop the query.
    */
   stop () {
-    this._log(`query:done in ${Date.now() - (this._startTime || 0)}ms`)
+    const endTime = Date.now()
+    this._log(`query:done in ${endTime - (this._startTime || 0)}ms`)
 
     if (this._run) {
       this._log(`${this._run.errors.length} of ${this._run.peersSeen.size} peers errored (${this._run.errors.length / this._run.peersSeen.size * 100}% fail rate)`)
+
+      console.log('LookUp(%d ms) StartTime:%d, EndTime:%d, Target:%s', endTime - (this._startTime || 0), endTime, this._startTime, utils.encodeBase32(this.key))
+      for (const query of this._run.queries) {
+        const time = query.endTime - query.startTime
+        console.log('  Query(%d ms) %s - %s', time, query.peerId.toB58String(), query.status)
+        for (const closerPeer of query.closerPeers) {
+          console.log('    CloserPeer %s', closerPeer.toB58String())
+        }
+      }
     }
 
     if (!this.running) {

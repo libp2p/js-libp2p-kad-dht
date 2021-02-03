@@ -12,6 +12,16 @@ const utils = require('../utils')
  */
 
 /**
+ * @typedef QueryStatus
+ * @property {PeerId} peerId
+ * @property {Uint8Array} target - The key being queried
+ * @property {string} status - error or success
+ * @property {number} startTime - In ticks
+ * @property {number} endTime - In ticks
+ * @property {PeerId[]} closerPeers - Closer peers
+ */
+
+/**
  * Manages a single run of the query.
  */
 class Run extends EventEmitter {
@@ -41,6 +51,9 @@ class Run extends EventEmitter {
     // (this member is initialized when the worker queues start)
     /** @type {PeerDistanceList | null} */
     this.peersQueried = null
+
+    /** @type {QueryStatus[]} */
+    this.queries = []
   }
 
   /**

@@ -237,11 +237,16 @@ class WorkerQueue {
    */
   async execQuery (peer) {
     let res, queryError
+    const queryStartTime = Date.now()
     try {
+      // A Peer Query started
       res = await this.path.queryFunc(peer)
     } catch (err) {
       queryError = err
     }
+
+    // A Peer Query finished
+    const queryFinishTime = Date.now()
 
     // Abort and ignore any error if we're no longer running
     if (!this.running) {
@@ -249,11 +254,31 @@ class WorkerQueue {
     }
 
     if (queryError) {
+      // Record a query error
+      this.run.queries.push({
+        target: this.run.query.key,
+        peerId: peer,
+        startTime: queryStartTime,
+        endTime: queryFinishTime,
+        status: 'error',
+        closerPeers: []
+      })
+
       // TODO: The query errored, track the peer and remove them at the end
       this.dht.routingTable.remove(peer)
       this.run.errors.push(queryError)
       return
     }
+
+    // Record a successful query with any closer peers
+    this.run.queries.push({
+      target: this.run.query.key,
+      peerId: peer,
+      startTime: queryStartTime,
+      endTime: queryFinishTime,
+      status: 'success',
+      closerPeers: res && res.closerPeers ? res.closerPeers.map(peerData => peerData.id) : []
+    })
 
     // Add the peer to the closest peers we have successfully queried
     this.run.peersQueried && await this.run.peersQueried.add(peer)
