@@ -15,7 +15,7 @@ class QueryManager {
   /**
    * Called when a query is started.
    *
-   * @param {Query} query
+   * @param {import('./query')} query
    */
   queryStarted (query) {
     this.queries.add(query)
@@ -24,7 +24,7 @@ class QueryManager {
   /**
    * Called when a query completes.
    *
-   * @param {Query} query
+   * @param {import('./query')} query
    */
   queryCompleted (query) {
     this.queries.delete(query)
