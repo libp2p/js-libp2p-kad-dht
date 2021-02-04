@@ -238,7 +238,7 @@ module.exports = (dht) => {
       const hash = await utils.convertBuffer(key)
       const tablePeers = dht.routingTable.closestPeers(hash, dht.kBucketSize)
 
-      const q = new Query(dht, key, () => {
+      const q = new Query(dht, hash, () => {
         // There is no distinction between the disjoint paths,
         // so there are no per-path variables in dht scope.
         // Just return the actual query function.
