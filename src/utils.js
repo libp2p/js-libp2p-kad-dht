@@ -130,6 +130,47 @@ exports.xorCompare = (a, b) => {
 }
 
 /**
+ * Creates a bit array for the given byte.
+ *
+ * @example
+ * bitsInByte(255) // [1,1,1,1,1,1,1,1]
+ * bitsInByte(8)   // [0,0,0,0,0,0,0,1]
+ * @param {number} byte
+ */
+function bitsInByte (byte) {
+  return [
+    (byte & 0x80) !== 0 ? 1 : 0,
+    (byte & 0x40) !== 0 ? 1 : 0,
+    (byte & 0x20) !== 0 ? 1 : 0,
+    (byte & 0x10) !== 0 ? 1 : 0,
+    (byte & 0x8) !== 0 ? 1 : 0,
+    (byte & 0x4) !== 0 ? 1 : 0,
+    (byte & 0x2) !== 0 ? 1 : 0,
+    (byte & 0x1) !== 0 ? 1 : 0
+  ]
+}
+
+/**
+ * Computes a dht id to a float
+ *
+ * @param {Uint8Array} id - DHT id
+ */
+exports.uint8ArrayToFloat = (id) => {
+  let f = 0.0
+  let s = 1.0
+  for (const byte of id) {
+    for (const bit of bitsInByte(byte)) {
+      s /= 2.0
+      if (bit) {
+        f += s
+      }
+    }
+  }
+
+  return f
+}
+
+/**
  * Computes how many results to collect on each disjoint path, rounding up.
  * This ensures that we look for at least one result per path.
  *
