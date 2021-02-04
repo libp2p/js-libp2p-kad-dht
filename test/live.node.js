@@ -41,6 +41,9 @@ async function main () {
         }
       }
     },
+    dialer: {
+      dialTimeout: 5e3
+    },
     peerRouting: {
       refreshManager: { // Connect to our closest peers
         enabled: true, // Should find the closest peers.

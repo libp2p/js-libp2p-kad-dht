@@ -15,6 +15,7 @@ const utils = require('../utils')
  * @typedef QueryStatus
  * @property {PeerId} peerId
  * @property {Uint8Array} target - The key being queried
+ * @property {number} distance - Distance to the target
  * @property {string} status - error or success
  * @property {number} startTime - In ticks
  * @property {number} endTime - In ticks

@@ -69,6 +69,7 @@
     "promise-to-callback": "^1.0.0",
     "protons": "^2.0.0",
     "streaming-iterables": "^5.0.4",
+    "timeout-abort-controller": "^1.1.1",
     "uint8arrays": "^2.0.5",
     "varint": "^6.0.0",
     "xor-distance": "^2.0.0"

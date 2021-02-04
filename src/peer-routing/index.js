@@ -6,6 +6,7 @@ const pTimeout = require('p-timeout')
 const PeerId = require('peer-id')
 const crypto = require('libp2p-crypto')
 const uint8ArrayToString = require('uint8arrays/to-string')
+const multihashing = require('multihashing-async')
 
 const c = require('../constants')
 const Message = require('../message')
@@ -226,6 +227,12 @@ module.exports = (dht) => {
      * @returns {AsyncIterable<PeerId>}
      */
     async * getClosestPeers (key, options = { shallow: false }) {
+      // TODO: this is a hack. We need to be clearer about what `key` is.
+      // The libp2p refresh is giving us a raw peer id instead of its sha2-256 hash.
+      if (key.length > 32) {
+        key = await multihashing.digest(key, 'sha2-256')
+      }
+
       dht._log('getClosestPeers to %b', key)
 
       const id = await utils.convertBuffer(key)

@@ -120,13 +120,23 @@ class Query {
     if (this._run) {
       this._log(`${this._run.errors.length} of ${this._run.peersSeen.size} peers errored (${this._run.errors.length / this._run.peersSeen.size * 100}% fail rate)`)
 
-      console.log('LookUp(%d ms) StartTime:%d, EndTime:%d, Target:%s', endTime - (this._startTime || 0), endTime, this._startTime, utils.encodeBase32(this.key))
-      for (const query of this._run.queries) {
-        const time = query.endTime - query.startTime
-        console.log('  Query(%d ms) %s - %s', time, query.peerId.toB58String(), query.status)
-        for (const closerPeer of query.closerPeers) {
-          console.log('    CloserPeer %s', closerPeer.toB58String())
+      try {
+        console.log('LookUp(%d ms) Queries:%d, StartTime:%d, EndTime:%d, Target:%s',
+          endTime - (this._startTime || 0),
+          this._run.queries.length,
+          endTime,
+          this._startTime,
+          utils.encodeBase32(this.key)
+        )
+        for (const query of this._run.queries) {
+          const time = query.endTime - query.startTime
+          console.log('  Query(%d ms) %s - %s - distance %d', time, query.peerId.toB58String(), query.status, query.distance)
+          for (const closerPeer of query.closerPeers) {
+            console.log('    CloserPeer %s', closerPeer.toB58String())
+          }
         }
+      } catch (err) {
+        console.error(err)
       }
     }
 

@@ -1,6 +1,9 @@
 'use strict'
 
 const { default: Queue } = require('p-queue')
+// @ts-ignore
+const distance = require('xor-distance')
+const utils = require('../utils')
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -248,6 +251,9 @@ class WorkerQueue {
     // A Peer Query finished
     const queryFinishTime = Date.now()
 
+    const kadId = await utils.convertPeerId(peer)
+    const dist = utils.uint8ArrayToFloat(distance(kadId, this.run.query.key))
+
     // Abort and ignore any error if we're no longer running
     if (!this.running) {
       return
@@ -257,6 +263,7 @@ class WorkerQueue {
       // Record a query error
       this.run.queries.push({
         target: this.run.query.key,
+        distance: dist,
         peerId: peer,
         startTime: queryStartTime,
         endTime: queryFinishTime,
@@ -273,6 +280,7 @@ class WorkerQueue {
     // Record a successful query with any closer peers
     this.run.queries.push({
       target: this.run.query.key,
+      distance: dist,
       peerId: peer,
       startTime: queryStartTime,
       endTime: queryFinishTime,
