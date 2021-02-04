@@ -6,7 +6,6 @@ const pTimeout = require('p-timeout')
 const PeerId = require('peer-id')
 const crypto = require('libp2p-crypto')
 const uint8ArrayToString = require('uint8arrays/to-string')
-const multihashing = require('multihashing-async')
 
 const c = require('../constants')
 const Message = require('../message')
@@ -145,7 +144,7 @@ module.exports = (dht) => {
       }
 
       // sanity check
-      const match = peers.find((p) => p.isEqual(id))
+      const match = peers.find((p) => p.equals(id))
       if (match) {
         const peer = dht.peerStore.get(id)
 
@@ -159,7 +158,7 @@ module.exports = (dht) => {
       }
 
       // query the network
-      const query = new Query(dht, id.id, () => {
+      const query = new Query(dht, key, () => {
         /**
          * There is no distinction between the disjoint paths, so there are no per-path
          * variables in dht scope. Just return the actual query function.
@@ -168,7 +167,7 @@ module.exports = (dht) => {
          */
         const queryFn = async (peer) => {
           const msg = await this._findPeerSingle(peer, id)
-          const match = msg.closerPeers.find((p) => p.id.isEqual(id))
+          const match = msg.closerPeers.find((p) => p.id.equals(id))
 
           // found it
           if (match) {
@@ -219,31 +218,32 @@ module.exports = (dht) => {
     },
 
     /**
-     * Kademlia 'node lookup' operation.
+     * Kademlia 'node lookup' operation. The provided `key` will be
+     * hashed via sha2-256. The hash will then be used to query. You can
+     * pass `CID.multihash`, `PeerId.id`, or any Uint8Array to this function,
+     * but know that it will be hashed.
      *
-     * @param {Uint8Array} key
+     * TODO: This should probably just take a multihash. Right now it's a bit
+     * too loose with the key params. If users aren't careful they won't be able
+     * to find anything on the DHT.
+     *
+     * @param {Uint8Array} key - It will be hashed via sha2-256
      * @param {Object} [options]
      * @param {boolean} [options.shallow] - shallow query (default: false)
      * @returns {AsyncIterable<PeerId>}
      */
     async * getClosestPeers (key, options = { shallow: false }) {
-      // TODO: this is a hack. We need to be clearer about what `key` is.
-      // The libp2p refresh is giving us a raw peer id instead of its sha2-256 hash.
-      if (key.length > 32) {
-        key = await multihashing.digest(key, 'sha2-256')
-      }
-
       dht._log('getClosestPeers to %b', key)
 
-      const id = await utils.convertBuffer(key)
-      const tablePeers = dht.routingTable.closestPeers(id, dht.kBucketSize)
+      const hash = await utils.convertBuffer(key)
+      const tablePeers = dht.routingTable.closestPeers(hash, dht.kBucketSize)
 
       const q = new Query(dht, key, () => {
         // There is no distinction between the disjoint paths,
         // so there are no per-path variables in dht scope.
         // Just return the actual query function.
         return async (peer) => {
-          const closer = await closerPeersSingle(key, peer)
+          const closer = await closerPeersSingle(hash, peer)
 
           return {
             closerPeers: closer,
@@ -257,7 +257,7 @@ module.exports = (dht) => {
         return []
       }
 
-      const sorted = await utils.sortClosestPeers(Array.from(res.finalSet), id)
+      const sorted = await utils.sortClosestPeers(Array.from(res.finalSet), hash)
 
       for (const pId of sorted.slice(0, dht.kBucketSize)) {
         yield pId

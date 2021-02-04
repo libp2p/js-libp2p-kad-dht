@@ -232,6 +232,7 @@ class RoutingTable {
     }
 
     contact.lastSuccessfulOutboundQueryAt = Date.now() // TODO: verify this updates
+    contact.replaceable = false
   }
 
   /**

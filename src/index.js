@@ -61,7 +61,8 @@ class KadDHT extends EventEmitter {
    * @param {boolean} [props.forceProtocolLegacy = false] - WARNING: this is not recommended and should only be used for legacy purposes
    * @param {number} props.kBucketSize - k-bucket size (default 20)
    * @param {boolean} props.clientMode - If true, the DHT will not respond to queries. This should be true if your node will not be dialable. (default: false)
-   * @param {number} props.concurrency - alpha concurrency of queries (default 3)
+   * @param {number} [props.concurrency = 3] - alpha concurrency of queries (default 3)
+   * @param {number} [props.minClosestPeers = 3] - beta min number of known closest peers we must query
    * @param {Datastore} props.datastore - datastore (default MemoryDatastore)
    * @param {object} props.validators - validators object with namespace as keys and function(key, record, callback)
    * @param {object} props.selectors - selectors object with namespace as keys and function(key, records)
@@ -81,6 +82,7 @@ class KadDHT extends EventEmitter {
     kBucketSize = c.K,
     clientMode = true,
     concurrency = c.ALPHA,
+    minClosestPeers = c.BETA,
     validators = {},
     selectors = {},
     randomWalk = {
@@ -156,6 +158,13 @@ class KadDHT extends EventEmitter {
      * @type {number}
      */
     this.concurrency = concurrency
+
+    /**
+     * Number of closest peers we must have queried
+     *
+     * @type {number}
+     */
+    this.minClosestPeers = minClosestPeers
 
     /**
      * Number of disjoint query paths to use
@@ -537,7 +546,7 @@ class KadDHT extends EventEmitter {
    * Note: The peerStore is updated with new addresses found for the given peer.
    *
    * @param {PeerId} peer
-   * @param {Uint8Array} key
+   * @param {Uint8Array} key - sha2-256 hash
    */
   async _getValueOrPeers (peer, key) {
     const msg = await this._getValueSingle(peer, key)

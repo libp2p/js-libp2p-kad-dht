@@ -184,11 +184,12 @@ module.exports = (dht) => {
 
       dht._log('getMany %b (%s)', key, nvals)
 
+      const hash = await utils.convertBuffer(key)
       const vals = []
       let localRec
 
       try {
-        localRec = await getLocal(key)
+        localRec = await getLocal(hash)
       } catch (err) {
         if (nvals === 0) {
           throw err
@@ -206,8 +207,7 @@ module.exports = (dht) => {
         return vals
       }
 
-      const id = await utils.convertBuffer(key)
-      const rtp = dht.routingTable.closestPeers(id, dht.kBucketSize)
+      const rtp = dht.routingTable.closestPeers(hash, dht.kBucketSize)
 
       dht._log('peers in rt: %d', rtp.length)
 
@@ -240,7 +240,7 @@ module.exports = (dht) => {
         async function disjointPathQuery (peer) {
           let rec, peers, lookupErr
           try {
-            const results = await dht._getValueOrPeers(peer, key)
+            const results = await dht._getValueOrPeers(peer, hash)
             rec = results.record
             peers = results.peers
           } catch (err) {
@@ -284,7 +284,7 @@ module.exports = (dht) => {
       }
 
       // we have peers, lets send the actual query to them
-      const query = new Query(dht, key, createQuery)
+      const query = new Query(dht, hash, createQuery)
 
       try {
         await pTimeout(query.run(rtp), options.timeout)

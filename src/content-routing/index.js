@@ -23,12 +23,12 @@ module.exports = (dht) => {
    * Check for providers from a single node.
    *
    * @param {PeerId} peer
-   * @param {CID} key
+   * @param {Uint8Array} hash - sha2-256 hash
    *
    * @private
    */
-  const findProvidersSingle = async (peer, key) => { // eslint-disable-line require-await
-    const msg = new Message(Message.TYPES.GET_PROVIDERS, key.bytes, 0)
+  const findProvidersSingle = async (peer, hash) => { // eslint-disable-line require-await
+    const msg = new Message(Message.TYPES.GET_PROVIDERS, hash, 0)
     return dht.network.sendRequest(peer, msg)
   }
 
@@ -67,7 +67,7 @@ module.exports = (dht) => {
       }
 
       // Notify closest peers
-      await utils.mapParallel(dht.getClosestPeers(key.bytes), mapPeer)
+      await utils.mapParallel(dht.getClosestPeers(key.multihash), mapPeer)
 
       if (errors.length) {
         // TODO:
@@ -92,6 +92,7 @@ module.exports = (dht) => {
       const n = options.maxNumProviders || c.K
 
       dht._log(`findProviders ${key}`)
+      const hash = await utils.convertBuffer(key.multihash)
 
       const out = new LimitedPeerList(n)
       const provs = await dht.providers.getProviders(key)
@@ -144,7 +145,7 @@ module.exports = (dht) => {
          * @param {PeerId} peer
          */
         async function queryDisjointPath (peer) {
-          const msg = await findProvidersSingle(peer, key)
+          const msg = await findProvidersSingle(peer, hash)
           const provs = msg.providerPeers
           dht._log(`(${peer}) found ${provs.length} provider entries`)
 
@@ -166,8 +167,8 @@ module.exports = (dht) => {
         return queryDisjointPath
       }
 
-      const query = new Query(dht, key.bytes, makePath)
-      const peers = dht.routingTable.closestPeers(key.bytes, dht.kBucketSize)
+      const query = new Query(dht, hash, makePath)
+      const peers = dht.routingTable.closestPeers(hash, dht.kBucketSize)
 
       try {
         await pTimeout(

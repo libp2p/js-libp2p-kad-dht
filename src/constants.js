@@ -28,11 +28,18 @@ exports.READ_MESSAGE_TIMEOUT = 10 * second
 // The number of records that will be retrieved on a call to getMany()
 exports.GET_MANY_RECORD_COUNT = 16
 
-// K is the maximum number of requests to perform before returning failure
+// K is the number of peers we will return from a query that have
+// not failed a query (in progress queries are ok).
 exports.K = 20
 
-// Alpha is the concurrency for asynchronous requests
+// Alpha is the concurrency for asynchronous requests. This can vary
+// based on performance needs.
 exports.ALPHA = 3
+
+// Beta is the number of closest known peers that we must
+// successfully query before terminating a lookup. Should be consistent
+// for all members of the network.
+exports.BETA = 3
 
 exports.defaultRandomWalk = {
   enabled: true,
