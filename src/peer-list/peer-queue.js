@@ -2,8 +2,7 @@
 
 // @ts-ignore
 const Heap = require('heap')
-// @ts-ignore
-const distance = require('xor-distance')
+const distance = require('uint8arrays/xor')
 const debug = require('debug')
 
 const utils = require('../utils')

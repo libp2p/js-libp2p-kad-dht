@@ -7,7 +7,7 @@ const expect = chai.expect
 const PeerId = require('peer-id')
 const random = require('lodash.random')
 
-const RoutingTable = require('../src/routing')
+const RoutingTable = require('../src/routing-table')
 const kadUtils = require('../src/utils')
 const createPeerId = require('./utils/create-peer-id')
 

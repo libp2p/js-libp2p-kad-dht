@@ -103,10 +103,12 @@ class RandomWalk {
       await times(queries, async (index) => {
         this.log('running query %d', index)
         try {
-          const id = await this._randomPeerId()
-
           // Check if we've happened to already abort
-          if (!this._controller) return
+          if (!this._controller || this._controller.signal.aborted) {
+            return
+          }
+
+          const id = await this._randomPeerId()
 
           await this._query(id, {
             timeout: walkTimeout,

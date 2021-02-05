@@ -4,8 +4,8 @@ const debug = require('debug')
 const multihashing = require('multihashing-async')
 const mh = multihashing.multihash
 const { Key } = require('interface-datastore')
-// @ts-ignore
-const distance = require('xor-distance')
+const distance = require('uint8arrays/xor')
+const compare = require('uint8arrays/compare')
 const pMap = require('p-map')
 const { Record } = require('libp2p-record')
 const PeerId = require('peer-id')
@@ -126,7 +126,7 @@ exports.sortClosestPeers = async (peers, target) => {
  * @param {{ distance: Uint8Array }} b
  */
 exports.xorCompare = (a, b) => {
-  return distance.compare(a.distance, b.distance)
+  return compare(a.distance, b.distance)
 }
 
 /**
