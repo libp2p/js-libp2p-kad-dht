@@ -43,6 +43,7 @@
     "extends": "ipfs"
   },
   "homepage": "https://github.com/libp2p/js-libp2p-kad-dht",
+  "types": "dist/src/index.d.ts",
   "dependencies": {
     "abort-controller": "^3.0.0",
     "cids": "^1.1.5",

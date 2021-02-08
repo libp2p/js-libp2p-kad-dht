@@ -376,7 +376,7 @@ class KadDHT extends EventEmitter {
    *
    * @param {Uint8Array} key
    * @param {Object} [options]
-   * @param {boolean} [options.shallow] - shallow query (default: false)
+   * @param {boolean} [options.shallow = false] - shallow query
    */
   async * getClosestPeers (key, options = { shallow: false }) {
     yield * this.peerRouting.getClosestPeers(key, options)
