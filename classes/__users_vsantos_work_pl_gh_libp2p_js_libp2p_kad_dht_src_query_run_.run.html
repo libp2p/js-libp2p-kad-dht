@@ -1,0 +1,604 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Run | libp2p-kad-dht - v0.21.0</title>
+	<meta name="description" content="Documentation for libp2p-kad-dht - v0.21.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../assets/css/main.css">
+	<link href="https://unpkg.com/nord-highlightjs@0.1.0/dist/nord.css" rel="stylesheet" type="text/css" />
+	<style>
+        .toolbar-icon {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        .toolbar-icon-search {
+            box-sizing: border-box;
+            position: absolute;
+            overflow: hidden;
+            right: -40px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            @media (min-width: 901px){
+                display: none
+            }
+        }
+            @media (min-width: 901px){
+                .toolbar-icon-menu {
+                    display: none
+                }
+                .toolbar-icon-options {
+                    display: none
+                }
+            }
+
+        .gg-menu {
+            transform: scale(var(--ggs,1))
+        }
+        .gg-menu,
+        .gg-menu::after,
+        .gg-menu::before {
+            box-sizing: border-box;
+            position: relative;
+            display: block;
+            width: 20px;
+            height: 2px;
+            border-radius: 3px;
+            background: currentColor
+        }
+        .gg-menu::after,
+        .gg-menu::before {
+            content: "";
+            position: absolute;
+            top: -6px
+        }
+        .gg-menu::after {
+            top: 6px
+        }
+        .gg-options {
+            box-sizing: border-box;
+            position: relative;
+            display: block;
+            transform: scale(var(--ggs,1));
+            width: 10px;
+            height: 2px;
+            box-shadow:
+                -3px 4px 0 0,
+                3px -4px 0 0
+        }
+        .gg-options::after,
+        .gg-options::before {
+            content: "";
+            display: block;
+            box-sizing: border-box;
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border: 2px solid;
+            border-radius: 100%
+        }
+        .gg-options::before {
+            top: -7px;
+            left: -4px
+        }
+        .gg-options::after {
+            bottom: -7px;
+            right: -4px
+        }
+        .gg-search {
+            box-sizing: border-box;
+            position: relative;
+            display: block;
+            transform: scale(var(--ggs,1));
+            width: 16px;
+            height: 16px;
+            border: 2px solid;
+            border-radius: 100%;
+            margin-left: -4px;
+            margin-top: -4px
+        }
+        .gg-search::after {
+            content: "";
+            display: block;
+            box-sizing: border-box;
+            position: absolute;
+            border-radius: 3px;
+            width: 2px;
+            height: 8px;
+            background: currentColor;
+            transform: rotate(-45deg);
+            top: 10px;
+            left: 12px
+        }
+    </style>
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="../assets/js/search.json" data-base="..">
+					<div class="field">
+						<label for="tsd-search-field" class="toolbar-icon toolbar-icon-search"><i class="gg-search"></i></label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="../index.html" class="title">libp2p-kad-dht - v0.21.0</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<a href="#" class="toolbar-icon toolbar-icon-menu" data-toggle="menu"><i class="gg-menu"></i></a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/query/run</a>
+				</li>
+				<li>
+					<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html">Run</a>
+				</li>
+			</ul>
+			<h1>Class Run</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Manages a single run of the query.</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-hierarchy">
+				<h3>Hierarchy</h3>
+				<ul class="tsd-hierarchy">
+					<li>
+						<span class="tsd-signature-type">any</span>
+						<ul class="tsd-hierarchy">
+							<li>
+								<span class="target">Run</span>
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel-group tsd-index-group">
+				<h2>Index</h2>
+				<section class="tsd-panel tsd-index-panel">
+					<div class="tsd-index-content">
+						<section class="tsd-index-section ">
+							<h3>References</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-reference tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#peerid" class="tsd-kind-icon">Peer<wbr>Id</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
+							<h3>Constructors</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#errors" class="tsd-kind-icon">errors</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#peersqueried" class="tsd-kind-icon">peers<wbr>Queried</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#peersqueriedpromise" class="tsd-kind-icon">peers<wbr>Queried<wbr>Promise</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#peersseen" class="tsd-kind-icon">peers<wbr>Seen</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#query" class="tsd-kind-icon">query</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#running" class="tsd-kind-icon">running</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#workers" class="tsd-kind-icon">workers</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
+							<h3>Methods</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#continuequerying" class="tsd-kind-icon">continue<wbr>Querying</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#execute" class="tsd-kind-icon">execute</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#executepaths" class="tsd-kind-icon">execute<wbr>Paths</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#init" class="tsd-kind-icon">init</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#startworker" class="tsd-kind-icon">start<wbr>Worker</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#stop" class="tsd-kind-icon">stop</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#workerqueue" class="tsd-kind-icon">worker<wbr>Queue</a></li>
+							</ul>
+						</section>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>References</h2>
+				<section class="tsd-panel tsd-member tsd-kind-reference tsd-parent-kind-class">
+					<a name="peerid" class="tsd-anchor"></a>
+					<h3>Peer<wbr>Id</h3>
+					Re-exports <a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid">PeerId</a>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Constructors</h2>
+				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class">
+					<a name="constructor" class="tsd-anchor"></a>
+					<h3>constructor</h3>
+					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Run<span class="tsd-signature-symbol">(</span>query<span class="tsd-signature-symbol">: </span><a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_manager_.html#query" class="tsd-signature-type">Query</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html" class="tsd-signature-type">Run</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Creates a Run.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>query: <a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_manager_.html#query" class="tsd-signature-type">Query</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+										</div>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html" class="tsd-signature-type">Run</a></h4>
+						</li>
+					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="errors" class="tsd-anchor"></a>
+					<h3>errors</h3>
+					<div class="tsd-signature tsd-kind-icon">errors<span class="tsd-signature-symbol">:</span> <a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_utils_.timeouterror.html#error" class="tsd-signature-type">Error</a><span class="tsd-signature-symbol">[]</span></div>
+					<aside class="tsd-sources">
+					</aside>
+					<div class="tsd-comment tsd-typography">
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="peersqueried" class="tsd-anchor"></a>
+					<h3>peers<wbr>Queried</h3>
+					<div class="tsd-signature tsd-kind-icon">peers<wbr>Queried<span class="tsd-signature-symbol">:</span> <a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_peer_list_peer_distance_list_.peerdistancelist.html" class="tsd-signature-type">PeerDistanceList</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></div>
+					<aside class="tsd-sources">
+					</aside>
+					<div class="tsd-comment tsd-typography">
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="peersqueriedpromise" class="tsd-anchor"></a>
+					<h3>peers<wbr>Queried<wbr>Promise</h3>
+					<div class="tsd-signature tsd-kind-icon">peers<wbr>Queried<wbr>Promise<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></div>
+					<aside class="tsd-sources">
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="peersseen" class="tsd-anchor"></a>
+					<h3>peers<wbr>Seen</h3>
+					<div class="tsd-signature tsd-kind-icon">peers<wbr>Seen<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="query" class="tsd-anchor"></a>
+					<h3>query</h3>
+					<div class="tsd-signature tsd-kind-icon">query<span class="tsd-signature-symbol">:</span> <a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_manager_.html#query" class="tsd-signature-type">Query</a></div>
+					<aside class="tsd-sources">
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="running" class="tsd-anchor"></a>
+					<h3>running</h3>
+					<div class="tsd-signature tsd-kind-icon">running<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="workers" class="tsd-anchor"></a>
+					<h3>workers</h3>
+					<div class="tsd-signature tsd-kind-icon">workers<span class="tsd-signature-symbol">:</span> <a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_worker_queue_.workerqueue.html" class="tsd-signature-type">WorkerQueue</a><span class="tsd-signature-symbol">[]</span></div>
+					<aside class="tsd-sources">
+					</aside>
+					<div class="tsd-comment tsd-typography">
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="continuequerying" class="tsd-anchor"></a>
+					<h3>continue<wbr>Querying</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">continue<wbr>Querying<span class="tsd-signature-symbol">(</span>worker<span class="tsd-signature-symbol">: </span><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_worker_queue_.workerqueue.html" class="tsd-signature-type">WorkerQueue</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>If we&#39;ve queried K peers, and the remaining peers in the given <code>worker</code>&#39;s queue
+										are all further from the key than the peers we&#39;ve already queried, then we should
+									stop querying on that <code>worker</code>.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>worker: <a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_worker_queue_.workerqueue.html" class="tsd-signature-type">WorkerQueue</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="execute" class="tsd-anchor"></a>
+					<h3>execute</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">execute<span class="tsd-signature-symbol">(</span>peers<span class="tsd-signature-symbol">: </span><a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid" class="tsd-signature-type">PeerId</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>finalSet<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid" class="tsd-signature-type">PeerId</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>paths<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>closerPeers<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>id<span class="tsd-signature-symbol">: </span><a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid" class="tsd-signature-type">PeerId</a><span class="tsd-signature-symbol">; </span>multiaddrs<span class="tsd-signature-symbol">: </span><a href="../modules/__libp2p_kad_dht_.html#multiaddr" class="tsd-signature-type">Multiaddr</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">; </span>pathComplete<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">; </span>peer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>id<span class="tsd-signature-symbol">: </span><a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid" class="tsd-signature-type">PeerId</a><span class="tsd-signature-symbol">; </span>multiaddrs<span class="tsd-signature-symbol">: </span><a href="../modules/__libp2p_kad_dht_.html#multiaddr" class="tsd-signature-type">Multiaddr</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">; </span>queryComplete<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">; </span>success<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Execute the run with the given initial set of peers.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>peers: <a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid" class="tsd-signature-type">PeerId</a><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>finalSet<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Set</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid" class="tsd-signature-type">PeerId</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>paths<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>closerPeers<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>id<span class="tsd-signature-symbol">: </span><a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid" class="tsd-signature-type">PeerId</a><span class="tsd-signature-symbol">; </span>multiaddrs<span class="tsd-signature-symbol">: </span><a href="../modules/__libp2p_kad_dht_.html#multiaddr" class="tsd-signature-type">Multiaddr</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">; </span>pathComplete<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">; </span>peer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>id<span class="tsd-signature-symbol">: </span><a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html#peerid" class="tsd-signature-type">PeerId</a><span class="tsd-signature-symbol">; </span>multiaddrs<span class="tsd-signature-symbol">: </span><a href="../modules/__libp2p_kad_dht_.html#multiaddr" class="tsd-signature-type">Multiaddr</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">; </span>queryComplete<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">; </span>success<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="executepaths" class="tsd-anchor"></a>
+					<h3>execute<wbr>Paths</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">execute<wbr>Paths<span class="tsd-signature-symbol">(</span>paths<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_path_.path.html" class="tsd-signature-type">Path</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Execute all paths through the DHT.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>paths: <span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_path_.path.html" class="tsd-signature-type">Path</a><span class="tsd-signature-symbol">&gt;</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="init" class="tsd-anchor"></a>
+					<h3>init</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">init<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Initialize the list of closest peers we&#39;ve queried - this is shared by all
+									paths in the run.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="startworker" class="tsd-anchor"></a>
+					<h3>start<wbr>Worker</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">start<wbr>Worker<span class="tsd-signature-symbol">(</span>path<span class="tsd-signature-symbol">: </span><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_path_.path.html" class="tsd-signature-type">Path</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Create and start a worker queue for a particular path.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>path: <a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_path_.path.html" class="tsd-signature-type">Path</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="stop" class="tsd-anchor"></a>
+					<h3>stop</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">stop<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Stop all the workers</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="workerqueue" class="tsd-anchor"></a>
+					<h3>worker<wbr>Queue</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">worker<wbr>Queue<span class="tsd-signature-symbol">(</span>path<span class="tsd-signature-symbol">: </span><a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_path_.path.html" class="tsd-signature-type">Path</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Initialize the list of queried peers, then start a worker queue for the
+									given path.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>path: <a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_path_.path.html" class="tsd-signature-type">Path</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+			</section>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="current tsd-kind-module">
+						<a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/query/run</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-class tsd-parent-kind-module">
+						<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html" class="tsd-kind-icon">Run</a>
+						<ul>
+							<li class=" tsd-kind-reference tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#peerid" class="tsd-kind-icon">Peer<wbr>Id</a>
+							</li>
+							<li class=" tsd-kind-constructor tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#constructor" class="tsd-kind-icon">constructor</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#errors" class="tsd-kind-icon">errors</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#peersqueried" class="tsd-kind-icon">peers<wbr>Queried</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#peersqueriedpromise" class="tsd-kind-icon">peers<wbr>Queried<wbr>Promise</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#peersseen" class="tsd-kind-icon">peers<wbr>Seen</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#query" class="tsd-kind-icon">query</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#running" class="tsd-kind-icon">running</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#workers" class="tsd-kind-icon">workers</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#continuequerying" class="tsd-kind-icon">continue<wbr>Querying</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#execute" class="tsd-kind-icon">execute</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#executepaths" class="tsd-kind-icon">execute<wbr>Paths</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#init" class="tsd-kind-icon">init</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#startworker" class="tsd-kind-icon">start<wbr>Worker</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#stop" class="tsd-kind-icon">stop</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.run.html#workerqueue" class="tsd-kind-icon">worker<wbr>Queue</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="after-current">
+					<li class=" tsd-kind-type-alias tsd-parent-kind-module tsd-is-not-exported">
+						<a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.html#peerid" class="tsd-kind-icon">Peer<wbr>Id</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
+						<a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.html#eventemitter" class="tsd-kind-icon">Event<wbr>Emitter</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
+						<a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.html#path" class="tsd-kind-icon">Path</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
+						<a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.html#peerdistancelist" class="tsd-kind-icon">Peer<wbr>Distance<wbr>List</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-module tsd-is-not-exported">
+						<a href="../modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.html#workerqueue" class="tsd-kind-icon">Worker<wbr>Queue</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer>
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-namespace"><span class="tsd-kind-icon">Namespace</span></li>
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
+				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="overlay"></div>
+<script src="../assets/js/main.js"></script>
+</body>
+</html>
