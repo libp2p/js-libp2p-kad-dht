@@ -62,6 +62,7 @@
     "libp2p-interfaces": "^0.8.2",
     "libp2p-record": "^0.10.0",
     "multiaddr": "^8.1.2",
+    "multicodec": "^3.0.1",
     "multihashing-async": "^2.1.0",
     "p-filter": "^2.1.0",
     "p-map": "^4.0.0",
