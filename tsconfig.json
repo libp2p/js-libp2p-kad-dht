@@ -4,6 +4,7 @@
       "outDir": "dist"
   },
   "include": [
-    "src"
+    "src",
+    "src/routing-table/generated-prefix-list.json"
   ]
 }

@@ -8,7 +8,7 @@ const { MemoryDatastore } = require('interface-datastore')
 const uint8ArrayEquals = require('uint8arrays/equals')
 const uint8ArrayToString = require('uint8arrays/to-string')
 
-const RoutingTable = require('./routing')
+const RoutingTable = require('./routing-table')
 const utils = require('./utils')
 const c = require('./constants')
 const Network = require('./network')
@@ -170,7 +170,7 @@ class KadDHT extends EventEmitter {
      *
      * @type {RoutingTable}
      */
-    this.routingTable = new RoutingTable(this.peerId, this.kBucketSize)
+    this.routingTable = new RoutingTable(this, { kBucketSize: this.kBucketSize })
 
     /**
      * Reference to the datastore, uses an in-memory store if none given.
@@ -235,31 +235,33 @@ class KadDHT extends EventEmitter {
 
   /**
    * Start listening to incoming connections.
-   *
-   * @returns {Promise<void>}
    */
-  async start () {
+  start () {
     this._running = true
-    this.providers.start()
-    this._queryManager.start()
-    await this.network.start()
 
-    // Start random walk, it will not run if it's disabled
-    this.randomWalk.start()
+    return Promise.all([
+      this.providers.start(),
+      this._queryManager.start(),
+      this.network.start(),
+      this.randomWalk.start(),
+      this.routingTable.start()
+    ])
   }
 
   /**
    * Stop accepting incoming connections and sending outgoing
    * messages.
-   *
-   * @returns {Promise<void>}
    */
   stop () {
     this._running = false
-    this.randomWalk.stop()
-    this.providers.stop()
-    this._queryManager.stop()
-    return this.network.stop()
+
+    return Promise.all([
+      this.randomWalk.stop(),
+      this.providers.stop(),
+      this._queryManager.stop(),
+      this.network.stop(),
+      this.routingTable.stop()
+    ])
   }
 
   /**

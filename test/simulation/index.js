@@ -6,7 +6,7 @@
 const PeerStore = require('libp2p/src/peer-store')
 const PeerId = require('peer-id')
 const multihashes = require('multihashing-async').multihash
-const RoutingTable = require('../../src/routing')
+const RoutingTable = require('../../src/routing-table')
 const Message = require('../../src/message')
 const { convertBuffer } = require('../../src/utils')
 const { sortClosestPeers } = require('../../src/utils')
