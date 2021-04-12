@@ -3,7 +3,7 @@
 const PeerStore = require('libp2p/src/peer-store')
 const pRetry = require('p-retry')
 const delay = require('delay')
-const multiaddr = require('multiaddr')
+const { Multiaddr } = require('multiaddr')
 
 const KadDHT = require('../../src')
 const { PROTOCOL_DHT } = require('../../src/constants')
@@ -79,7 +79,7 @@ class TestDHT {
 
     const dht = new KadDHT({
       libp2p: {
-        multiaddrs: [multiaddr('/ip4/0.0.0.0/tcp/4002')]
+        multiaddrs: [new Multiaddr('/ip4/0.0.0.0/tcp/4002')]
       },
       dialer: {
         connectToPeer: (peer) => connectToPeer(dht, peer)
