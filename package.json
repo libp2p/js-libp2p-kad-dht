@@ -8,7 +8,7 @@
     "lint": "aegir lint",
     "prepare": "npm run build",
     "build": "npm run build:proto && npm run build:proto-types && aegir build",
-    "build:proto": "pbjs -t static-module -w commonjs --force-number --no-verify --no-delimited --no-create --no-beautify --no-defaults --lint eslint-disable -o src/message/dht.js ./src/message/dht.proto",
+    "build:proto": "pbjs -t static-module -w commonjs -r libp2p-kad-dht --force-number --no-verify --no-delimited --no-create --no-beautify --no-defaults --lint eslint-disable -o src/message/dht.js ./src/message/dht.proto",
     "build:proto-types": "pbts -o src/message/dht.d.ts src/message/dht.js",
     "test": "aegir test -t node",
     "test:node": "aegir test -t node",
