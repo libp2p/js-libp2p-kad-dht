@@ -154,6 +154,10 @@ class TestDHT {
       })
     }
 
+    // Libp2p dial adds multiaddrs to the addressBook
+    dhtA.peerStore.addressBook.add(dhtB.peerId, dhtB.libp2p.multiaddrs)
+    dhtB.peerStore.addressBook.add(dhtA.peerId, dhtA.libp2p.multiaddrs)
+
     // Check routing tables
     return Promise.all(routingTableChecks.map(check => {
       return pRetry(check, { retries: 50 })
