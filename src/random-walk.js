@@ -6,6 +6,7 @@ const PeerId = require('peer-id')
 const { AbortController } = require('abort-controller')
 const errcode = require('err-code')
 const times = require('p-times')
+const setImmediate = require('async/setImmediate')
 const c = require('./constants')
 const { logger } = require('./utils')
 
@@ -40,9 +41,10 @@ class RandomWalk {
    * every interval requesting random data. This is done to keep the dht
    * healthy over time.
    *
+   * @param {function()} callback
    * @returns {void}
    */
-  start () {
+  start (callback) {
     // Don't run twice
     if (this._timeoutId || !this._options.enabled) { return }
 
@@ -51,20 +53,23 @@ class RandomWalk {
       // Start runner immediately
       this._runPeriodically()
     }, this._options.delay)
+    setImmediate(callback || (() => {}))
   }
 
   /**
    * Stop the random-walk process. Any active
    * queries will be aborted.
    *
+   * @param {function()} callback
    * @returns {void}
    */
-  stop () {
+  stop (callback) {
     if (this._timeoutId) {
       clearTimeout(this._timeoutId)
       this._timeoutId = undefined
     }
     this._controller && this._controller.abort()
+    setImmediate(callback || (() => {}))
   }
 
   /**
