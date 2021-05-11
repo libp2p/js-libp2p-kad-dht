@@ -368,6 +368,9 @@ class KadDHT extends EventEmitter {
    * @returns {Promise<{ id: PeerId, multiaddrs: Multiaddr[] }>}
    */
   async findPeer (id, options = { timeout: 60000 }) { // eslint-disable-line require-await
+    if (id._idB58String == this.peerId._idB58String) {
+      throw errcode(new Error('Cannot find self'), 'ERR_DIAL_SELF')
+    }
     return this.peerRouting.findPeer(id, options)
   }
 
