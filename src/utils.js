@@ -1,8 +1,8 @@
 'use strict'
 
 const debug = require('debug')
-const multihashing = require('multihashing-async')
-const mh = multihashing.multihash
+const { sha256 } = require('multiformats/hashes/sha2')
+const { base58btc } = require('multiformats/bases/base58')
 const { Key } = require('interface-datastore')
 // @ts-ignore
 const distance = require('xor-distance')
@@ -20,8 +20,8 @@ const uint8ArrayToString = require('uint8arrays/to-string')
  * @param {Uint8Array} buf
  * @returns {Promise<Uint8Array>}
  */
-exports.convertBuffer = (buf) => {
-  return multihashing.digest(buf, 'sha2-256')
+exports.convertBuffer = async (buf) => {
+  return (await sha256.digest(buf)).digest
 }
 
 /**
@@ -30,8 +30,8 @@ exports.convertBuffer = (buf) => {
  * @param {PeerId} peer
  * @returns {Promise<Uint8Array>}
  */
-exports.convertPeerId = (peer) => {
-  return multihashing.digest(peer.id, 'sha2-256')
+exports.convertPeerId = async (peer) => {
+  return (await sha256.digest(peer.id)).digest
 }
 
 /**
@@ -171,7 +171,7 @@ exports.logger = (id, subsystem) => {
 
   // Add a formatter for converting to a base58 string
   debug.formatters.b = (v) => {
-    return mh.toB58String(v)
+    return base58btc.baseEncode(v)
   }
 
   const logger = Object.assign(debug(name.join(':')), {
@@ -204,9 +204,13 @@ exports.withTimeout = (asyncFn, time) => {
     return Promise.race([
       asyncFn(...args),
       new Promise((resolve, reject) => {
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           reject(errcode(new Error('Async function did not complete before timeout'), 'ETIMEDOUT'))
         }, time)
+
+        if (timeout && timeout.unref) {
+          timeout.unref()
+        }
       })
     ])
   }

@@ -29,7 +29,7 @@ const Record = libp2pRecord.Record
  * @typedef {import('interface-datastore').Datastore} Datastore
  * @typedef {import('libp2p/src/dialer')} Dialer
  * @typedef {import('libp2p/src/registrar')} Registrar
- * @typedef {import('cids')} CID
+ * @typedef {import('multiformats').CID} CID
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
  * @typedef {object} PeerData
  * @property {PeerId} id
@@ -239,6 +239,10 @@ class KadDHT extends EventEmitter {
    * @returns {Promise<void>}
    */
   async start () {
+    if (this._running) {
+      return
+    }
+
     this._running = true
     this.providers.start()
     this._queryManager.start()
@@ -254,12 +258,12 @@ class KadDHT extends EventEmitter {
    *
    * @returns {Promise<void>}
    */
-  stop () {
+  async stop () {
     this._running = false
     this.randomWalk.stop()
-    this.providers.stop()
+    await this.network.stop()
     this._queryManager.stop()
-    return this.network.stop()
+    this.providers.stop()
   }
 
   /**

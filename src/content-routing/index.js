@@ -10,7 +10,7 @@ const Query = require('../query')
 const utils = require('../utils')
 
 /**
- * @typedef {import('cids')} CID
+ * @typedef {import('multiformats').CID} CID
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
  */

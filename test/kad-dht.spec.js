@@ -1,10 +1,7 @@
 /* eslint-env mocha */
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-chai.use(require('chai-checkmark'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const sinon = require('sinon')
 const { Multiaddr } = require('multiaddr')
 const { Record } = require('libp2p-record')
@@ -97,7 +94,7 @@ describe('KadDHT', () => {
     })
 
     it('simple with defaults', async () => {
-      const [dht] = await tdht.spawn(1)
+      const [dht] = await tdht.spawn(1, null, false)
 
       sinon.spy(dht.network, 'start')
       sinon.spy(dht.randomWalk, 'start')
@@ -125,7 +122,7 @@ describe('KadDHT', () => {
     })
 
     it('client mode', async () => {
-      const [dht] = await tdht.spawn(1, { clientMode: true })
+      const [dht] = await tdht.spawn(1, { clientMode: true }, false)
       sinon.spy(dht.registrar, 'handle')
 
       await dht.start()
@@ -136,7 +133,7 @@ describe('KadDHT', () => {
     it('random-walk disabled', async () => {
       const [dht] = await tdht.spawn(1, {
         randomWalk: { enabled: false }
-      })
+      }, false)
 
       sinon.spy(dht.network, 'start')
       sinon.spy(dht.randomWalk, 'start')
@@ -154,16 +151,17 @@ describe('KadDHT', () => {
     })
 
     it('should not fail when already started', async () => {
-      const [dht] = await tdht.spawn(1)
+      const [dht] = await tdht.spawn(1, null, false)
 
       await dht.start()
       await dht.start()
-
       await dht.start()
+
+      await dht.stop()
     })
 
     it('should not fail to stop when was not started', async () => {
-      const [dht] = await tdht.spawn(1)
+      const [dht] = await tdht.spawn(1, null, false)
 
       await dht.stop()
     })
@@ -209,7 +207,8 @@ describe('KadDHT', () => {
       } catch (err) {
         expect(err).to.exist()
         expect(err.code).to.be.eql('ERR_NOT_FOUND')
-        return tdht.teardown()
+      } finally {
+        await tdht.teardown()
       }
     })
 
@@ -460,7 +459,6 @@ describe('KadDHT', () => {
 
       const tdht = new TestDHT()
       const [dht] = await tdht.spawn(1)
-      await dht.start()
 
       const stubs = [
         // Simulate returning a peer id to query
@@ -477,6 +475,8 @@ describe('KadDHT', () => {
       for (const stub of stubs) {
         stub.restore()
       }
+
+      return tdht.teardown()
     })
   })
 
@@ -803,7 +803,7 @@ describe('KadDHT', () => {
       const [dht] = await tdht.spawn(1)
 
       await dht._add(peerIds[1])
-      const res = await dht._nearestPeersToQuery({ key: 'hello' })
+      const res = await dht._nearestPeersToQuery({ key: uint8ArrayFromString('hello') })
       expect(res).to.be.eql([{
         id: peerIds[1],
         multiaddrs: []
@@ -815,7 +815,7 @@ describe('KadDHT', () => {
 
       await dht._add(peerIds[1])
       await dht._add(peerIds[2])
-      const res = await dht._betterPeersToQuery({ key: 'hello' }, peerIds[1])
+      const res = await dht._betterPeersToQuery({ key: uint8ArrayFromString('hello') }, peerIds[1])
 
       expect(res[0].id).to.be.eql(peerIds[2])
     })
