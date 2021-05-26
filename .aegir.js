@@ -3,4 +3,3 @@ module.exports = {
     bundlesizeMax: '182kB'
   }
 }
-
