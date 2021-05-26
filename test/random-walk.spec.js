@@ -272,6 +272,6 @@ describe('Random Walk', () => {
     bootstrap(dhts)
     await waitForWellFormedTables(dhts, 7, 0, timeout)
 
-    return tdht.teardown()
+    tdht.teardown()
   })
 })

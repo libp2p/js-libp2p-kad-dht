@@ -27,7 +27,7 @@ describe('multiple nodes', () => {
   afterEach(function () {
     this.timeout(10 * 1000)
 
-    return tdht.teardown()
+    tdht.teardown()
   })
 
   it('put to "bootstrap" node and get with the others', async function () {

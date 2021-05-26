@@ -58,7 +58,7 @@
     "libp2p-interfaces": "^0.10.0",
     "libp2p-record": "^0.10.0",
     "multiaddr": "^9.0.0",
-    "multiformats": "^8.0.5",
+    "multiformats": "^9.0.0",
     "p-filter": "^2.1.0",
     "p-map": "^4.0.0",
     "p-queue": "^6.6.2",

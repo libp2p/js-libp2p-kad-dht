@@ -235,10 +235,8 @@ class KadDHT extends EventEmitter {
 
   /**
    * Start listening to incoming connections.
-   *
-   * @returns {Promise<void>}
    */
-  async start () {
+  start () {
     if (this._running) {
       return
     }
@@ -246,7 +244,7 @@ class KadDHT extends EventEmitter {
     this._running = true
     this.providers.start()
     this._queryManager.start()
-    await this.network.start()
+    this.network.start()
 
     // Start random walk, it will not run if it's disabled
     this.randomWalk.start()
@@ -255,13 +253,11 @@ class KadDHT extends EventEmitter {
   /**
    * Stop accepting incoming connections and sending outgoing
    * messages.
-   *
-   * @returns {Promise<void>}
    */
-  async stop () {
+  stop () {
     this._running = false
     this.randomWalk.stop()
-    await this.network.stop()
+    this.network.stop()
     this._queryManager.stop()
     this.providers.stop()
   }

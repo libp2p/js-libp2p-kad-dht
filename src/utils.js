@@ -13,6 +13,7 @@ const errcode = require('err-code')
 const uint8ArrayConcat = require('uint8arrays/concat')
 const uint8ArrayFromString = require('uint8arrays/from-string')
 const uint8ArrayToString = require('uint8arrays/to-string')
+const pTimeout = require('p-timeout')
 
 /**
  * Creates a DHT ID by hashing a given Uint8Array.
@@ -200,19 +201,24 @@ exports.withTimeout = (asyncFn, time) => {
    * @param  {...any} args
    * @returns {Promise<T>}
    */
-  function timeoutFn (...args) {
-    return Promise.race([
-      asyncFn(...args),
-      new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(errcode(new Error('Async function did not complete before timeout'), 'ETIMEDOUT'))
-        }, time)
+  async function timeoutFn (...args) {
+    if (!time) {
+      return asyncFn(...args)
+    }
 
-        if (timeout && timeout.unref) {
-          timeout.unref()
-        }
-      })
-    ])
+    let res
+
+    try {
+      res = await pTimeout(asyncFn(...args), time)
+    } catch (err) {
+      if (err instanceof pTimeout.TimeoutError) {
+        throw errcode(err, 'ETIMEDOUT')
+      }
+
+      throw err
+    }
+
+    return res
   }
 
   return timeoutFn

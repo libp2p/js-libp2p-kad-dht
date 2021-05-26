@@ -27,7 +27,7 @@ describe('Query', () => {
   })
 
   afterEach(() => {
-    return tdht.teardown()
+    tdht.teardown()
   })
 
   it('simple run', async () => {
@@ -271,7 +271,7 @@ describe('Query', () => {
 
       // Shut down after visiting peerIds[2]
       if (p.toB58String() === peerIds[2].toB58String()) {
-        await dhtA.stop()
+        dhtA.stop()
         setTimeout(checkExpectations, 100)
         return getResult()
       }

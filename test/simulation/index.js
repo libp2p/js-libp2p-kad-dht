@@ -121,7 +121,7 @@ async function GetClosestPeersSimulation () {
   }
 
   // Start the dht
-  await dht.start()
+  dht.start()
 
   const startTime = Date.now()
   const closestPeers = await dht.getClosestPeers(QUERY_KEY)
