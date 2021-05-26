@@ -1,6 +1,6 @@
 'use strict'
 
-const { CID } = require('multiformats')
+const { CID } = require('multiformats/cid')
 const errcode = require('err-code')
 
 const Message = require('../../message')

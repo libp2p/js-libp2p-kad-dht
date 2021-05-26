@@ -10,7 +10,7 @@ const c = require('./constants')
 const utils = require('./utils')
 
 /**
- * @typedef {import('multiformats').CID} CID
+ * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('interface-datastore').Datastore} Datastore
  */
 

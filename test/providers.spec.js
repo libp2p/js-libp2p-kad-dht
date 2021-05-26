@@ -3,7 +3,7 @@
 
 const { expect } = require('aegir/utils/chai')
 const { MemoryDatastore } = require('interface-datastore')
-const { CID } = require('multiformats')
+const { CID } = require('multiformats/cid')
 const { sha256 } = require('multiformats/hashes/sha2')
 const LevelStore = require('datastore-level')
 const path = require('path')
