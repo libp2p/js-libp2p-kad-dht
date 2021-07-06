@@ -29,7 +29,7 @@ const Record = libp2pRecord.Record
  * @typedef {import('interface-datastore').Datastore} Datastore
  * @typedef {import('libp2p/src/dialer')} Dialer
  * @typedef {import('libp2p/src/registrar')} Registrar
- * @typedef {import('multiformats').CID} CID
+ * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
  * @typedef {object} PeerData
  * @property {PeerId} id
