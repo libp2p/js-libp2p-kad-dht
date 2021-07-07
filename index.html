@@ -3,120 +3,11 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>libp2p-kad-dht - v0.22.0</title>
-	<meta name="description" content="Documentation for libp2p-kad-dht - v0.22.0">
+	<title>libp2p-kad-dht - v0.23.0</title>
+	<meta name="description" content="Documentation for libp2p-kad-dht - v0.23.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
-	<link href="https://unpkg.com/nord-highlightjs@0.1.0/dist/nord.css" rel="stylesheet" type="text/css" />
-	<style>
-        .toolbar-icon {
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 10px;
-            cursor: pointer;
-        }
-        .toolbar-icon-search {
-            box-sizing: border-box;
-            position: absolute;
-            overflow: hidden;
-            right: -40px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            @media (min-width: 901px){
-                display: none
-            }
-        }
-            @media (min-width: 901px){
-                .toolbar-icon-menu {
-                    display: none
-                }
-                .toolbar-icon-options {
-                    display: none
-                }
-            }
-
-        .gg-menu {
-            transform: scale(var(--ggs,1))
-        }
-        .gg-menu,
-        .gg-menu::after,
-        .gg-menu::before {
-            box-sizing: border-box;
-            position: relative;
-            display: block;
-            width: 20px;
-            height: 2px;
-            border-radius: 3px;
-            background: currentColor
-        }
-        .gg-menu::after,
-        .gg-menu::before {
-            content: "";
-            position: absolute;
-            top: -6px
-        }
-        .gg-menu::after {
-            top: 6px
-        }
-        .gg-options {
-            box-sizing: border-box;
-            position: relative;
-            display: block;
-            transform: scale(var(--ggs,1));
-            width: 10px;
-            height: 2px;
-            box-shadow:
-                -3px 4px 0 0,
-                3px -4px 0 0
-        }
-        .gg-options::after,
-        .gg-options::before {
-            content: "";
-            display: block;
-            box-sizing: border-box;
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            border: 2px solid;
-            border-radius: 100%
-        }
-        .gg-options::before {
-            top: -7px;
-            left: -4px
-        }
-        .gg-options::after {
-            bottom: -7px;
-            right: -4px
-        }
-        .gg-search {
-            box-sizing: border-box;
-            position: relative;
-            display: block;
-            transform: scale(var(--ggs,1));
-            width: 16px;
-            height: 16px;
-            border: 2px solid;
-            border-radius: 100%;
-            margin-left: -4px;
-            margin-top: -4px
-        }
-        .gg-search::after {
-            content: "";
-            display: block;
-            box-sizing: border-box;
-            position: absolute;
-            border-radius: 3px;
-            width: 2px;
-            height: 8px;
-            background: currentColor;
-            transform: rotate(-45deg);
-            top: 10px;
-            left: 12px
-        }
-    </style>
+	<script async src="assets/js/search.js" id="search-script"></script>
 </head>
 <body>
 <header>
@@ -125,26 +16,41 @@
 			<div class="table-wrap">
 				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
 					<div class="field">
-						<label for="tsd-search-field" class="toolbar-icon toolbar-icon-search"><i class="gg-search"></i></label>
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
 						<input id="tsd-search-field" type="text" />
 					</div>
 					<ul class="results">
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">libp2p-kad-dht - v0.22.0</a>
+					<a href="index.html" class="title">libp2p-kad-dht - v0.23.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
-					<a href="#" class="toolbar-icon toolbar-icon-menu" data-toggle="menu"><i class="gg-menu"></i></a>
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
 				</div>
 			</div>
 		</div>
 	</div>
 	<div class="tsd-page-title">
 		<div class="container">
-			<ul class="tsd-breadcrumb">
-			</ul>
-			<h1>libp2p-kad-dht - v0.22.0</h1>
+			<h1>libp2p-kad-dht - v0.23.0</h1>
 		</div>
 	</div>
 </header>
@@ -193,12 +99,12 @@
 				<a href="#npm" id="npm" style="color: inherit; text-decoration: none;">
 					<h3>npm</h3>
 				</a>
-				<pre><code class="language-sh">&gt; npm i libp2p-kad-dht
+				<pre><code class="language-sh"><span style="color: #000000">&gt; npm i libp2p-kad-dht</span>
 </code></pre>
 				<a href="#use-in-nodejs" id="use-in-nodejs" style="color: inherit; text-decoration: none;">
 					<h3>Use in Node.js</h3>
 				</a>
-				<pre><code class="language-js"><span class="hljs-keyword">const</span> KadDHT = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;libp2p-kad-dht&#x27;</span>)
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">KadDHT</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;libp2p-kad-dht&#039;</span><span style="color: #000000">)</span>
 </code></pre>
 				<a href="#api" id="api" style="color: inherit; text-decoration: none;">
 					<h2>API</h2>
@@ -208,22 +114,22 @@
 				<a href="#custom-secondary-dht-in-libp2p" id="custom-secondary-dht-in-libp2p" style="color: inherit; text-decoration: none;">
 					<h3>Custom secondary DHT in libp2p</h3>
 				</a>
-				<pre><code class="language-js"><span class="hljs-comment">/**
- * <span class="hljs-doctag">@param <span class="hljs-type">{Libp2p}</span> <span class="hljs-variable">libp2p</span></span>
- */</span>
-<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">addDHT</span>(<span class="hljs-params">libp2p</span>) </span>{
-    <span class="hljs-keyword">const</span> customDHT = <span class="hljs-keyword">new</span> KadDHT({
-        libp2p,
-        <span class="hljs-attr">dialer</span>: libp2p.dialer,
-        <span class="hljs-attr">peerId</span>: libp2p.peerId,
-        <span class="hljs-attr">peerStore</span>: libp2p.peerStore,
-        <span class="hljs-attr">registrar</span>: libp2p.registrar,
-        <span class="hljs-attr">protocolPrefix</span>: <span class="hljs-string">&#x27;/custom&#x27;</span>
-    })
-    customDHT.start()
-    customDHT.on(<span class="hljs-string">&#x27;peer&#x27;</span>, libp2p._onDiscoveryPeer)
-    <span class="hljs-keyword">return</span> customDHT
-}
+				<pre><code class="language-js"><span style="color: #008000">/**</span>
+<span style="color: #008000"> * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{Libp2p}</span><span style="color: #008000"> </span><span style="color: #001080">libp2p</span>
+<span style="color: #008000"> */</span>
+<span style="color: #0000FF">function</span><span style="color: #000000"> </span><span style="color: #795E26">addDHT</span><span style="color: #000000">(</span><span style="color: #001080">libp2p</span><span style="color: #000000">) {</span>
+<span style="color: #000000">    </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">customDHT</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">KadDHT</span><span style="color: #000000">({</span>
+<span style="color: #000000">        </span><span style="color: #001080">libp2p</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">dialer:</span><span style="color: #000000"> </span><span style="color: #001080">libp2p</span><span style="color: #000000">.</span><span style="color: #001080">dialer</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">peerId:</span><span style="color: #000000"> </span><span style="color: #001080">libp2p</span><span style="color: #000000">.</span><span style="color: #001080">peerId</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">peerStore:</span><span style="color: #000000"> </span><span style="color: #001080">libp2p</span><span style="color: #000000">.</span><span style="color: #001080">peerStore</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">registrar:</span><span style="color: #000000"> </span><span style="color: #001080">libp2p</span><span style="color: #000000">.</span><span style="color: #001080">registrar</span><span style="color: #000000">,</span>
+<span style="color: #000000">        </span><span style="color: #001080">protocolPrefix:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;/custom&#039;</span>
+<span style="color: #000000">    })</span>
+<span style="color: #000000">    </span><span style="color: #001080">customDHT</span><span style="color: #000000">.</span><span style="color: #795E26">start</span><span style="color: #000000">()</span>
+<span style="color: #000000">    </span><span style="color: #001080">customDHT</span><span style="color: #000000">.</span><span style="color: #795E26">on</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;peer&#039;</span><span style="color: #000000">, </span><span style="color: #001080">libp2p</span><span style="color: #000000">.</span><span style="color: #001080">_onDiscoveryPeer</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #AF00DB">return</span><span style="color: #000000"> </span><span style="color: #001080">customDHT</span>
+<span style="color: #000000">}</span>
 </code></pre>
 				<p>Note that you may want to supply your own peer discovery function and datastore</p>
 				<a href="#peer-routing" id="peer-routing" style="color: inherit; text-decoration: none;">
@@ -258,97 +164,46 @@
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 			<nav class="tsd-navigation primary">
 				<ul>
-					<li class=" tsd-kind-module">
-						<a href="modules/__libp2p_kad_dht_.html"> libp2p-kad-dht</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_constants_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/constants</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_content_fetching_index_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/content-fetching/index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_content_routing_index_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/content-routing/index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_errors_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/errors</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_message_index_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/message/index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_network_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/network</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_peer_list_index_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/peer-list/index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_peer_list_limited_peer_list_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/peer-list/limited-peer-list</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_peer_list_peer_distance_list_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/peer-list/peer-distance-list</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_peer_list_peer_queue_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/peer-list/peer-queue</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_peer_routing_index_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/peer-routing/index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_providers_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/providers</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_manager_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/query-manager</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_index_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/query/index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_path_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/query/path</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_run_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/query/run</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_query_worker_queue_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/query/worker-queue</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_random_walk_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/random-walk</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_routing_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/routing</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_rpc_handlers_add_provider_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/rpc/handlers/add-provider</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_rpc_handlers_find_node_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/rpc/handlers/find-node</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_rpc_handlers_get_providers_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/rpc/handlers/get-providers</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_rpc_handlers_get_value_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/rpc/handlers/get-value</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_rpc_handlers_index_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/rpc/handlers/index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_rpc_handlers_ping_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/rpc/handlers/ping</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_rpc_handlers_put_value_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/rpc/handlers/put-value</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_rpc_index_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/rpc/index</a>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/__users_vsantos_work_pl_gh_libp2p_js_libp2p_kad_dht_src_utils_.html">/Users/vsantos/work/pl/gh/libp2p/js-libp2p-kad-dht/src/utils</a>
+					<li class=" ">
+						<a href="modules.html">Exports</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-class">
+						<a href="classes/kaddht.html" class="tsd-kind-icon">KadDHT</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-has-type-parameter">
+						<a href="interfaces/peerdata.html" class="tsd-kind-icon">Peer<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-has-type-parameter">
+						<a href="interfaces/randomwalkoptions.html" class="tsd-kind-icon">Random<wbr>Walk<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#cid" class="tsd-kind-icon">CID</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#datastore" class="tsd-kind-icon">Datastore</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#dialer" class="tsd-kind-icon">Dialer</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#libp2p" class="tsd-kind-icon">Libp2p</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#multiaddr" class="tsd-kind-icon">Multiaddr</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#peerid" class="tsd-kind-icon">Peer<wbr>Id</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#peerstore" class="tsd-kind-icon">Peer<wbr>Store</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#registrar" class="tsd-kind-icon">Registrar</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
@@ -359,14 +214,15 @@
 		<h2>Legend</h2>
 		<div class="tsd-legend-group">
 			<ul class="tsd-legend">
-				<li class="tsd-kind-namespace"><span class="tsd-kind-icon">Namespace</span></li>
-				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
-				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
-				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
-				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
 			</ul>
 		</div>
 	</div>
