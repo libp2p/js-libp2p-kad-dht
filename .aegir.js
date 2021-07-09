@@ -1,5 +1,5 @@
 module.exports = {
   build: {
-    bundlesizeMax: '182kB'
+    bundlesizeMax: '167kB'
   }
 }
