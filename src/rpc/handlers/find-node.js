@@ -1,6 +1,7 @@
 'use strict'
 
-const uint8ArrayEquals = require('uint8arrays/equals')
+const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
+
 const Message = require('../../message')
 const utils = require('../../utils')
 
@@ -27,7 +28,7 @@ module.exports = (dht) => {
     if (uint8ArrayEquals(msg.key, dht.peerId.id)) {
       closer = [{
         id: dht.peerId,
-        multiaddrs: []
+        multiaddrs: dht.libp2p.multiaddrs
       }]
     } else {
       closer = await dht._betterPeersToQuery(msg, peerId)

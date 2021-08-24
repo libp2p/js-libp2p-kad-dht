@@ -1,15 +1,13 @@
 /* eslint-env mocha */
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const pair = require('it-pair')
 const pipe = require('it-pipe')
 const delay = require('delay')
 const lp = require('it-length-prefixed')
 const pDefer = require('p-defer')
-const uint8ArrayFromString = require('uint8arrays/from-string')
+const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
 const Message = require('../src/message')
 

@@ -1,7 +1,7 @@
 'use strict'
 
 const crypto = require('libp2p-crypto')
-const multihashing = require('multihashing-async')
+const { sha256 } = require('multiformats/hashes/sha2')
 const PeerId = require('peer-id')
 const { AbortController } = require('abort-controller')
 const errcode = require('err-code')
@@ -32,6 +32,8 @@ class RandomWalk {
     }
 
     this.log = logger(dht.peerId, 'random-walk')
+
+    /** @type {*} */
     this._timeoutId = undefined
   }
 
@@ -43,6 +45,12 @@ class RandomWalk {
    * @returns {void}
    */
   start () {
+    if (this._running) {
+      return
+    }
+
+    this._running = true
+
     // Don't run twice
     if (this._timeoutId || !this._options.enabled) { return }
 
@@ -60,6 +68,8 @@ class RandomWalk {
    * @returns {void}
    */
   stop () {
+    this._running = false
+
     if (this._timeoutId) {
       clearTimeout(this._timeoutId)
       this._timeoutId = undefined
@@ -80,6 +90,11 @@ class RandomWalk {
       } catch (err) {
         this._kadDHT._log.error('random-walk:error', err)
       }
+
+      if (!this._running) {
+        return
+      }
+
       // Each subsequent walk should run on a `this._options.interval` interval
       await new Promise(resolve => {
         this._timeoutId = setTimeout(resolve, this._options.interval)
@@ -175,8 +190,8 @@ class RandomWalk {
    * @private
    */
   async _randomPeerId () {
-    const digest = await multihashing(crypto.randomBytes(16), 'sha2-256')
-    return new PeerId(digest)
+    const digest = await sha256.digest(crypto.randomBytes(16))
+    return new PeerId(digest.bytes)
   }
 }
 

@@ -1,12 +1,10 @@
 /* eslint-env mocha */
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const PeerId = require('peer-id')
 const PeerQueue = require('../src/peer-list/peer-queue')
-const uint8ArrayFromString = require('uint8arrays/from-string')
+const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
 describe('PeerQueue', () => {
   it('basics', async () => {

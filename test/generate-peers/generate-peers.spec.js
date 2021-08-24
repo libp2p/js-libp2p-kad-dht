@@ -4,7 +4,7 @@
 const { expect } = require('aegir/utils/chai')
 const which = require('which')
 const execa = require('execa')
-const uintArrayToString = require('uint8arrays/to-string')
+const { toString: uintArrayToString } = require('uint8arrays/to-string')
 const PeerId = require('peer-id')
 const RoutingTable = require('../../src/routing-table')
 const {

@@ -2,9 +2,9 @@
 
 // @ts-ignore
 const KBuck = require('k-bucket')
-const uint8ArrayDistance = require('uint8arrays/xor')
+const { xor: uint8ArrayXor } = require('uint8arrays/xor')
 const GENERATED_PREFIXES = require('./generated-prefix-list.json')
-const multicodec = require('multicodec')
+const { sha256 } = require('multiformats/hashes/sha2')
 const crypto = require('crypto')
 const PeerId = require('peer-id')
 const utils = require('../utils')
@@ -228,7 +228,7 @@ class RoutingTable {
 
     const keyBuffer = new ArrayBuffer(34)
     const keyView = new DataView(keyBuffer, 0, keyBuffer.byteLength)
-    keyView.setUint8(0, multicodec.SHA2_256)
+    keyView.setUint8(0, sha256.code)
     keyView.setUint8(1, 32)
     keyView.setUint32(2, keyPrefix, false)
 
@@ -279,7 +279,7 @@ class RoutingTable {
    */
   * _prefixLengths () {
     for (const { id } of this.kb.toIterable()) {
-      const distance = uint8ArrayDistance(this.kb.localNodeId, id)
+      const distance = uint8ArrayXor(this.kb.localNodeId, id)
       let leadingZeros = 0
 
       for (const byte of distance) {

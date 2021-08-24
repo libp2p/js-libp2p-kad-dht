@@ -1,14 +1,12 @@
 /* eslint-env mocha */
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const pDefer = require('p-defer')
 const delay = require('delay')
 const Query = require('../src/query')
 const kadUtils = require('../src/utils')
-const uint8ArrayFromString = require('uint8arrays/from-string')
+const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
 const createPeerId = require('./utils/create-peer-id')
 const TestDHT = require('./utils/test-dht')
@@ -29,7 +27,7 @@ describe('Query', () => {
   })
 
   afterEach(() => {
-    return tdht.teardown()
+    tdht.teardown()
   })
 
   it('simple run', async () => {
@@ -273,7 +271,7 @@ describe('Query', () => {
 
       // Shut down after visiting peerIds[2]
       if (p.toB58String() === peerIds[2].toB58String()) {
-        await dhtA.stop()
+        dhtA.stop()
         setTimeout(checkExpectations, 100)
         return getResult()
       }

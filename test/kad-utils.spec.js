@@ -1,14 +1,12 @@
 /* eslint-env mocha */
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const PeerId = require('peer-id')
-const distance = require('uint8arrays/xor')
-const uint8ArrayConcat = require('uint8arrays/concat')
-const uint8ArrayFromString = require('uint8arrays/from-string')
-const uint8ArrayToString = require('uint8arrays/to-string')
+const { xor: uint8ArrayXor } = require('uint8arrays/xor')
+const { concat: uint8ArrayConcat } = require('uint8arrays/concat')
+const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
+const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 
 const utils = require('../src/utils')
 const createPeerId = require('./utils/create-peer-id')
@@ -31,7 +29,7 @@ describe('kad utils', () => {
       const digest = await utils.convertBuffer(buf)
 
       expect(digest)
-        .to.eql(uint8ArrayFromString('b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9', 'base16'))
+        .to.equalBytes(uint8ArrayFromString('b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9', 'base16'))
     })
   })
 
@@ -89,10 +87,10 @@ describe('kad utils', () => {
     it('sorts two distances', () => {
       const target = uint8ArrayFromString('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a90')
       const a = {
-        distance: distance(uint8ArrayFromString('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a95'), target)
+        distance: uint8ArrayXor(uint8ArrayFromString('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a95'), target)
       }
       const b = {
-        distance: distance(uint8ArrayFromString('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a96'), target)
+        distance: uint8ArrayXor(uint8ArrayFromString('11140beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a96'), target)
       }
 
       expect(utils.xorCompare(a, b)).to.eql(-1)

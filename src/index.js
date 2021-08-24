@@ -5,8 +5,8 @@ const errcode = require('err-code')
 
 const libp2pRecord = require('libp2p-record')
 const { MemoryDatastore } = require('interface-datastore')
-const uint8ArrayEquals = require('uint8arrays/equals')
-const uint8ArrayToString = require('uint8arrays/to-string')
+const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
+const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 
 const RoutingTable = require('./routing-table')
 const utils = require('./utils')
@@ -23,14 +23,14 @@ const QueryManager = require('./query-manager')
 const Record = libp2pRecord.Record
 
 /**
- * @typedef {import('libp2p')} Libp2p
- * @typedef {import('libp2p/src/peer-store')} PeerStore
+ * @typedef {*} Libp2p
+ * @typedef {*} PeerStore
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('interface-datastore').Datastore} Datastore
- * @typedef {import('libp2p/src/dialer')} Dialer
- * @typedef {import('libp2p/src/registrar')} Registrar
- * @typedef {import('cids')} CID
- * @typedef {import('multiaddr')} Multiaddr
+ * @typedef {*} Dialer
+ * @typedef {*} Registrar
+ * @typedef {import('multiformats/cid').CID} CID
+ * @typedef {import('multiaddr').Multiaddr} Multiaddr
  * @typedef {object} PeerData
  * @property {PeerId} id
  * @property {Multiaddr[]} multiaddrs
@@ -419,6 +419,7 @@ class KadDHT extends EventEmitter {
     const ids = this.routingTable.closestPeers(key, this.kBucketSize)
 
     return ids.map((p) => {
+      /** @type {{ id: PeerId, addresses: { multiaddr: Multiaddr }[] }} */
       const peer = this.peerStore.get(p)
 
       return {

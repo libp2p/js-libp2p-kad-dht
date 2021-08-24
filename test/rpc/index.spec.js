@@ -1,16 +1,14 @@
 /* eslint-env mocha */
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const pDefer = require('p-defer')
 const pipe = require('it-pipe')
 const lp = require('it-length-prefixed')
 const { collect } = require('streaming-iterables')
 const Message = require('../../src/message')
 const rpc = require('../../src/rpc')
-const uint8ArrayFromString = require('uint8arrays/from-string')
+const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
 const createPeerId = require('../utils/create-peer-id')
 const TestDHT = require('../utils/test-dht')
@@ -24,6 +22,8 @@ describe('rpc', () => {
     peerIds = await createPeerId(2)
     tdht = new TestDHT()
   })
+
+  after(() => tdht.teardown())
 
   it('calls back with the response', async () => {
     const defer = pDefer()

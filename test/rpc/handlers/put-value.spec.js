@@ -2,12 +2,11 @@
 /* eslint max-nested-callbacks: ["error", 8] */
 'use strict'
 
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const { Record } = require('libp2p-record')
 const delay = require('delay')
-const uint8ArrayFromString = require('uint8arrays/from-string')
+const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
+
 const Message = require('../../../src/message')
 const handler = require('../../../src/rpc/handlers/put-value')
 const utils = require('../../../src/utils')

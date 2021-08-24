@@ -3,7 +3,7 @@
 const PeerStore = require('libp2p/src/peer-store')
 const pRetry = require('p-retry')
 const delay = require('delay')
-const multiaddr = require('multiaddr')
+const { Multiaddr } = require('multiaddr')
 
 const KadDHT = require('../../src')
 const { PROTOCOL_DHT } = require('../../src/constants')
@@ -79,7 +79,7 @@ class TestDHT {
 
     const dht = new KadDHT({
       libp2p: {
-        multiaddrs: [multiaddr('/ip4/0.0.0.0/tcp/4002')]
+        multiaddrs: [new Multiaddr('/ip4/0.0.0.0/tcp/4002')]
       },
       dialer: {
         connectToPeer: (peer) => connectToPeer(dht, peer)
@@ -108,7 +108,7 @@ class TestDHT {
     })
 
     if (autoStart) {
-      await dht.start()
+      dht.start()
     }
 
     dht.regRecord = regRecord
@@ -154,14 +154,18 @@ class TestDHT {
       })
     }
 
+    // Libp2p dial adds multiaddrs to the addressBook
+    dhtA.peerStore.addressBook.add(dhtB.peerId, dhtB.libp2p.multiaddrs)
+    dhtB.peerStore.addressBook.add(dhtA.peerId, dhtA.libp2p.multiaddrs)
+
     // Check routing tables
     return Promise.all(routingTableChecks.map(check => {
       return pRetry(check, { retries: 50 })
     }))
   }
 
-  async teardown () {
-    await Promise.all(this.nodes.map((node) => node.stop()))
+  teardown () {
+    this.nodes.forEach(node => node.stop())
     this.nodes = []
   }
 }

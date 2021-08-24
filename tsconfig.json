@@ -6,5 +6,8 @@
   "include": [
     "src",
     "src/routing-table/generated-prefix-list.json"
+  ],
+  "exclude": [
+    "src/message/dht.js" // exclude generated file
   ]
 }
