@@ -47,7 +47,6 @@
   "homepage": "https://github.com/libp2p/js-libp2p-kad-dht",
   "types": "dist/src/index.d.ts",
   "dependencies": {
-    "abort-controller": "^3.0.0",
     "debug": "^4.3.1",
     "err-code": "^3.0.0",
     "hashlru": "^2.3.0",
@@ -66,13 +65,11 @@
     "p-map": "^4.0.0",
     "p-queue": "^6.6.2",
     "p-timeout": "^4.1.0",
-    "p-times": "^3.0.0",
     "peer-id": "^0.15.0",
     "protobufjs": "^6.10.2",
     "streaming-iterables": "^6.0.0",
     "uint8arrays": "^3.0.0",
-    "varint": "^6.0.0",
-    "xor-distance": "^2.0.0"
+    "varint": "^6.0.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.7",

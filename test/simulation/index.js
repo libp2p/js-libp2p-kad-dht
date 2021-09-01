@@ -89,10 +89,7 @@ async function GetClosestPeersSimulation () {
     on: () => {}
   }, {
     kBucketSize: KValue,
-    concurrency: ALPHA,
-    randomWalk: {
-      enabled: false
-    }
+    concurrency: ALPHA
   })
 
   // Add random peers to our table

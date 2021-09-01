@@ -17,7 +17,6 @@ const contentRouting = require('./content-routing')
 const peerRouting = require('./peer-routing')
 const Message = require('./message')
 const Providers = require('./providers')
-const RandomWalk = require('./random-walk')
 const QueryManager = require('./query-manager')
 
 const Record = libp2pRecord.Record
@@ -34,13 +33,6 @@ const Record = libp2pRecord.Record
  * @typedef {object} PeerData
  * @property {PeerId} id
  * @property {Multiaddr[]} multiaddrs
- *
- * @typedef {object} RandomWalkOptions
- * @property {boolean} enabled discovery enabled (default: true)
- * @property {number} queriesPerPeriod how many queries to run per period (default: 1)
- * @property {number} interval how often to run the the random-walk process, in milliseconds (default: 300000)
- * @property {number} timeout how long to wait for the the random-walk query to run, in milliseconds (default: 30000)
- * @property {number} delay how long to wait before starting the first random walk, in milliseconds (default: 10000)
  */
 
 /**
@@ -65,7 +57,6 @@ class KadDHT extends EventEmitter {
    * @param {Datastore} props.datastore - datastore (default MemoryDatastore)
    * @param {object} props.validators - validators object with namespace as keys and function(key, record, callback)
    * @param {object} props.selectors - selectors object with namespace as keys and function(key, records)
-   * @param {RandomWalkOptions} props.randomWalk - randomWalk options
    * @param {function(import('libp2p-record').Record, PeerId): void} [props.onPut] - Called when an entry is added to or changed in the datastore
    * @param {function(import('libp2p-record').Record): void} [props.onRemove] - Called when an entry is removed from the datastore
    */
@@ -83,13 +74,6 @@ class KadDHT extends EventEmitter {
     concurrency = c.ALPHA,
     validators = {},
     selectors = {},
-    randomWalk = {
-      enabled: false,
-      queriesPerPeriod: 1,
-      interval: 300000,
-      timeout: 30000,
-      delay: 10000
-    },
     onPut = () => {},
     onRemove = () => {}
   }) {
@@ -201,13 +185,6 @@ class KadDHT extends EventEmitter {
     this._log = utils.logger(this.peerId)
 
     /**
-     * Random walk management
-     *
-     * @type {RandomWalk}
-     */
-    this.randomWalk = new RandomWalk(this, randomWalk)
-
-    /**
      * Keeps track of running queries
      *
      * @type {QueryManager}
@@ -243,7 +220,6 @@ class KadDHT extends EventEmitter {
       this.providers.start(),
       this._queryManager.start(),
       this.network.start(),
-      this.randomWalk.start(),
       this.routingTable.start()
     ])
   }
@@ -256,7 +232,6 @@ class KadDHT extends EventEmitter {
     this._running = false
 
     return Promise.all([
-      this.randomWalk.stop(),
       this.providers.stop(),
       this._queryManager.stop(),
       this.network.stop(),
