@@ -110,5 +110,8 @@
     "Pedro Teixeira <i@pgte.me>",
     "Qmstream <51881352+Qmstream@users.noreply.github.com>",
     "Thomas Eizinger <thomas@eizinger.io>"
-  ]
+  ],
+  "browser": {
+    "src/routing-table/generated-prefix-list.json": "src/routing-table/generated-prefix-list-browser.json"
+  }
 }
