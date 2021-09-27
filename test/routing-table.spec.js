@@ -4,6 +4,7 @@
 const { expect } = require('aegir/utils/chai')
 const PeerId = require('peer-id')
 const random = require('lodash.random')
+const sinon = require('sinon')
 
 const RoutingTable = require('../src/routing-table')
 const kadUtils = require('../src/utils')
@@ -15,8 +16,17 @@ describe('Routing Table', () => {
   beforeEach(async function () {
     this.timeout(20 * 1000)
 
-    const id = await PeerId.create({ bits: 512 })
-    table = new RoutingTable(id, 20)
+    const dht = {
+      peerId: await PeerId.create({ bits: 512 }),
+      libp2p: {
+        ping: sinon.stub()
+      }
+    }
+
+    table = new RoutingTable(dht, {
+      kBucketSize: 20,
+      refreshInterval: 30000
+    })
   })
 
   it('add', async function () {
@@ -72,5 +82,92 @@ describe('Routing Table', () => {
 
     const key = await kadUtils.convertPeerId(peers[2])
     expect(table.closestPeers(key, 15)).to.have.length(15)
+  })
+
+  it('favours old peers that respond to pings', async () => {
+    let fn
+
+    // execute queued functions immediately
+    table._pingQueue = {
+      add: (f) => {
+        fn = f
+      }
+    }
+
+    const peerIds = [
+      PeerId.createFromB58String('QmYobx1VAHP7Mi88LcDvLeQoWcc1Aa2rynYHpdEPBqHZi5'),
+      PeerId.createFromB58String('QmYobx1VAHP7Mi88LcDvLeQoWcc1Aa2rynYHpdEPBqHZi6')
+    ]
+
+    const oldPeer = {
+      id: peerIds[0].toBytes(),
+      peer: peerIds[0]
+    }
+    const newPeer = {
+      id: peerIds[1].toBytes(),
+      peer: peerIds[1]
+    }
+
+    table._onPing([oldPeer], newPeer)
+
+    // add the old peer
+    table.kb.add(oldPeer)
+
+    // perform the ping
+    await fn()
+
+    expect(table.dht.libp2p.ping.callCount).to.equal(1)
+    expect(table.dht.libp2p.ping.calledWith(oldPeer.peer)).to.be.true()
+
+    // did not add the new peer
+    expect(table.kb.get(newPeer.id)).to.be.null()
+
+    // kept the old peer
+    expect(table.kb.get(oldPeer.id)).to.not.be.null()
+  })
+
+  it('evicts oldest peer that does not respond to ping', async () => {
+    let fn
+
+    // execute queued functions immediately
+    table._pingQueue = {
+      add: (f) => {
+        fn = f
+      }
+    }
+
+    const peerIds = [
+      PeerId.createFromB58String('QmYobx1VAHP7Mi88LcDvLeQoWcc1Aa2rynYHpdEPBqHZi5'),
+      PeerId.createFromB58String('QmYobx1VAHP7Mi88LcDvLeQoWcc1Aa2rynYHpdEPBqHZi6')
+    ]
+
+    const oldPeer = {
+      id: peerIds[0].toBytes(),
+      peer: peerIds[0]
+    }
+    const newPeer = {
+      id: peerIds[1].toBytes(),
+      peer: peerIds[1]
+    }
+
+    table._onPing([oldPeer], newPeer)
+
+    // add the old peer
+    table.kb.add(oldPeer)
+
+    // libp2p fails to dial the old peer
+    table.dht.libp2p.ping = sinon.stub().withArgs(oldPeer.peer).rejects(new Error('Could not dial peer'))
+
+    // perform the ping
+    await fn()
+
+    expect(table.dht.libp2p.ping.callCount).to.equal(1)
+    expect(table.dht.libp2p.ping.calledWith(oldPeer.peer)).to.be.true()
+
+    // added the new peer
+    expect(table.kb.get(newPeer.id)).to.not.be.null()
+
+    // evicted the old peer
+    expect(table.kb.get(oldPeer.id)).to.be.null()
   })
 })
