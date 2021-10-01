@@ -15,7 +15,9 @@ const log = Object.assign(debug('libp2p:dht:routing-table'), {
 // @ts-ignore
 const length = require('it-length')
 const { default: Queue } = require('p-queue')
-const pTimeout = require('p-timeout')
+const { PROTOCOL_DHT } = require('../constants')
+// @ts-expect-error no types
+const TimeoutController = require('timeout-abort-controller')
 
 /**
  * @typedef {object} KBucketPeer
@@ -90,6 +92,8 @@ class RoutingTable {
     if (this._refreshTimeoutId) {
       clearTimeout(this._refreshTimeoutId)
     }
+
+    this._pingQueue.clear()
   }
 
   /**
@@ -322,14 +326,24 @@ class RoutingTable {
       try {
         await Promise.all(
           oldContacts.map(async oldContact => {
+            let timeoutController
+
             try {
+              timeoutController = new TimeoutController(this._pingTimeout)
               log(`Pinging old contact ${oldContact.peer.toB58String()}`)
-              await pTimeout(this.dht.libp2p.ping(oldContact.peer), this._pingTimeout)
+              const conn = await this.dht.libp2p.dialProtocol(oldContact.peer, PROTOCOL_DHT, {
+                signal: timeoutController.signal
+              })
+              await conn.close()
               responded++
             } catch (err) {
               log.error('Could not ping peer', err)
               log(`Evicting old contact after ping failed ${oldContact.peer.toB58String()}`)
               this.kb.remove(oldContact.id)
+            } finally {
+              if (timeoutController) {
+                timeoutController.clear()
+              }
             }
           })
         )
