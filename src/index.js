@@ -4,7 +4,7 @@ const { EventEmitter } = require('events')
 const errcode = require('err-code')
 
 const libp2pRecord = require('libp2p-record')
-const { MemoryDatastore } = require('interface-datastore')
+const { MemoryDatastore } = require('datastore-core/memory')
 const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 
@@ -288,7 +288,7 @@ class KadDHT extends EventEmitter {
 
     try {
       await this.datastore.delete(dsKey)
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       if (err.code === 'ERR_NOT_FOUND') {
         return undefined
       }
@@ -443,7 +443,7 @@ class KadDHT extends EventEmitter {
     let rawRecord
     try {
       rawRecord = await this.datastore.get(dsKey)
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       if (err.code === 'ERR_NOT_FOUND') {
         return undefined
       }
@@ -536,7 +536,7 @@ class KadDHT extends EventEmitter {
       // We have a record
       try {
         await this._verifyRecordOnline(record)
-      } catch (err) {
+      } catch (/** @type {any} */ err) {
         const errMsg = 'invalid record received, discarded'
         this._log(errMsg)
         throw errcode(new Error(errMsg), 'ERR_INVALID_RECORD')

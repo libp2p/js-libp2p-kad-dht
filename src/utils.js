@@ -3,7 +3,7 @@
 const debug = require('debug')
 const { sha256 } = require('multiformats/hashes/sha2')
 const { base58btc } = require('multiformats/bases/base58')
-const { Key } = require('interface-datastore')
+const { Key } = require('interface-datastore/key')
 const { xor: uint8ArrayXor } = require('uint8arrays/xor')
 const { compare: uint8ArrayCompare } = require('uint8arrays/compare')
 const pMap = require('p-map')
@@ -210,7 +210,7 @@ exports.withTimeout = (asyncFn, time) => {
 
     try {
       res = await pTimeout(asyncFn(...args), time)
-    } catch (err) {
+    } catch (/** @type {any} */ err) {
       if (err instanceof pTimeout.TimeoutError) {
         throw errcode(err, 'ETIMEDOUT')
       }
