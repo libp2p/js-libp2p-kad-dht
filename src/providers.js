@@ -6,8 +6,15 @@ const varint = require('varint')
 const PeerId = require('peer-id')
 const { Key } = require('interface-datastore/key')
 const { default: Queue } = require('p-queue')
-const c = require('./constants')
+const {
+  PROVIDERS_CLEANUP_INTERVAL,
+  PROVIDERS_VALIDITY,
+  PROVIDERS_LRU_CACHE_SIZE,
+  PROVIDERS_KEY_PREFIX
+} = require('./constants')
 const utils = require('./utils')
+
+const log = utils.logger('libp2p:kad-dht:providers')
 
 /**
  * @typedef {import('multiformats/cid').CID} CID
@@ -35,28 +42,26 @@ class Providers {
   constructor (datastore, self, cacheSize) {
     this.datastore = datastore
 
-    this._log = utils.logger(self, 'providers')
-
     /**
      * How often invalid records are cleaned. (in seconds)
      *
      * @type {number}
      */
-    this.cleanupInterval = c.PROVIDERS_CLEANUP_INTERVAL
+    this.cleanupInterval = PROVIDERS_CLEANUP_INTERVAL
 
     /**
      * How long is a provider valid for. (in seconds)
      *
      * @type {number}
      */
-    this.provideValidity = c.PROVIDERS_VALIDITY
+    this.provideValidity = PROVIDERS_VALIDITY
 
     /**
      * LRU cache size
      *
      * @type {number}
      */
-    this.lruCacheSize = cacheSize || c.PROVIDERS_LRU_CACHE_SIZE
+    this.lruCacheSize = cacheSize || PROVIDERS_LRU_CACHE_SIZE
 
     // @ts-ignore hashlru types are wrong
     this.providers = cache(this.lruCacheSize)
@@ -100,7 +105,7 @@ class Providers {
    */
   _cleanup () {
     return this.syncQueue.add(async () => {
-      this._log('start cleanup')
+      log('start cleanup')
       const start = Date.now()
 
       let count = 0
@@ -109,7 +114,7 @@ class Providers {
       const batch = this.datastore.batch()
 
       // Get all provider entries from the datastore
-      const query = this.datastore.query({ prefix: c.PROVIDERS_KEY_PREFIX })
+      const query = this.datastore.query({ prefix: PROVIDERS_KEY_PREFIX })
       for await (const entry of query) {
         try {
           // Add a delete to the batch for each expired entry
@@ -118,7 +123,7 @@ class Providers {
           const now = Date.now()
           const delta = now - time
           const expired = delta > this.provideValidity
-          this._log('comparing: %d - %d = %d > %d %s',
+          log('comparing: %d - %d = %d > %d %s',
             now, time, delta, this.provideValidity, expired ? '(expired)' : '')
           if (expired) {
             deleteCount++
@@ -129,10 +134,10 @@ class Providers {
           }
           count++
         } catch (/** @type {any} */ err) {
-          this._log.error(err.message)
+          log.error(err.message)
         }
       }
-      this._log('deleting %d / %d entries', deleteCount, count)
+      log('deleting %d / %d entries', deleteCount, count)
 
       // Commit the deletes to the datastore
       if (deleted.size) {
@@ -155,7 +160,7 @@ class Providers {
         }
       }
 
-      this._log('Cleanup successful (%dms)', Date.now() - start)
+      log('Cleanup successful (%dms)', Date.now() - start)
     })
   }
 
@@ -186,10 +191,10 @@ class Providers {
    */
   async addProvider (cid, provider) { // eslint-disable-line require-await
     return this.syncQueue.add(async () => {
-      this._log('addProvider %s', cid.toString())
+      log('addProvider %s', cid.toString())
       const provs = await this._getProvidersMap(cid)
 
-      this._log('loaded %s provs', provs.size)
+      log('loaded %s provs', provs.size)
       const now = new Date()
       provs.set(utils.encodeBase32(provider.id), now)
 
@@ -207,7 +212,7 @@ class Providers {
    */
   async getProviders (cid) { // eslint-disable-line require-await
     return this.syncQueue.add(async () => {
-      this._log('getProviders %s', cid.toString())
+      log('getProviders %s', cid.toString())
       const provs = await this._getProvidersMap(cid)
       return [...provs.keys()].map((base32PeerId) => {
         return new PeerId(utils.decodeBase32(base32PeerId))
@@ -226,7 +231,7 @@ class Providers {
  */
 function makeProviderKey (cid) {
   cid = typeof cid === 'string' ? cid : utils.encodeBase32(cid.bytes)
-  return c.PROVIDERS_KEY_PREFIX + cid
+  return PROVIDERS_KEY_PREFIX + cid
 }
 
 /**
@@ -292,4 +297,4 @@ function readTime (buf) {
   return varint.decode(buf)
 }
 
-module.exports = Providers
+module.exports.Providers = Providers

@@ -33,22 +33,6 @@ describe('kad utils', () => {
     })
   })
 
-  describe('withTimeout', () => {
-    it('rejects with the error in the original function', async () => {
-      const original = async () => { throw new Error('explode') } // eslint-disable-line require-await
-      const asyncFn = utils.withTimeout(original, 100)
-      let err
-      try {
-        await asyncFn()
-      } catch (/** @type {any} */ _err) {
-        err = _err
-      }
-
-      expect(err).to.exist()
-      expect(err.message).to.include('explode')
-    })
-  })
-
   describe('sortClosestPeers', () => {
     it('sorts a list of PeerIds', async () => {
       const rawIds = [

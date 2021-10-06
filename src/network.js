@@ -1,19 +1,16 @@
 'use strict'
 
 const errcode = require('err-code')
-
 const { pipe } = require('it-pipe')
 const lp = require('it-length-prefixed')
-const pTimeout = require('p-timeout')
-const { consume } = require('streaming-iterables')
+const drain = require('it-drain')
 const first = require('it-first')
-
 const MulticodecTopology = require('libp2p-interfaces/src/topology/multicodec-topology')
-
-const rpc = require('./rpc')
-const c = require('./constants')
-const Message = require('./message')
+const { MULTICODEC } = require('./constants')
+const { Message } = require('./message')
 const utils = require('./utils')
+
+const log = utils.logger('libp2p:kad-dht:network')
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -27,15 +24,16 @@ class Network {
   /**
    * Create a new network
    *
-   * @param {import('./index')} dht
+   * @param {import('libp2p')} libp2p
+   * @param {import('./routing-table').RoutingTable} routingTable
+   * @param {import('libp2p/src/peer-store')} peerStore
    */
-  constructor (dht) {
-    this.dht = dht
-    this.readMessageTimeout = c.READ_MESSAGE_TIMEOUT
-    this._log = utils.logger(this.dht.peerId, 'net')
-    this._rpc = rpc(this.dht)
+  constructor (libp2p, routingTable, peerStore) {
     this._onPeerConnected = this._onPeerConnected.bind(this)
     this._running = false
+    this._libp2p = libp2p
+    this._peerStore = peerStore
+    this._routingTable = routingTable
   }
 
   /**
@@ -46,41 +44,28 @@ class Network {
       return
     }
 
-    if (!this.dht.isStarted) {
-      throw errcode(new Error('Can not start network'), 'ERR_CANNOT_START_NETWORK')
-    }
-
     this._running = true
-
-    // Only respond to queries when not in client mode
-    if (this.dht._clientMode === false) {
-      // Incoming streams
-      this.dht.registrar.handle(this.dht.protocol, this._rpc)
-    }
 
     // register protocol with topology
     const topology = new MulticodecTopology({
-      multicodecs: [this.dht.protocol],
+      multicodecs: [MULTICODEC],
       handlers: {
         onConnect: this._onPeerConnected,
         onDisconnect: () => {}
       }
     })
-    this._registrarId = this.dht.registrar.register(topology)
+    this._registrarId = this._libp2p.registrar.register(topology)
   }
 
   /**
    * Stop all network activity
    */
   stop () {
-    if (!this.dht.isStarted && !this.isStarted) {
-      return
-    }
     this._running = false
 
     // unregister protocol and handlers
     if (this._registrarId) {
-      this.dht.registrar.unregister(this._registrarId)
+      this._libp2p.registrar.unregister(this._registrarId)
     }
   }
 
@@ -94,49 +79,33 @@ class Network {
   }
 
   /**
-   * Are all network components there?
-   *
-   * @type {boolean}
-   */
-  get isConnected () {
-    // TODO add a way to check if switch has started or not
-    return this.dht.isStarted && this.isStarted
-  }
-
-  /**
-   * Registrar notifies a connection successfully with dht protocol.
+   * Registrar notifies a connection successfully with dht protocol
    *
    * @param {PeerId} peerId - remote peer id
    */
-  async _onPeerConnected (peerId) {
-    await this.dht._add(peerId)
-    this._log('added to the routing table: %s', peerId.toB58String())
+  _onPeerConnected (peerId) {
+    this._routingTable.add(peerId)
+      .then(() => {
+        log(`added ${peerId} to the routing table`)
+      })
+      .catch(err => {
+        log(`error adding ${peerId} to the routing table:`, err)
+      })
   }
 
   /**
-   * Send a request and record RTT for latency measurements.
+   * Send a request and record RTT for latency measurements
    *
-   * @async
    * @param {PeerId} to - The peer that should receive a message
    * @param {Message} msg - The message to send.
+   * @param {AbortSignal} signal
    */
-  async sendRequest (to, msg) {
-    // TODO: record latency
-    if (!this.isConnected) {
-      throw errcode(new Error('Network is offline'), 'ERR_NETWORK_OFFLINE')
-    }
+  async sendRequest (to, msg, signal) {
+    log(`sending request to: ${to}`)
 
-    const id = to.toB58String()
-    this._log('sending to: %s', id)
+    const { stream } = await this._libp2p.dialProtocol(to, MULTICODEC, { signal })
 
-    let conn = this.dht.registrar.connectionManager.get(to)
-    if (!conn) {
-      conn = await this.dht.dialer.connectToPeer(to)
-    }
-
-    const { stream } = await conn.newStream(this.dht.protocol)
-
-    return this._writeReadMessage(stream, msg.serialize())
+    return this._writeReadMessage(stream, msg.serialize(), signal)
   }
 
   /**
@@ -144,22 +113,31 @@ class Network {
    *
    * @param {PeerId} to
    * @param {Message} msg
+   * @param {AbortSignal} signal
    */
-  async sendMessage (to, msg) {
-    if (!this.isConnected) {
-      throw errcode(new Error('Network is offline'), 'ERR_NETWORK_OFFLINE')
-    }
+  async sendMessage (to, msg, signal) {
+    log(`sending message to: ${to}`)
 
-    const id = to.toB58String()
-    this._log('sending to: %s', id)
+    const { stream } = await this._libp2p.dialProtocol(to, MULTICODEC, { signal })
 
-    let conn = this.dht.registrar.connectionManager.get(to)
-    if (!conn) {
-      conn = await this.dht.dialer.connectToPeer(to)
-    }
-    const { stream } = await conn.newStream(this.dht.protocol)
+    return this._writeMessage(stream, msg.serialize(), signal)
+  }
 
-    return this._writeMessage(stream, msg.serialize())
+  /**
+   * Write a message to the given stream
+   *
+   * @param {MuxedStream} stream - the stream to use
+   * @param {Uint8Array} msg - the message to send
+   * @param {AbortSignal} signal
+   * @returns {Promise<void>}
+   */
+  _writeMessage (stream, msg, signal) {
+    return pipe(
+      [msg],
+      lp.encode(),
+      stream,
+      drain
+    )
   }
 
   /**
@@ -169,57 +147,48 @@ class Network {
    *
    * @param {MuxedStream} stream - the stream to use
    * @param {Uint8Array} msg - the message to send
+   * @param {AbortSignal} signal
    */
-  async _writeReadMessage (stream, msg) { // eslint-disable-line require-await
-    return pTimeout(
-      writeReadMessage(stream, msg),
-      this.readMessageTimeout
-    )
-  }
-
-  /**
-   * Write a message to the given stream.
-   *
-   * @param {MuxedStream} stream - the stream to use
-   * @param {Uint8Array} msg - the message to send
-   */
-  _writeMessage (stream, msg) {
-    return pipe(
+  async _writeReadMessage (stream, msg, signal) {
+    const res = await pipe(
       [msg],
       lp.encode(),
       stream,
-      consume
-    )
-  }
-}
+      lp.decode(),
+      /**
+       * @param {AsyncIterable<Uint8Array>} source
+       */
+      async source => {
+        const buf = await first(source)
 
-/**
- * @param {MuxedStream} stream
- * @param {Uint8Array} msg
- */
-async function writeReadMessage (stream, msg) {
-  const res = await pipe(
-    [msg],
-    lp.encode(),
-    stream,
-    lp.decode(),
-    /**
-     * @param {AsyncIterable<Uint8Array>} source
-     */
-    async source => {
-      const buf = await first(source)
-
-      if (buf) {
-        return buf.slice()
+        if (buf) {
+          return buf.slice()
+        }
       }
+    )
+
+    if (res.length === 0) {
+      throw errcode(new Error('No message received'), 'ERR_NO_MESSAGE_RECEIVED')
     }
-  )
 
-  if (res.length === 0) {
-    throw errcode(new Error('No message received'), 'ERR_NO_MESSAGE_RECEIVED')
+    const message = Message.deserialize(res)
+
+    // add any observed peers to the address book
+    message.closerPeers.forEach(peerData => {
+      this._peerStore.addressBook.add(peerData.id, peerData.multiaddrs)
+      this._routingTable.add(peerData.id).catch(err => {
+        log.error(`Could not add ${peerData.id} to routing table`, err)
+      })
+    })
+    message.providerPeers.forEach(peerData => {
+      this._peerStore.addressBook.add(peerData.id, peerData.multiaddrs)
+      this._routingTable.add(peerData.id).catch(err => {
+        log.error(`Could not add ${peerData.id} to routing table`, err)
+      })
+    })
+
+    return message
   }
-
-  return Message.deserialize(res)
 }
 
-module.exports = Network
+module.exports.Network = Network

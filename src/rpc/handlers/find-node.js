@@ -1,19 +1,28 @@
 'use strict'
 
-const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
-
-const Message = require('../../message')
+const { Message } = require('../../message')
 const utils = require('../../utils')
+const log = utils.logger('libp2p:kad-dht:rpc:handlers:find-node')
 
 /**
  * @typedef {import('peer-id')} PeerId
+ * @typedef {import('../../types').DHTMessageHandler} DHTMessageHandler
  */
 
 /**
- * @param {import('../../index')} dht
+ * @implements {DHTMessageHandler}
  */
-module.exports = (dht) => {
-  const log = utils.logger(dht.peerId, 'rpc:find-node')
+class FindNodeHandler {
+  /**
+   * @param {PeerId} peerId
+   * @param {import('../../types').Addressable} addressable
+   * @param {import('../../peer-routing').PeerRouting} peerRouting
+   */
+  constructor (peerId, addressable, peerRouting) {
+    this._peerId = peerId
+    this._addressable = addressable
+    this._peerRouting = peerRouting
+  }
 
   /**
    * Process `FindNode` DHT messages.
@@ -21,17 +30,17 @@ module.exports = (dht) => {
    * @param {PeerId} peerId
    * @param {Message} msg
    */
-  async function findNode (peerId, msg) {
+  async handle (peerId, msg) {
     log('start')
 
     let closer
-    if (uint8ArrayEquals(msg.key, dht.peerId.id)) {
+    if (this._peerId.equals(msg.key)) {
       closer = [{
-        id: dht.peerId,
-        multiaddrs: dht.libp2p.multiaddrs
+        id: this._peerId,
+        multiaddrs: this._addressable.multiaddrs
       }]
     } else {
-      closer = await dht._betterPeersToQuery(msg, peerId)
+      closer = await this._peerRouting.getCloserPeersOffline(msg.key, peerId)
     }
 
     const response = new Message(msg.type, new Uint8Array(0), msg.clusterLevel)
@@ -44,6 +53,6 @@ module.exports = (dht) => {
 
     return response
   }
-
-  return findNode
 }
+
+module.exports.FindNodeHandler = FindNodeHandler

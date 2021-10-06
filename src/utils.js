@@ -9,11 +9,9 @@ const { compare: uint8ArrayCompare } = require('uint8arrays/compare')
 const pMap = require('p-map')
 const { Record } = require('libp2p-record')
 const PeerId = require('peer-id')
-const errcode = require('err-code')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const { concat: uint8ArrayConcat } = require('uint8arrays/concat')
-const pTimeout = require('p-timeout')
 
 /**
  * Creates a DHT ID by hashing a given Uint8Array.
@@ -158,87 +156,17 @@ exports.createPutRecord = (key, value) => {
 /**
  * Creates a logger for the given subsystem
  *
- * @param {PeerId} [id]
- * @param {string} [subsystem]
+ * @param {string} name
  */
-exports.logger = (id, subsystem) => {
-  const name = ['libp2p', 'dht']
-  if (subsystem) {
-    name.push(subsystem)
-  }
-  if (id) {
-    name.push(`${id.toB58String().slice(0, 8)}`)
-  }
-
+exports.logger = (name) => {
   // Add a formatter for converting to a base58 string
   debug.formatters.b = (v) => {
     return base58btc.baseEncode(v)
   }
 
-  const logger = Object.assign(debug(name.join(':')), {
-    error: debug(name.concat(['error']).join(':'))
+  const logger = Object.assign(debug(name), {
+    error: debug(`${name}:error`)
   })
 
   return logger
-}
-
-exports.TimeoutError = class TimeoutError extends Error {
-  get code () {
-    return 'ETIMEDOUT'
-  }
-}
-
-/**
- * Creates an async function that calls the given `asyncFn` and Errors
- * if it does not resolve within `time` ms
- *
- * @template T
- * @param {(...args: any[]) => Promise<T>} asyncFn
- * @param {number} [time]
- */
-exports.withTimeout = (asyncFn, time) => {
-  /**
-   * @param  {...any} args
-   * @returns {Promise<T>}
-   */
-  async function timeoutFn (...args) {
-    if (!time) {
-      return asyncFn(...args)
-    }
-
-    let res
-
-    try {
-      res = await pTimeout(asyncFn(...args), time)
-    } catch (/** @type {any} */ err) {
-      if (err instanceof pTimeout.TimeoutError) {
-        throw errcode(err, 'ETIMEDOUT')
-      }
-
-      throw err
-    }
-
-    return res
-  }
-
-  return timeoutFn
-}
-
-/**
- * Iterates the given `asyncIterator` and runs each item through the given `asyncFn` in parallel.
- * Returns a promise that resolves when all items of the `asyncIterator` have been passed
- * through `asyncFn`.
- *
- * @template T
- * @template O
- *
- * @param {AsyncIterable<T>} asyncIterator
- * @param {(arg0: T) => Promise<O>} asyncFn
- */
-exports.mapParallel = async function (asyncIterator, asyncFn) {
-  const tasks = []
-  for await (const item of asyncIterator) {
-    tasks.push(asyncFn(item))
-  }
-  return Promise.all(tasks)
 }

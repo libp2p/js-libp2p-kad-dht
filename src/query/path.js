@@ -1,86 +1,113 @@
 'use strict'
 
-const PeerQueue = require('../peer-list/peer-queue')
-const utils = require('../utils')
+const {
+  ALPHA
+} = require('../constants')
+const { default: Queue } = require('p-queue')
+const { xor } = require('uint8arrays/xor')
+const defer = require('p-defer')
 
-// TODO: Temporary until parallel dial in Switch have a proper
-// timeout. Requires async/await refactor of transports and
-// dial abort logic. This gives us 30s to complete the `queryFunc`.
-// This should help reduce the high end call times of queries
-const QUERY_FUNC_TIMEOUT = 30e3
+const MAX_UINT32 = 0xFFFFFFFF
 
 /**
  * @typedef {import('peer-id')} PeerId
+ * @typedef {import('../types').QueryResult<any>} QueryResult
+ * @typedef {import('../types').QueryFunc<any>} QueryFunc
  */
 
 /**
- * Manages a single Path through the DHT.
+ * Walks a path through the DHT, calling the passed query function for
+ * every peer encountered that we have not seen before.
+ *
+ * @param {Uint8Array} targetKey - what are we trying to find
+ * @param {PeerId} startingPeer - where we start our query
+ * @param {PeerId} ourPeerId - who we are
+ * @param {Set<PeerId>} peersSeen - list of peers all paths have traversed
+ * @param {AbortSignal} signal - when to stop querying
+ * @param {QueryFunc} query - the query function to run with each peer
  */
-class Path {
-  /**
-   * Creates a Path.
-   *
-   * @param {import('./run')} run
-   * @param {import('./index').QueryFunc} queryFunc
-   */
-  constructor (run, queryFunc) {
-    this.run = run
-    this.queryFunc = utils.withTimeout(queryFunc, QUERY_FUNC_TIMEOUT)
-    if (!this.queryFunc) throw new Error('Path requires a `queryFn` to be specified')
-    if (typeof this.queryFunc !== 'function') throw new Error('Path expected `queryFn` to be a function. Got ' + typeof this.queryFunc)
+module.exports.disjointPathQuery = async function * pathQuery (targetKey, startingPeer, ourPeerId, peersSeen, signal, query) {
+  // Only ALPHA node/value lookups are allowed at any given time for each process
+  // https://github.com/libp2p/specs/tree/master/kad-dht#alpha-concurrency-parameter-%CE%B1
+  const queue = new Queue({
+    concurrency: ALPHA
+  })
 
-    /** @type {PeerId[]} */
-    this.initialPeers = []
-
-    /** @type {PeerQueue | null} */
-    this.peersToQuery = null
-
-    /** @type {import('./index').QueryResult | null} */
-    this.res = null
-  }
+  // clear the queue if the query is aborted
+  signal.addEventListener('abort', () => {
+    queue.clear()
+    queue.emit('idle')
+  })
 
   /**
-   * Add a peer to the set of peers that are used to intialize the path.
+   * Adds the passed peer to the query queue if it's not us and no
+   * other path has passed through this peer
    *
    * @param {PeerId} peer
    */
-  addInitialPeer (peer) {
-    this.initialPeers.push(peer)
-  }
-
-  /**
-   * Execute the path
-   */
-  async execute () {
-    // Create a queue of peers ordered by distance from the key
-    const queue = await PeerQueue.fromKey(this.run.query.key)
-    // Add initial peers to the queue
-    this.peersToQuery = queue
-    await Promise.all(this.initialPeers.map(peer => this.addPeerToQuery(peer)))
-    await this.run.workerQueue(this)
-  }
-
-  /**
-   * Add a peer to the peers to be queried.
-   *
-   * @param {PeerId} peer
-   */
-  async addPeerToQuery (peer) {
-    // Don't add self
-    if (this.run.query.dht._isSelf(peer)) {
+  function queryPeer (peer) {
+    if (peersSeen.has(peer) || ourPeerId.equals(peer)) {
       return
     }
 
-    // The paths must be disjoint, meaning that no two paths in the Query may
-    // traverse the same peer
-    if (this.run.peersSeen.has(peer.toB58String())) {
-      return
-    }
+    peersSeen.add(peer)
 
-    if (this.peersToQuery) {
-      await this.peersToQuery.enqueue(peer)
-    }
+    queue.add(async () => {
+      try {
+        const result = await query(peer, signal)
+
+        if (result.done) {
+          return result
+        }
+
+        // if there are closer peers and the query has not been aborted, continue the query
+        if (result.closerPeers && !signal.aborted) {
+          result.closerPeers
+            .map(peerData => peerData.id)
+            .forEach(queryPeer)
+        }
+
+        // @ts-ignore simulate p-queue@7.x.x event
+        queue.emit('completed', result)
+      } catch (err) {
+        // @ts-ignore simulate p-queue@7.x.x event
+        queue.emit('error', err)
+      }
+    }, {
+      // use the xor value as the queue priority - closer peers should execute first
+      priority: MAX_UINT32 - new DataView(xor(peer.toBytes(), targetKey), 0).getUint32(0, true)
+    })
   }
+
+  // begin the query with the starting peer
+  queryPeer(startingPeer)
+
+  // yield results as they come in
+  yield * toGenerator(queue)
 }
 
-module.exports = Path
+/**
+ * @param {Queue} queue
+ */
+function * toGenerator (queue) {
+  /** @type {defer.DeferredPromise<QueryResult>} */
+  let deferred = defer()
+  let running = true
+
+  // @ts-expect-error 'completed' event is in p-queue@7.x.x
+  queue.on('completed', result => {
+    deferred.resolve(result)
+  })
+  // @ts-expect-error 'error' event is in p-queue@7.x.x
+  queue.on('error', err => {
+    deferred.reject(err)
+  })
+  queue.on('idle', () => {
+    running = false
+  })
+
+  while (running) { // eslint-disable-line no-unmodified-loop-condition
+    yield deferred.promise
+    deferred = defer()
+  }
+}

@@ -136,4 +136,4 @@ function fromPbPeer (peer) {
   }
 }
 
-module.exports = Message
+module.exports.Message = Message

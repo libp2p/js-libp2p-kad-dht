@@ -15,6 +15,8 @@ exports.MAX_RECORD_AGE = 36 * hour
 
 exports.PROTOCOL_DHT = '/kad/1.0.0'
 
+exports.MULTICODEC = '/ipfs' + exports.PROTOCOL_DHT
+
 exports.PROVIDERS_KEY_PREFIX = '/providers/'
 
 exports.PROVIDERS_LRU_CACHE_SIZE = 256

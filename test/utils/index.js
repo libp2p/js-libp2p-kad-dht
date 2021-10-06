@@ -1,8 +1,5 @@
 'use strict'
 
-const delay = require('delay')
-const pRetry = require('p-retry')
-const pTimeout = require('p-timeout')
 const duplexPair = require('it-pair/duplex')
 
 const createMockRegistrar = (registrarRecord) => {
@@ -54,33 +51,6 @@ const ConnectionPair = () => {
 }
 
 exports.ConnectionPair = ConnectionPair
-
-exports.waitForWellFormedTables = (dhts, minPeers, avgPeers, waitTimeout) => {
-  return pTimeout(pRetry(async () => {
-    let totalPeers = 0
-
-    const ready = dhts.map((dht) => {
-      const rtlen = dht.routingTable.size
-      totalPeers += rtlen
-      if (minPeers > 0 && rtlen < minPeers) {
-        return false
-      }
-      const actualAvgPeers = totalPeers / dhts.length
-      if (avgPeers > 0 && actualAvgPeers < avgPeers) {
-        return false
-      }
-      return true
-    })
-
-    if (ready.every(Boolean)) {
-      return
-    }
-    await delay(200)
-    throw new Error('not done yet')
-  }, {
-    retries: 50
-  }), waitTimeout)
-}
 
 // Count how many peers are in b but are not in a
 exports.countDiffPeers = (a, b) => {
