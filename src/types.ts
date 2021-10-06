@@ -5,6 +5,7 @@ import type { PublicKey } from 'libp2p-crypto'
 import type { CID } from 'multiformats/cid'
 import type { Message } from './message'
 import type { MuxedStream } from 'libp2p/src/upgrader'
+import type Topology from 'libp2p-interfaces/src/topology'
 
 export interface PeerData {
   id: PeerId
@@ -71,4 +72,21 @@ export interface Dialer {
 // Implemented by libp2p, should be moved to libp2p-interfaces eventually
 export interface Addressable {
   multiaddrs: Multiaddr[]
+}
+
+// Implemented by libp2p.registrar, should be moved to libp2p-interfaces eventually
+export interface Registrar {
+  register: (topology: Topology) => string
+  unregister: (id: string) => boolean
+}
+
+// Implemented by libp2p.peerStore, should be moved to libp2p-interfaces eventually
+export interface PeerStore {
+  addressBook: AddressBook
+  get: (peerId: PeerId) => { id: PeerId, addresses: Array<{ multiaddr: Multiaddr }> } | undefined
+}
+
+// Implemented by libp2p.peerStore.addressStore, should be moved to libp2p-interfaces eventually
+export interface AddressBook {
+  add: (peerId: PeerId, addresses: Multiaddr[]) => void
 }

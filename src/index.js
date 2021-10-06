@@ -50,8 +50,6 @@ class KadDHT extends EventEmitter {
    *
    * @param {object} props
    * @param {Libp2p} props.libp2p - the libp2p instance
-   * @param {PeerId} props.peerId - peer's peerId
-   * @param {PeerStore} props.peerStore - libp2p peerStore
    * @param {string} [props.protocolPrefix = '/ipfs'] - libp2p registrar handle protocol
    * @param {boolean} [props.forceProtocolLegacy = false] - WARNING: this is not recommended and should only be used for legacy purposes
    * @param {number} props.kBucketSize - k-bucket size (default 20)
@@ -62,8 +60,6 @@ class KadDHT extends EventEmitter {
    */
   constructor ({
     libp2p,
-    peerId,
-    peerStore,
     protocolPrefix = '/ipfs',
     forceProtocolLegacy = false,
     datastore = new MemoryDatastore(),
@@ -82,20 +78,6 @@ class KadDHT extends EventEmitter {
      * @type {Libp2p}
      */
     this._libp2p = libp2p
-
-    /**
-     * Local peer-id
-     *
-     * @type {PeerId}
-     */
-    this._peerId = peerId
-
-    /**
-     * Local PeerStore
-     *
-     * @type {PeerStore}
-     */
-    this._peerStore = peerStore
 
     /**
      * Registrar protocol
@@ -121,7 +103,7 @@ class KadDHT extends EventEmitter {
      *
      * @type {RoutingTable}
      */
-    this._routingTable = new RoutingTable(libp2p, { kBucketSize })
+    this._routingTable = new RoutingTable(libp2p.peerId, libp2p, { kBucketSize })
 
     /**
      * Reference to the datastore, uses an in-memory store if none given.
@@ -147,7 +129,12 @@ class KadDHT extends EventEmitter {
       ...selectors
     }
 
-    this._network = new Network(libp2p, this._routingTable, libp2p.peerStore)
+    this._network = new Network(
+      libp2p,
+      libp2p.registrar,
+      this._routingTable,
+      libp2p.peerStore.addressBook
+    )
 
     /**
      * Keeps track of running queries
@@ -192,9 +179,9 @@ class KadDHT extends EventEmitter {
     )
     this._rpc = new RPC(
       this._routingTable,
-      peerId,
+      libp2p.peerId,
       this._providers,
-      peerStore,
+      libp2p.peerStore,
       libp2p,
       this._peerRouting,
       datastore,
@@ -481,7 +468,7 @@ class KadDHT extends EventEmitter {
     log('getPublicKey %s', peer.toB58String())
 
     // local check
-    const peerData = this._peerStore.get(peer)
+    const peerData = this._libp2p.peerStore.get(peer)
 
     if (peerData && peerData.id.pubKey) {
       log('getPublicKey: found local copy')
@@ -514,8 +501,8 @@ class KadDHT extends EventEmitter {
 
     const peerId = new PeerId(peer.id, undefined, pk)
     const addrs = ((peerData && peerData.addresses) || []).map((address) => address.multiaddr)
-    this._peerStore.addressBook.add(peerId, addrs)
-    this._peerStore.keyBook.set(peerId, pk)
+    this._libp2p.peerStore.addressBook.add(peerId, addrs)
+    this._libp2p.peerStore.keyBook.set(peerId, pk)
 
     return pk
   }

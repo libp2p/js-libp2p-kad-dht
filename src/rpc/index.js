@@ -23,7 +23,7 @@ class RPC {
    * @param {import('../routing-table').RoutingTable} routingTable
    * @param {import('peer-id')} peerId
    * @param {import('../providers').Providers} providers
-   * @param {import('libp2p/src/peer-store')} peerStore
+   * @param {import('../types').PeerStore} peerStore
    * @param {import('../types').Addressable} addressable
    * @param {import('../peer-routing').PeerRouting} peerRouting
    * @param {import('interface-datastore').Datastore} datastore

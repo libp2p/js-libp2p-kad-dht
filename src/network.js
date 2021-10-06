@@ -24,15 +24,17 @@ class Network {
   /**
    * Create a new network
    *
-   * @param {import('libp2p')} libp2p
+   * @param {import('./types').Dialer} dialer
+   * @param {import('./types').Registrar} registrar
    * @param {import('./routing-table').RoutingTable} routingTable
-   * @param {import('libp2p/src/peer-store')} peerStore
+   * @param {import('./types').AddressBook} addressBook
    */
-  constructor (libp2p, routingTable, peerStore) {
+  constructor (dialer, registrar, routingTable, addressBook) {
     this._onPeerConnected = this._onPeerConnected.bind(this)
     this._running = false
-    this._libp2p = libp2p
-    this._peerStore = peerStore
+    this._dialer = dialer
+    this._registrar = registrar
+    this._addressBook = addressBook
     this._routingTable = routingTable
   }
 
@@ -54,7 +56,7 @@ class Network {
         onDisconnect: () => {}
       }
     })
-    this._registrarId = this._libp2p.registrar.register(topology)
+    this._registrarId = this._registrar.register(topology)
   }
 
   /**
@@ -65,7 +67,7 @@ class Network {
 
     // unregister protocol and handlers
     if (this._registrarId) {
-      this._libp2p.registrar.unregister(this._registrarId)
+      this._registrar.unregister(this._registrarId)
     }
   }
 
@@ -103,7 +105,7 @@ class Network {
   async sendRequest (to, msg, signal) {
     log(`sending request to: ${to}`)
 
-    const { stream } = await this._libp2p.dialProtocol(to, MULTICODEC, { signal })
+    const { stream } = await this._dialer.dialProtocol(to, MULTICODEC, { signal })
 
     return this._writeReadMessage(stream, msg.serialize(), signal)
   }
@@ -118,7 +120,7 @@ class Network {
   async sendMessage (to, msg, signal) {
     log(`sending message to: ${to}`)
 
-    const { stream } = await this._libp2p.dialProtocol(to, MULTICODEC, { signal })
+    const { stream } = await this._dialer.dialProtocol(to, MULTICODEC, { signal })
 
     return this._writeMessage(stream, msg.serialize(), signal)
   }
@@ -175,13 +177,13 @@ class Network {
 
     // add any observed peers to the address book
     message.closerPeers.forEach(peerData => {
-      this._peerStore.addressBook.add(peerData.id, peerData.multiaddrs)
+      this._addressBook.add(peerData.id, peerData.multiaddrs)
       this._routingTable.add(peerData.id).catch(err => {
         log.error(`Could not add ${peerData.id} to routing table`, err)
       })
     })
     message.providerPeers.forEach(peerData => {
-      this._peerStore.addressBook.add(peerData.id, peerData.multiaddrs)
+      this._addressBook.add(peerData.id, peerData.multiaddrs)
       this._routingTable.add(peerData.id).catch(err => {
         log.error(`Could not add ${peerData.id} to routing table`, err)
       })

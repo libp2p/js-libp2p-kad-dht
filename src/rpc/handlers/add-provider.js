@@ -18,7 +18,7 @@ class AddProviderHandler {
   /**
    * @param {PeerId} peerId
    * @param {import('../../providers').Providers} providers
-   * @param {import('libp2p/src/peer-store')} peerStore
+   * @param {import('../../types').PeerStore} peerStore
    */
   constructor (peerId, providers, peerStore) {
     this._peerId = peerId

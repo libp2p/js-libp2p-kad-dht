@@ -21,13 +21,15 @@ const { TimeoutController } = require('timeout-abort-controller')
  */
 class RoutingTable {
   /**
-   * @param {import('libp2p')} libp2p
+   * @param {import('peer-id')} peerId
+   * @param {import('../types').Dialer} dialer
    * @param {object} [options]
    * @param {number} [options.kBucketSize=20]
    * @param {number} [options.pingTimeout=10000]
    */
-  constructor (libp2p, { kBucketSize, pingTimeout } = {}) {
-    this._libp2p = libp2p
+  constructor (peerId, dialer, { kBucketSize, pingTimeout } = {}) {
+    this._peerId = peerId
+    this._dialer = dialer
     this._kBucketSize = kBucketSize || 20
     this._pingTimeout = pingTimeout || 10000
 
@@ -45,7 +47,7 @@ class RoutingTable {
   }
 
   async start () {
-    this.kb.localNodeId = await utils.convertPeerId(this._libp2p.peerId)
+    this.kb.localNodeId = await utils.convertPeerId(this._peerId)
     this.kb.on('ping', this._onPing)
   }
 
@@ -81,7 +83,7 @@ class RoutingTable {
             try {
               timeoutController = new TimeoutController(this._pingTimeout)
               log(`Pinging old contact ${oldContact.peer}`)
-              const { stream } = await this._libp2p.dialProtocol(oldContact.peer, PROTOCOL_DHT, {
+              const { stream } = await this._dialer.dialProtocol(oldContact.peer, PROTOCOL_DHT, {
                 signal: timeoutController.signal
               })
               await stream.close()

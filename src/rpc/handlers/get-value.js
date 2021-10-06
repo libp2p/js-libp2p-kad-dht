@@ -22,7 +22,7 @@ const log = utils.logger('libp2p:kad-dht:rpc:handlers:get-value')
 class GetValueHandler {
   /**
    * @param {PeerId} peerId
-   * @param {import('libp2p/src/peer-store')} peerStore
+   * @param {import('../../types').PeerStore} peerStore
    * @param {import('../../peer-routing').PeerRouting} peerRouting
    * @param {import('interface-datastore').Datastore} datastore
    */

@@ -20,7 +20,7 @@ class GetProvidersHandler {
    * @param {import('../../peer-routing').PeerRouting} peerRouting
    * @param {import('../../providers').Providers} providers
    * @param {import('interface-datastore').Datastore} datastore
-   * @param {import('libp2p/src/peer-store')} peerStore
+   * @param {import('../../types').PeerStore} peerStore
    */
   constructor (peerId, peerRouting, providers, datastore, peerStore) {
     this._peerId = peerId

@@ -26,7 +26,7 @@ class ContentRouting {
    * @param {import('../query-manager').QueryManager} queryManager
    * @param {import('../routing-table').RoutingTable} routingTable
    * @param {import('../providers').Providers} providers
-   * @param {import('libp2p/src/peer-store')} peerStore
+   * @param {import('../types').PeerStore} peerStore
    */
   constructor (peerId, network, peerRouting, queryManager, routingTable, providers, peerStore) {
     this._peerId = peerId

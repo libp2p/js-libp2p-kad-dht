@@ -11,7 +11,7 @@ const { PutValueHandler } = require('./put-value')
 /**
  * @param {import('peer-id')} peerId
  * @param {import('../../providers').Providers} providers
- * @param {import('libp2p/src/peer-store')} peerStore
+ * @param {import('../../types').PeerStore} peerStore
  * @param {import('../../types').Addressable} addressable
  * @param {import('../../peer-routing').PeerRouting} peerRouting
  * @param {import('interface-datastore').Datastore} datastore

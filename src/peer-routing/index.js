@@ -23,7 +23,7 @@ class PeerRouting {
   /**
    * @param {import('peer-id')} peerId
    * @param {import('../routing-table').RoutingTable} routingTable
-   * @param {import('libp2p/src/peer-store')} peerStore
+   * @param {import('../types').PeerStore} peerStore
    * @param {import('../network').Network} network
    * @param {import('libp2p-interfaces/src/types').DhtValidators} validators
    * @param {import('../query-manager').QueryManager} queryManager
