@@ -3,6 +3,9 @@
 const { AbortController } = require('native-abort-controller')
 const { anySignal } = require('any-signal')
 const { query } = require('./query')
+const {
+  ALPHA
+} = require('./constants')
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -17,12 +20,14 @@ class QueryManager {
    *
    * @param {PeerId} peerId
    * @param {number} disjointPaths
+   * @param {number} alpha
    */
-  constructor (peerId, disjointPaths) {
+  constructor (peerId, disjointPaths, alpha = ALPHA) {
     this._peerId = peerId
     this._disjointPaths = disjointPaths
     this._controllers = new Set()
     this._running = false
+    this._alpha = alpha
   }
 
   /**
@@ -50,12 +55,12 @@ class QueryManager {
    *
    * @param {Uint8Array} key
    * @param {PeerId[]} peers
-   * @param {import('./types').MakeQueryFunc<T>} makeQuery
+   * @param {import('./types').QueryFunc<T>} queryFunc
    * @param {AbortSignal} [signal]
    *
    * @returns {AsyncIterable<import('./types').QueryResult<T>>}
    */
-  async * run (key, peers, makeQuery, signal) {
+  async * run (key, peers, queryFunc, signal) {
     if (!this._running) {
       throw new Error('QueryManager not started')
     }
@@ -72,7 +77,15 @@ class QueryManager {
     // query a subset of peers up to `kBucketSize / 2` in length
     const peersToQuery = peers.slice(0, Math.min(this._disjointPaths, peers.length))
 
-    yield * query(this._peerId, key, peersToQuery, makeQuery, anySignal(signals))
+    try {
+      yield * query(this._peerId, key, peersToQuery, queryFunc, anySignal(signals), this._alpha)
+    } catch (/** @type {any} */ err) {
+      if (!this._running && err.code === 'ERR_QUERY_ABORTED') {
+        // ignore query aborted errors that were thrown during query manager shutdown
+      } else {
+        throw err
+      }
+    }
 
     this._controllers.delete(abortController)
   }

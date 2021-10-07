@@ -2,7 +2,7 @@
 'use strict'
 
 const { expect } = require('aegir/utils/chai')
-const Message = require('../../../src/message')
+const { Message } = require('../../../src/message')
 const handler = require('../../../src/rpc/handlers/ping')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 

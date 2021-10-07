@@ -7,14 +7,9 @@ import type { Message } from './message'
 import type { MuxedStream } from 'libp2p/src/upgrader'
 import type Topology from 'libp2p-interfaces/src/topology'
 
-export interface PeerData {
-  id: PeerId
-  multiaddrs: Multiaddr[]
-}
-
 export interface QueryContinuationResult<T> {
-  done: false
-  closerPeers?: PeerData[]
+  done?: false
+  closerPeers?: PeerId[]
   value?: T
   err?: Error
 }
@@ -38,8 +33,8 @@ export interface DHT extends EventEmitter {
   getMany: (key: Uint8Array, nvals: number, options?: { signal?: AbortSignal }) => AsyncGenerator<DHTValue, void, undefined>
   removeLocal: (key: Uint8Array) => Promise<void>
   provide: (key: CID, options?: { signal?: AbortSignal }) => Promise<void>
-  findProviders: (key: CID, options?: { signal?: AbortSignal, maxNumProviders?: number }) => AsyncGenerator<PeerData, void, undefined>
-  findPeer: (id: PeerId, options?: { signal?: AbortSignal }) => Promise<PeerData>
+  findProviders: (key: CID, options?: { signal?: AbortSignal, maxNumProviders?: number }) => AsyncGenerator<PeerId, void, undefined>
+  findPeer: (id: PeerId, options?: { signal?: AbortSignal }) => Promise<{ id: PeerId, multiaddrs: Multiaddr[] } | undefined>
   getClosestPeers: (key: Uint8Array, options?: { shallow?: boolean, signal?: AbortSignal }) => AsyncGenerator<PeerId, void, undefined>
   getPublicKey: (peer: PeerId) => Promise<PublicKey>
   enableServerMode: () => void
@@ -50,19 +45,23 @@ export interface DHTMessageHandler {
   handle: (peerId: PeerId, msg: Message) => Promise<Message | undefined>
 }
 
+export interface QueryContext {
+  // the key we are looking up
+  key: Uint8Array
+  // the current peer being queried
+  peer: PeerId
+  // if this signal emits an 'abort' event, any long-lived processes or requests started as part of this query should be terminated
+  signal: AbortSignal
+  // which disjoint path we are following
+  pathIndex: number
+  // the total number of disjoint paths being executed
+  numPaths: number
+}
+
 /**
  * Query function
  */
-export interface QueryFunc<T> { (currentPeer: PeerId, signal: AbortSignal): Promise<QueryResult<T>> }
-
-/**
- * User-supplied function to set up an individual disjoint path. Per-path
- * query state should be held in this function's closure.
- *
- * Accepts the numeric index from zero to numPaths - 1 and returns a function
- * to call on each peer in the query.
- */
-export interface MakeQueryFunc<T> { (pathIndex: number, numPaths: number): QueryFunc<T> }
+export interface QueryFunc<T> { (context: QueryContext): Promise<QueryResult<T> | undefined> }
 
 // Implemented by libp2p, should be moved to libp2p-interfaces eventually
 export interface Dialer {

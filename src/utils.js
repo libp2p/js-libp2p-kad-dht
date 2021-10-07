@@ -4,9 +4,6 @@ const debug = require('debug')
 const { sha256 } = require('multiformats/hashes/sha2')
 const { base58btc } = require('multiformats/bases/base58')
 const { Key } = require('interface-datastore/key')
-const { xor: uint8ArrayXor } = require('uint8arrays/xor')
-const { compare: uint8ArrayCompare } = require('uint8arrays/compare')
-const pMap = require('p-map')
 const { Record } = require('libp2p-record')
 const PeerId = require('peer-id')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
@@ -87,45 +84,6 @@ exports.now = () => {
  */
 exports.encodeBase32 = (buf) => {
   return uint8ArrayToString(buf, 'base32')
-}
-
-/**
- * Decode a given base32 string into a Uint8Array.
- *
- * @param {string} raw
- * @returns {Uint8Array}
- */
-exports.decodeBase32 = (raw) => {
-  return uint8ArrayFromString(raw, 'base32')
-}
-
-/**
- * Sort peers by distance to the given `target`.
- *
- * @param {Array<PeerId>} peers
- * @param {Uint8Array} target
- */
-exports.sortClosestPeers = async (peers, target) => {
-  const distances = await pMap(peers, async (peer) => {
-    const id = await exports.convertPeerId(peer)
-
-    return {
-      peer: peer,
-      distance: uint8ArrayXor(id, target)
-    }
-  })
-
-  return distances.sort(exports.xorCompare).map((d) => d.peer)
-}
-
-/**
- * Compare function to sort an array of elements which have a distance property which is the xor distance to a given element.
- *
- * @param {{ distance: Uint8Array }} a
- * @param {{ distance: Uint8Array }} b
- */
-exports.xorCompare = (a, b) => {
-  return uint8ArrayCompare(a.distance, b.distance)
 }
 
 /**

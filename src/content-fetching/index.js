@@ -18,10 +18,9 @@ const log = utils.logger('libp2p:kad-dht:content-fetching')
 
 /**
  * @typedef {import('peer-id')} PeerId
- * @typedef {import('../types').PeerData} PeerData
  *
  * @typedef {object} ContentFetchValue
- * @property {PeerData} peer
+ * @property {PeerId} peer
  * @property {Uint8Array} value
  */
 
@@ -245,78 +244,66 @@ class ContentFetching {
     }
 
     const valsLength = vals.length
+    let queryResults = 0
 
     /**
-     * @type {import('../types').MakeQueryFunc<ContentFetchValue>}
+     * @type {import('../types').QueryFunc<ContentFetchValue>}
      */
-    const createQuery = (pathIndex, numPaths) => {
-      // This function body runs once per disjoint path
+    const getValueQuery = async ({ peer, signal, numPaths }) => {
       const pathSize = utils.pathSize(nvals - valsLength, numPaths)
-      let queryResults = 0
 
-      /**
-       * Here we return the query function to use on this particular disjoint path
-       *
-       * @type {import('../types').QueryFunc<ContentFetchValue>}
-       */
-      const query = async (peer, signal) => {
-        let rec, peers, lookupErr
-        try {
-          const results = await this._peerRouting.getValueOrPeers(peer, key, signal)
-          rec = results.record
-          peers = results.peers
-        } catch (/** @type {any} */ err) {
-          // If we have an invalid record we just want to continue and fetch a new one.
-          if (err.code !== 'ERR_INVALID_RECORD') {
-            throw err
-          }
-
-          lookupErr = err
+      let rec, peers, lookupErr
+      try {
+        const results = await this._peerRouting.getValueOrPeers(peer, key, signal)
+        rec = results.record
+        peers = results.peers
+      } catch (/** @type {any} */ err) {
+        // If we have an invalid record we just want to continue and fetch a new one.
+        if (err.code !== 'ERR_INVALID_RECORD') {
+          throw err
         }
 
-        // there was an error getting the value or peers
-        if (lookupErr) {
-          queryResults++
+        lookupErr = err
+      }
 
-          return {
-            done: false,
-            err: lookupErr
-          }
-        }
-
-        // didn't get a value, continue looking
-        if (!rec) {
-          return {
-            done: false,
-            closerPeers: peers
-          }
-        }
-
+      // there was an error getting the value or peers
+      if (lookupErr) {
         queryResults++
 
-        // got enough values, all done
-        if (queryResults >= pathSize) {
-          return {
-            done: true,
-            value: {
-              peer: { id: peer, multiaddrs: [] },
-              value: rec.value
-            }
-          }
-        }
-
-        // not got enough values, continue looking
         return {
-          done: false,
-          closerPeers: peers,
+          closerPeers: [],
+          err: lookupErr
+        }
+      }
+
+      // didn't get a value, continue looking
+      if (!rec) {
+        return {
+          closerPeers: (peers || []).map(peerData => peerData.id)
+        }
+      }
+
+      queryResults++
+
+      // got enough values, all done
+      if (queryResults >= pathSize) {
+        return {
+          done: true,
           value: {
-            peer: { id: peer, multiaddrs: [] },
+            peer,
             value: rec.value
           }
         }
       }
 
-      return query
+      // not got enough values, continue looking
+      return {
+        closerPeers: (peers || []).map(peerData => peerData.id),
+        value: {
+          peer,
+          value: rec.value
+        }
+      }
     }
 
     // we have peers, lets send the actual query to them
@@ -325,11 +312,11 @@ class ContentFetching {
     try {
       let err
 
-      for await (const res of this._queryManager.run(key, rtp, createQuery, signal)) {
+      for await (const res of this._queryManager.run(key, rtp, getValueQuery, signal)) {
         if (res.done && res.value) {
           yield {
             val: res.value.value,
-            from: res.value.peer.id
+            from: res.value.peer
           }
           yielded = true
         }

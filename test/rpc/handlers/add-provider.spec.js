@@ -6,7 +6,7 @@ const { expect } = require('aegir/utils/chai')
 const { Multiaddr } = require('multiaddr')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
-const Message = require('../../../src/message')
+const { Message } = require('../../../src/message')
 const handler = require('../../../src/rpc/handlers/add-provider')
 
 const createPeerId = require('../../utils/create-peer-id')

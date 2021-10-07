@@ -7,7 +7,7 @@ const { Record } = require('libp2p-record')
 const delay = require('delay')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
-const Message = require('../../../src/message')
+const { Message } = require('../../../src/message')
 const handler = require('../../../src/rpc/handlers/put-value')
 const utils = require('../../../src/utils')
 

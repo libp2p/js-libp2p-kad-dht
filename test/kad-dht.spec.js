@@ -17,7 +17,7 @@ const delay = require('delay')
 
 const kadUtils = require('../src/utils')
 const c = require('../src/constants')
-const Message = require('../src/message')
+const { Message } = require('../src/message')
 
 const createPeerId = require('./utils/create-peer-id')
 const createValues = require('./utils/create-values')

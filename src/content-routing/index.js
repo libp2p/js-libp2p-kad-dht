@@ -15,7 +15,6 @@ const log = utils.logger('libp2p:kad-dht:content-routing')
  * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
- * @typedef {import('../types').PeerData} PeerData
  */
 
 class ContentRouting {
@@ -115,24 +114,7 @@ class ContentRouting {
 
     const out = new LimitedPeerList(n)
     const provs = await this._providers.getProviders(key)
-
-    provs
-      .forEach(id => {
-        const peerData = this._peerStore.get(id)
-
-        if (peerData) {
-          out.push({
-            id: peerData.id,
-            multiaddrs: peerData.addresses
-              .map((address) => address.multiaddr)
-          })
-        } else {
-          out.push({
-            id,
-            multiaddrs: []
-          })
-        }
-      })
+    provs.forEach(id => out.push(id))
 
     // yield values
     yield * out.toArray()
@@ -147,53 +129,44 @@ class ContentRouting {
     const paths = []
 
     /**
-     * @type {import('../types').MakeQueryFunc<PeerData[]>}
+     * The query function to use on this particular disjoint path
+     *
+     * @type {import('../types').QueryFunc<PeerId[]>}
      */
-    const makeQuery = (pathIndex, numPaths) => {
-      // This function body runs once per disjoint path
-      const pathSize = utils.pathSize(n - out.length, numPaths)
-      const pathProviders = new LimitedPeerList(pathSize)
-      paths.push(pathProviders)
+    const findProvidersQuery = async ({ peer, signal, pathIndex, numPaths }) => {
+      if (!paths[pathIndex]) {
+        // set up the provider list for this path
+        const pathSize = utils.pathSize(n - out.length, numPaths)
+        paths[pathIndex] = new LimitedPeerList(pathSize)
+      }
 
-      /**
-       * The query function to use on this particular disjoint path
-       *
-       * @type {import('../types').QueryFunc<PeerData[]>}
-       */
-      const findProvidersQuery = async (peer, signal) => {
-        const msg = await this._findProvidersSingle(peer, key, signal)
-        const provs = msg.providerPeers
-        log(`Found ${provs.length} provider entries for ${key}`)
+      const msg = await this._findProvidersSingle(peer, key, signal)
+      const provs = msg.providerPeers
+      log(`Found ${provs.length} provider entries for ${key}`)
 
-        provs.forEach((prov) => {
-          pathProviders.push({
-            ...prov
-          })
-        })
+      provs.forEach((prov) => {
+        paths[pathIndex].push(prov.id)
+      })
 
-        // hooray we have all that we want
-        if (pathProviders.length >= pathSize) {
-          return {
-            done: true,
-            value: provs
-          }
-        }
-
-        // it looks like we want some more
+      // hooray we have all that we want
+      if (paths[pathIndex].length >= numPaths) {
         return {
-          done: false,
-          closerPeers: msg.closerPeers,
-          value: provs
+          done: true,
+          value: provs.map(peerData => peerData.id)
         }
       }
 
-      return findProvidersQuery
+      // it looks like we want some more
+      return {
+        closerPeers: msg.closerPeers.map(peerData => peerData.id),
+        value: provs.map(peerData => peerData.id)
+      }
     }
 
     const peers = this._routingTable.closestPeers(key.bytes)
 
     // TODO: this finds peers by CID bytes, should it be by multihash bytes instead?
-    for await (const res of this._queryManager.run(key.bytes, peers, makeQuery, signal)) {
+    for await (const res of this._queryManager.run(key.bytes, peers, findProvidersQuery, signal)) {
       if (res.done && res.value) {
         yield * res.value
       }

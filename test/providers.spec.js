@@ -15,12 +15,12 @@ const createPeerId = require('./utils/create-peer-id')
 const createValues = require('./utils/create-values')
 
 describe('Providers', () => {
-  let peerIds
+  let peers
   let providers
 
   before(async function () {
     this.timeout(10 * 1000)
-    peerIds = await createPeerId(3)
+    peers = await createPeerId(3)
   })
 
   afterEach(() => {
@@ -28,43 +28,42 @@ describe('Providers', () => {
   })
 
   it('simple add and get of providers', async () => {
-    providers = new Providers(new MemoryDatastore(), peerIds[2])
+    providers = new Providers(new MemoryDatastore(), peers[2])
 
     const cid = CID.parse('QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n')
 
     await Promise.all([
-      providers.addProvider(cid, peerIds[0]),
-      providers.addProvider(cid, peerIds[1])
+      providers.addProvider(cid, peers[0]),
+      providers.addProvider(cid, peers[1])
     ])
 
     const provs = await providers.getProviders(cid)
     const ids = new Set(provs.map((peerId) => peerId.toB58String()))
-    expect(ids.has(peerIds[0].toB58String())).to.be.eql(true)
-    expect(ids.has(peerIds[1].toB58String())).to.be.eql(true)
+    expect(ids.has(peers[0].toB58String())).to.be.eql(true)
+    expect(ids.has(peers[0])).to.be.eql(true)
   })
 
   it('duplicate add of provider is deduped', async () => {
-    providers = new Providers(new MemoryDatastore(), peerIds[2])
+    providers = new Providers(new MemoryDatastore(), peers[2])
 
     const cid = CID.parse('QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n')
 
     await Promise.all([
-      providers.addProvider(cid, peerIds[0]),
-      providers.addProvider(cid, peerIds[0]),
-      providers.addProvider(cid, peerIds[1]),
-      providers.addProvider(cid, peerIds[1]),
-      providers.addProvider(cid, peerIds[1])
+      providers.addProvider(cid, peers[0]),
+      providers.addProvider(cid, peers[0]),
+      providers.addProvider(cid, peers[1]),
+      providers.addProvider(cid, peers[1]),
+      providers.addProvider(cid, peers[1])
     ])
 
     const provs = await providers.getProviders(cid)
     expect(provs).to.have.length(2)
     const ids = new Set(provs.map((peerId) => peerId.toB58String()))
-    expect(ids.has(peerIds[0].toB58String())).to.be.eql(true)
-    expect(ids.has(peerIds[1].toB58String())).to.be.eql(true)
+    expect(ids.has(peers[0])).to.be.eql(true)
   })
 
   it('more providers than space in the lru cache', async () => {
-    providers = new Providers(new MemoryDatastore(), peerIds[2], 10)
+    providers = new Providers(new MemoryDatastore(), peers[2], 10)
 
     const hashes = await Promise.all([...new Array(100)].map((i) => {
       return sha256.digest(uint8ArrayFromString(`hello ${i}`))
@@ -72,17 +71,17 @@ describe('Providers', () => {
 
     const cids = hashes.map((h) => CID.createV0(h))
 
-    await Promise.all(cids.map(cid => providers.addProvider(cid, peerIds[0])))
+    await Promise.all(cids.map(cid => providers.addProvider(cid, peers[0])))
     const provs = await Promise.all(cids.map(cid => providers.getProviders(cid)))
 
     expect(provs).to.have.length(100)
     for (const p of provs) {
-      expect(p[0].id).to.be.eql(peerIds[0].id)
+      expect(p[0].id).to.be.eql(peers[0].id)
     }
   })
 
   it('expires', async () => {
-    providers = new Providers(new MemoryDatastore(), peerIds[2])
+    providers = new Providers(new MemoryDatastore(), peers[2])
     providers.cleanupInterval = 100
     providers.provideValidity = 200
 
@@ -90,15 +89,15 @@ describe('Providers', () => {
 
     const cid = CID.parse('QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n')
     await Promise.all([
-      providers.addProvider(cid, peerIds[0]),
-      providers.addProvider(cid, peerIds[1])
+      providers.addProvider(cid, peers[0]),
+      providers.addProvider(cid, peers[1])
     ])
 
     const provs = await providers.getProviders(cid)
 
     expect(provs).to.have.length(2)
-    expect(provs[0].id).to.be.eql(peerIds[0].id)
-    expect(provs[1].id).to.be.eql(peerIds[1].id)
+    expect(provs[0].id).to.be.eql(peers[0].id)
+    expect(provs[1].id).to.be.eql(peers[1].id)
 
     await new Promise(resolve => setTimeout(resolve, 400))
 
@@ -113,7 +112,7 @@ describe('Providers', () => {
       os.tmpdir(), (Math.random() * 100).toString()
     )
     const store = new LevelStore(p)
-    providers = new Providers(store, peerIds[2], 10)
+    providers = new Providers(store, peers[2], 10)
 
     console.log('starting') // eslint-disable-line no-console
     const res = await Promise.all([

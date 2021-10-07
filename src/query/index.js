@@ -1,12 +1,16 @@
 'use strict'
 
 const { base58btc } = require('multiformats/bases/base58')
-const utils = require('../utils')
+const { convertBuffer, logger } = require('../utils')
 const merge = require('it-merge')
 const { disjointPathQuery } = require('./path')
+const {
+  ALPHA
+} = require('../constants')
 
 /**
  * @typedef {import('peer-id')} PeerId
+ *
  */
 
 /**
@@ -18,15 +22,14 @@ const { disjointPathQuery } = require('./path')
  * @param {PeerId} peerId
  * @param {Uint8Array} key
  * @param {PeerId[]} peers
- * @param {import('../types').MakeQueryFunc<T>} makeQuery
+ * @param {import('../types').QueryFunc<T>} query
  * @param {AbortSignal} signal
- *
- * @returns {AsyncIterable<import('../types').QueryResult<T>>}
+ * @param {number} alpha - how many concurrent node/value lookups to run
  */
-async function * query (peerId, key, peers, makeQuery, signal) { // eslint-disable-line require-await
-  this._startTime = Date.now()
+async function * query (peerId, key, peers, query, signal, alpha = ALPHA) { // eslint-disable-line require-await
+  const startTime = Date.now()
 
-  const log = utils.logger('libp2p:kad-dht:query:' + base58btc.baseEncode(key))
+  const log = logger('libp2p:kad-dht:query:' + base58btc.baseEncode(key))
   log('query:start')
 
   try {
@@ -39,9 +42,12 @@ async function * query (peerId, key, peers, makeQuery, signal) { // eslint-disab
     // traverse the same peer
     const peersSeen = new Set()
 
+    // perform lookups on kadId, not the actual value
+    const keyKadId = await convertBuffer(key)
+
     // Create disjoint paths
     const paths = peers.map((peer, index) => {
-      return disjointPathQuery(key, peer, peerId, peersSeen, signal, makeQuery(index, peers.length))
+      return disjointPathQuery(key, keyKadId, peer, peerId, peersSeen, signal, query, index, peers.length, alpha)
     })
 
     /** @type {Error[]} */
@@ -49,6 +55,10 @@ async function * query (peerId, key, peers, makeQuery, signal) { // eslint-disab
 
     // Execute the query along each disjoint path and yield their results as they become available
     for await (const res of merge(...paths)) {
+      if (!res) {
+        continue
+      }
+
       yield res
 
       if (res.err) {
@@ -64,7 +74,7 @@ async function * query (peerId, key, peers, makeQuery, signal) { // eslint-disab
       throw errors[0]
     }
   } finally {
-    log(`query:done in ${Date.now() - (this._startTime || 0)}ms`)
+    log(`query:done in ${Date.now() - (startTime || 0)}ms`)
   }
 }
 

@@ -3,7 +3,7 @@
 const PeerList = require('.')
 
 /**
- * @typedef {import('../').PeerData} PeerData
+ * @typedef {import('peer-id')} PeerId
  */
 
 /**
@@ -23,7 +23,7 @@ class LimitedPeerList extends PeerList {
   /**
    * Add a PeerData if it fits in the list
    *
-   * @param {PeerData} peerData
+   * @param {PeerId} peerData
    */
   push (peerData) {
     if (this.length < this.limit) {

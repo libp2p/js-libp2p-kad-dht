@@ -13,6 +13,7 @@ const {
   PROVIDERS_KEY_PREFIX
 } = require('./constants')
 const utils = require('./utils')
+const { fromString: uint8ArrayFromString } = require('uint8arrays')
 
 const log = utils.logger('libp2p:kad-dht:providers')
 
@@ -36,10 +37,9 @@ const log = utils.logger('libp2p:kad-dht:providers')
 class Providers {
   /**
    * @param {Datastore} datastore
-   * @param {PeerId} [self]
    * @param {number} [cacheSize=256]
    */
-  constructor (datastore, self, cacheSize) {
+  constructor (datastore, cacheSize) {
     this.datastore = datastore
 
     /**
@@ -215,7 +215,7 @@ class Providers {
       log('getProviders %s', cid.toString())
       const provs = await this._getProvidersMap(cid)
       return [...provs.keys()].map((base32PeerId) => {
-        return new PeerId(utils.decodeBase32(base32PeerId))
+        return new PeerId(uint8ArrayFromString(base32PeerId, 'base32'))
       })
     })
   }

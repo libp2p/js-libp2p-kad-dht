@@ -6,7 +6,7 @@ const pDefer = require('p-defer')
 const pipe = require('it-pipe')
 const lp = require('it-length-prefixed')
 const { collect } = require('streaming-iterables')
-const Message = require('../../src/message')
+const { Message } = require('../../src/message')
 const rpc = require('../../src/rpc')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 

@@ -117,7 +117,7 @@ class KadDHT extends EventEmitter {
      *
      * @type {Providers}
      */
-    this._providers = new Providers(datastore, libp2p.peerId)
+    this._providers = new Providers(datastore)
 
     this._validators = {
       pk: libp2pRecord.validator.validators.pk,

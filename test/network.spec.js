@@ -9,7 +9,7 @@ const lp = require('it-length-prefixed')
 const pDefer = require('p-defer')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
-const Message = require('../src/message')
+const { Message } = require('../src/message')
 
 const TestDHT = require('./utils/test-dht')
 

@@ -5,7 +5,6 @@ const { Record, validator } = require('libp2p-record')
 const PeerId = require('peer-id')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
-const map = require('it-map')
 const { Message } = require('../message')
 const utils = require('../utils')
 
@@ -13,7 +12,6 @@ const log = utils.logger('libp2p:kad-dht:peer-routing')
 
 /**
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
- * @typedef {import('../types').PeerData} PeerData
  */
 
 /**
@@ -84,7 +82,7 @@ class PeerRouting {
       .map((peerData) => {
         this._peerStore.addressBook.add(peerData.id, peerData.multiaddrs)
 
-        return peerData
+        return peerData.id
       })
   }
 
@@ -131,7 +129,7 @@ class PeerRouting {
    *
    * @param {PeerId} id
    * @param {AbortSignal} signal
-   * @returns {Promise<{ id: PeerId, multiaddrs: Multiaddr[] }>}
+   * @returns {Promise<{ id: PeerId, multiaddrs: Multiaddr[] } | undefined>}
    */
   async findPeer (id, signal) {
     log('findPeer %s', id.toB58String())
@@ -167,40 +165,31 @@ class PeerRouting {
       }
     }
 
-    // query the network
     /**
-     * @type {import('../types').MakeQueryFunc<PeerData>}
+     * There is no distinction between the disjoint paths, so there are no per-path
+     * variables in dht scope. Just return the actual query function.
+     *
+     * @type {import('../types').QueryFunc<{ id: PeerId, multiaddrs: Multiaddr[] }>}
      */
-    const makeQuery = () => {
-      /**
-       * There is no distinction between the disjoint paths, so there are no per-path
-       * variables in dht scope. Just return the actual query function.
-       *
-       * @type {import('../types').QueryFunc<PeerData>}
-       */
-      const queryFn = async (peer, signal) => {
-        const msg = await this.findPeerSingle(peer, id, signal)
-        const match = msg.closerPeers.find((p) => p.id.equals(id))
+    const findPeerQuery = async ({ peer, signal }) => {
+      const msg = await this.findPeerSingle(peer, id, signal)
+      const match = msg.closerPeers.find((p) => p.id.equals(id))
 
-        // found it
-        if (match) {
-          return {
-            done: true,
-            value: match
-          }
-        }
-
-        // query closer peers
+      // found it
+      if (match) {
         return {
-          done: false,
-          closerPeers: msg.closerPeers
+          done: true,
+          value: match
         }
       }
 
-      return queryFn
+      // query closer peers
+      return {
+        closerPeers: msg.closerPeers.map(peerData => peerData.id)
+      }
     }
 
-    for await (const result of this._queryManager.run(id.id, peers, makeQuery, signal)) {
+    for await (const result of this._queryManager.run(id.id, peers, findPeerQuery, signal)) {
       if (result.done && result.value) {
         return result.value
       }
@@ -224,32 +213,25 @@ class PeerRouting {
     const tablePeers = this._routingTable.closestPeers(id)
 
     /**
-     * @type {import('../types').MakeQueryFunc<PeerData[]>}
+     * There is no distinction between the disjoint paths,
+     * so there are no per-path variables in dht scope.
+     * Just return the actual query function.
+     *
+     * @type {import('../types').QueryFunc<PeerId[]>}
      */
-    const q = () => {
-      /**
-       * There is no distinction between the disjoint paths,
-       * so there are no per-path variables in dht scope.
-       * Just return the actual query function.
-       *
-       * @type {import('../types').QueryFunc<PeerData[]>}
-       */
-      const getCloserPeersQuery = async (peer, signal) => {
-        const closer = await this.closerPeersSingle(key, peer, signal)
+    const getCloserPeersQuery = async ({ peer, signal }) => {
+      const closer = await this.closerPeersSingle(key, peer, signal)
 
-        return {
-          closerPeers: closer,
-          value: closer,
-          done: Boolean(shallow || !closer.length)
-        }
+      return {
+        closerPeers: closer,
+        value: closer,
+        done: (shallow || !closer.length) ? true : undefined
       }
-
-      return getCloserPeersQuery
     }
 
-    for await (const result of this._queryManager.run(key, tablePeers, q, signal)) {
+    for await (const result of this._queryManager.run(key, tablePeers, getCloserPeersQuery, signal)) {
       if (result.value) {
-        yield * map(result.value, peerData => peerData.id)
+        yield * result.value
       }
     }
   }
