@@ -3,7 +3,7 @@
 const { pipe } = require('it-pipe')
 const lp = require('it-length-prefixed')
 
-const { Message } = require('../message')
+const { Message, MESSAGE_TYPE_LOOKUP } = require('../message')
 const handlers = require('./handlers')
 const utils = require('../utils')
 
@@ -74,8 +74,6 @@ class RPC {
       log.error(err)
     }
 
-    const idB58Str = peerId.toB58String()
-    log('from: %s', idB58Str)
     const self = this
 
     await pipe(
@@ -88,6 +86,7 @@ class RPC {
         for await (const msg of source) {
           // handle the message
           const desMessage = Message.deserialize(msg.slice())
+          log('incoming %s from %p', MESSAGE_TYPE_LOOKUP[desMessage.type], peerId)
           const res = await self.handleMessage(peerId, desMessage)
 
           // Not all handlers will return a response

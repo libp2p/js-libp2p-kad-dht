@@ -23,7 +23,7 @@ const MAX_XOR = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
  * @param {Uint8Array} kadId - sha256(key)
  * @param {PeerId} startingPeer - where we start our query
  * @param {PeerId} ourPeerId - who we are
- * @param {Set<PeerId>} peersSeen - list of peers all paths have traversed
+ * @param {Set<string>} peersSeen - list of peers all paths have traversed
  * @param {AbortSignal} signal - when to stop querying
  * @param {QueryFunc} query - the query function to run with each peer
  * @param {number} pathIndex - which disjoint path we are following
@@ -44,11 +44,11 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
    * @param {PeerId} peer
    */
   async function queryPeer (peer) {
-    if (!peer || peersSeen.has(peer) || ourPeerId.equals(peer)) {
+    if (!peer || peersSeen.has(peer.toB58String()) || ourPeerId.equals(peer)) {
       return
     }
 
-    peersSeen.add(peer)
+    peersSeen.add(peer.toB58String())
 
     const peerKadId = await convertPeerId(peer)
 

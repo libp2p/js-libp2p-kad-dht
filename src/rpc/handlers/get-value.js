@@ -42,7 +42,7 @@ class GetValueHandler {
   async handle (peerId, msg) {
     const key = msg.key
 
-    log('key: %b', key)
+    log('asked for key %b', key)
 
     if (!key || key.length === 0) {
       throw errcode(new Error('Invalid key'), 'ERR_INVALID_KEY')
@@ -75,12 +75,12 @@ class GetValueHandler {
     ])
 
     if (record) {
-      log('got record')
+      log('had record for %b in local datastore', key)
       response.record = record
     }
 
     if (closer.length > 0) {
-      log('got closer %s', closer.length)
+      log('had %s closer peers in routing table', closer.length)
       response.closerPeers = closer
     }
 
@@ -96,7 +96,7 @@ class GetValueHandler {
    * @param {Uint8Array} key
    */
   async _checkLocalDatastore (key) {
-    log(`checkLocalDatastore: ${uint8ArrayToString(key)} %b`, key)
+    log(`checkLocalDatastore looking for ${uint8ArrayToString(key)} %b`, key)
     const dsKey = utils.bufferToKey(key)
 
     // Fetch value from ds

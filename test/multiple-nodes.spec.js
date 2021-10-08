@@ -38,13 +38,13 @@ describe('multiple nodes', () => {
     await dhts[7].put(key, value)
 
     const res = await Promise.all([
-      dhts[0].get(key, { timeout: 1000 }),
-      dhts[1].get(key, { timeout: 1000 }),
-      dhts[2].get(key, { timeout: 1000 }),
-      dhts[3].get(key, { timeout: 1000 }),
-      dhts[4].get(key, { timeout: 1000 }),
-      dhts[5].get(key, { timeout: 1000 }),
-      dhts[6].get(key, { timeout: 1000 })
+      dhts[0].get(key),
+      dhts[1].get(key),
+      dhts[2].get(key),
+      dhts[3].get(key),
+      dhts[4].get(key),
+      dhts[5].get(key),
+      dhts[6].get(key)
     ])
 
     expect(res[0]).to.eql(uint8ArrayFromString('world'))
@@ -64,13 +64,13 @@ describe('multiple nodes', () => {
     await dhts[1].put(key, value)
 
     const res = await Promise.all([
-      dhts[0].get(key, { timeout: 1000 }),
-      dhts[2].get(key, { timeout: 1000 }),
-      dhts[3].get(key, { timeout: 1000 }),
-      dhts[4].get(key, { timeout: 1000 }),
-      dhts[5].get(key, { timeout: 1000 }),
-      dhts[6].get(key, { timeout: 1000 }),
-      dhts[7].get(key, { timeout: 1000 })
+      dhts[0].get(key),
+      dhts[2].get(key),
+      dhts[3].get(key),
+      dhts[4].get(key),
+      dhts[5].get(key),
+      dhts[6].get(key),
+      dhts[7].get(key)
     ])
 
     expect(res[0]).to.eql(uint8ArrayFromString('world'))
@@ -94,10 +94,10 @@ describe('multiple nodes', () => {
     await dhts[4].put(key, uint8ArrayFromString('world4'))
 
     const res = await Promise.all([
-      dhts[4].get(key, { timeout: 2000 }),
-      dhts[5].get(key, { timeout: 2000 }),
-      dhts[6].get(key, { timeout: 2000 }),
-      dhts[7].get(key, { timeout: 2000 })
+      dhts[4].get(key),
+      dhts[5].get(key),
+      dhts[6].get(key),
+      dhts[7].get(key)
     ])
 
     expect(res[0]).to.eql(result)

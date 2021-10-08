@@ -20,7 +20,7 @@ const log = utils.logger('libp2p:kad-dht:content-fetching')
  * @typedef {import('peer-id')} PeerId
  *
  * @typedef {object} ContentFetchValue
- * @property {PeerId} peer
+ * @property {PeerId} from
  * @property {Uint8Array} value
  */
 
@@ -80,12 +80,13 @@ class ContentFetching {
    * @param {AbortSignal} signal
    */
   async sendCorrectionRecord (key, vals, best, signal) {
+    log('sendCorrection for %b', key)
     const fixupRec = await utils.createPutRecord(key, best)
 
     return Promise.all(
       vals.map(async (v) => {
         // no need to do anything
-        if (uint8ArrayEquals(v.val, best)) {
+        if (uint8ArrayEquals(v.value, best)) {
           return
         }
 
@@ -122,14 +123,14 @@ class ContentFetching {
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
    */
   async put (key, value, signal, options = {}) {
-    log('PutValue %b', key)
+    log('put value %b', key)
 
     // create record in the dht format
     const record = await utils.createPutRecord(key, value)
 
     // store the record locally
     const dsKey = utils.bufferToKey(key)
-    log(`Storing record for key ${dsKey}`)
+    log(`storing record for key ${dsKey}`)
     await this._datastore.put(dsKey, record)
 
     // put record to the closest peers
@@ -143,7 +144,7 @@ class ContentFetching {
           await this._peerRouting.putValueToPeer(key, record, peer, signal)
           counterSuccess += 1
         } catch (/** @type {any} */ err) {
-          log.error('Failed to put to peer (%b): %s', peer.id, err)
+          log.error('failed to put to peer (%b): %s', peer.id, err)
         }
       }
     })))
@@ -159,17 +160,16 @@ class ContentFetching {
   }
 
   /**
-   * Get the value to the given key.
-   * Times out after 1 minute by default.
+   * Get the value to the given key
    *
    * @param {Uint8Array} key
    * @param {AbortSignal} signal
    */
   async get (key, signal) {
-    log('_get %b', key)
+    log('get %b', key)
 
     const vals = await all(this.getMany(key, GET_MANY_RECORD_COUNT, signal))
-    const recs = vals.map((v) => v.val)
+    const recs = vals.map((v) => v.value)
     let i = 0
 
     try {
@@ -201,9 +201,9 @@ class ContentFetching {
    * @param {AbortSignal} signal
    */
   async * getMany (key, nvals, signal) {
-    log('getMany %b (%s)', key, nvals)
+    log('getMany want %s values for %b', nvals, key)
 
-    const vals = []
+    let yielded = 0
     let localRec
 
     try {
@@ -215,42 +215,42 @@ class ContentFetching {
     }
 
     if (localRec) {
-      vals.push({
-        val: localRec.value,
-        from: this._peerId
-      })
-    }
+      yielded++
 
-    if (vals.length >= nvals) {
-      yield * vals
-      return
+      yield {
+        value: localRec.value,
+        from: this._peerId
+      }
+
+      if (nvals === 1) {
+        return
+      }
     }
 
     const id = await utils.convertBuffer(key)
     const rtp = this._routingTable.closestPeers(id)
 
-    log('peers in rt: %d', rtp.length)
+    log('found %d peers in routing table', rtp.length)
 
     if (rtp.length === 0) {
       const errMsg = 'Failed to lookup key! No peers from routing table!'
-
       log.error(errMsg)
-      if (vals.length === 0) {
+
+      if (yielded === 0) {
         throw errcode(new Error(errMsg), 'ERR_NO_PEERS_IN_ROUTING_TABLE')
       }
 
-      yield * vals
       return
     }
 
-    const valsLength = vals.length
+    const valsLength = yielded
     let queryResults = 0
 
     /**
      * @type {import('../types').QueryFunc<ContentFetchValue>}
      */
     const getValueQuery = async ({ peer, signal, numPaths }) => {
-      const pathSize = utils.pathSize(nvals - valsLength, numPaths)
+      const resultsWanted = utils.pathSize(nvals - valsLength, numPaths)
 
       let rec, peers, lookupErr
       try {
@@ -286,11 +286,11 @@ class ContentFetching {
       queryResults++
 
       // got enough values, all done
-      if (queryResults >= pathSize) {
+      if (queryResults >= resultsWanted) {
         return {
           done: true,
           value: {
-            peer,
+            from: peer,
             value: rec.value
           }
         }
@@ -300,25 +300,19 @@ class ContentFetching {
       return {
         closerPeers: (peers || []).map(peerData => peerData.id),
         value: {
-          peer,
+          from: peer,
           value: rec.value
         }
       }
     }
 
     // we have peers, lets send the actual query to them
-    let yielded = false
-
     try {
       let err
 
       for await (const res of this._queryManager.run(key, rtp, getValueQuery, signal)) {
-        if (res.done && res.value) {
-          yield {
-            val: res.value.value,
-            from: res.value.peer
-          }
-          yielded = true
+        if (res.value) {
+          yield res.value
         }
 
         if (res.err) {

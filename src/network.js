@@ -6,8 +6,7 @@ const lp = require('it-length-prefixed')
 const drain = require('it-drain')
 const first = require('it-first')
 const MulticodecTopology = require('libp2p-interfaces/src/topology/multicodec-topology')
-const { MULTICODEC } = require('./constants')
-const { Message } = require('./message')
+const { Message, MESSAGE_TYPE_LOOKUP } = require('./message')
 const utils = require('./utils')
 
 const log = utils.logger('libp2p:kad-dht:network')
@@ -28,14 +27,16 @@ class Network {
    * @param {import('./types').Registrar} registrar
    * @param {import('./routing-table').RoutingTable} routingTable
    * @param {import('./types').AddressBook} addressBook
+   * @param {string} protocol
    */
-  constructor (dialer, registrar, routingTable, addressBook) {
+  constructor (dialer, registrar, routingTable, addressBook, protocol) {
     this._onPeerConnected = this._onPeerConnected.bind(this)
     this._running = false
     this._dialer = dialer
     this._registrar = registrar
     this._addressBook = addressBook
     this._routingTable = routingTable
+    this._protocol = protocol
   }
 
   /**
@@ -50,7 +51,7 @@ class Network {
 
     // register protocol with topology
     const topology = new MulticodecTopology({
-      multicodecs: [MULTICODEC],
+      multicodecs: [this._protocol],
       handlers: {
         onConnect: this._onPeerConnected,
         onDisconnect: () => {}
@@ -86,12 +87,15 @@ class Network {
    * @param {PeerId} peerId - remote peer id
    */
   _onPeerConnected (peerId) {
-    this._routingTable.add(peerId)
-      .then(() => {
-        log(`added ${peerId} to the routing table`)
+    this._routingTable.find(peerId)
+      .then(async res => {
+        if (!res) {
+          await this._routingTable.add(peerId)
+          log('added %p to the routing table', peerId)
+        }
       })
       .catch(err => {
-        log(`error adding ${peerId} to the routing table:`, err)
+        log('error adding %p to the routing table:', peerId, err)
       })
   }
 
@@ -103,9 +107,9 @@ class Network {
    * @param {AbortSignal} signal
    */
   async sendRequest (to, msg, signal) {
-    log(`sending request to: ${to}`)
+    log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
 
-    const { stream } = await this._dialer.dialProtocol(to, MULTICODEC, { signal })
+    const { stream } = await this._dialer.dialProtocol(to, this._protocol, { signal })
 
     return this._writeReadMessage(stream, msg.serialize(), signal)
   }
@@ -118,9 +122,9 @@ class Network {
    * @param {AbortSignal} signal
    */
   async sendMessage (to, msg, signal) {
-    log(`sending message to: ${to}`)
+    log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
 
-    const { stream } = await this._dialer.dialProtocol(to, MULTICODEC, { signal })
+    const { stream } = await this._dialer.dialProtocol(to, this._protocol, { signal })
 
     return this._writeMessage(stream, msg.serialize(), signal)
   }

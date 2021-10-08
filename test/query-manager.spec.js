@@ -4,8 +4,8 @@
 const { expect } = require('aegir/utils/chai')
 const defer = require('p-defer')
 const delay = require('delay')
-const Query = require('../src/query')
-const kadUtils = require('../src/utils')
+// const Query = require('../src/query')
+// const kadUtils = require('../src/utils')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const { QueryManager } = require('../src/query-manager')
 const createPeerId = require('./utils/create-peer-id')
@@ -825,14 +825,11 @@ describe('QueryManager', () => {
 
     manager.stop()
   })
-
+/*
   it.skip('stop after finding k closest peers', async () => {
-    // mock this so we can dial non existing peers
-    dht.dialer.dial = () => {}
-
     // Sort peers by distance from dht.peerId
     const peerZeroDhtKey = await kadUtils.convertPeerId(dht.peerId)
-    const sorted = await kadUtils.sortClosestPeers(peerIds, peerZeroDhtKey)
+    const sorted = await sortClosestPeers(peerIds, peerZeroDhtKey)
 
     // Local node has nodes 10, 16 and 18 in k-bucket
     const initial = [sorted[10], sorted[16], sorted[18]]
@@ -909,4 +906,5 @@ describe('QueryManager', () => {
     expect(res.finalSet.has(sorted[5])).to.eql(true)
     expect(res.finalSet.has(sorted[38])).to.eql(false)
   })
+*/
 })

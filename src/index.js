@@ -11,7 +11,6 @@ const { RoutingTable } = require('./routing-table')
 const { RoutingTableRefresh } = require('./routing-table/refresh')
 const utils = require('./utils')
 const {
-  MULTICODEC,
   K,
   PROTOCOL_DHT
 } = require('./constants')
@@ -133,7 +132,8 @@ class KadDHT extends EventEmitter {
       libp2p,
       libp2p.registrar,
       this._routingTable,
-      libp2p.peerStore.addressBook
+      libp2p.peerStore.addressBook,
+      this._protocol
     )
 
     /**
@@ -185,7 +185,7 @@ class KadDHT extends EventEmitter {
       libp2p,
       this._peerRouting,
       datastore,
-      validators
+      this._validators
     )
   }
 
@@ -200,6 +200,7 @@ class KadDHT extends EventEmitter {
    * Whether we are in client or server mode
    */
   enableServerMode () {
+    this._clientMode = false
     this._libp2p.handle(this._protocol, this._rpc.onIncomingStream.bind(this._rpc))
   }
 
@@ -207,6 +208,7 @@ class KadDHT extends EventEmitter {
    * Whether we are in client or server mode
    */
   enableClientMode () {
+    this._clientMode = true
     this._libp2p.unhandle(this._protocol)
   }
 
@@ -217,7 +219,7 @@ class KadDHT extends EventEmitter {
     this._running = true
 
     // Only respond to queries when not in client mode
-    if (this._clientMode === false) {
+    if (!this._clientMode) {
       // Incoming streams
       this.enableServerMode()
     }
@@ -351,7 +353,7 @@ class KadDHT extends EventEmitter {
    * Announce to the network that we can provide given key's value.
    *
    * @param {CID} key
-   * @param {object} [options] - findProviders options
+   * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    */
   async provide (key, options = {}) { // eslint-disable-line require-await
@@ -465,7 +467,7 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async getPublicKey (peer, options = {}) {
-    log('getPublicKey %s', peer.toB58String())
+    log('getPublicKey %p', peer)
 
     // local check
     const peerData = this._libp2p.peerStore.get(peer)
@@ -506,37 +508,9 @@ class KadDHT extends EventEmitter {
 
     return pk
   }
-
-  // ----------- Discovery -----------
-
-  /**
-   * @param {PeerId} peerId
-   * @param {Multiaddr[]} multiaddrs
-   */
-  _peerDiscovered (peerId, multiaddrs) {
-    this.emit('peer', {
-      id: peerId,
-      multiaddrs
-    })
-  }
-
-  // ----------- Internals -----------
-
-  /**
-   * Verify a record without searching the DHT.
-   *
-   * @param {import('libp2p-record').Record} record
-   */
-  async _verifyRecordLocally (record) {
-    log('verifyRecordLocally')
-
-    await libp2pRecord.validator.verifyRecord(this._validators, record)
-  }
 }
 
 module.exports = {
-  multicodec: MULTICODEC,
-
   /**
    * @param {*} opts
    * @returns {DHT}

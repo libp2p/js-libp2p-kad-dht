@@ -50,16 +50,16 @@ class AddProviderHandler {
       msg.providerPeers.map(async (pi) => {
         // Ignore providers not from the originator
         if (!pi.id.equals(peerId)) {
-          log('invalid provider peer %s from %s', pi.id.toB58String(), peerId.toB58String())
+          log('invalid provider peer %p from %p', pi.id, peerId)
           return
         }
 
         if (pi.multiaddrs.length < 1) {
-          log('no valid addresses for provider %s. Ignore', peerId.toB58String())
+          log('no valid addresses for provider %p. Ignore', peerId)
           return
         }
 
-        log('received provider %s for %s (addrs %s)', peerId.toB58String(), cid.toString(), pi.multiaddrs.map((m) => m.toString()))
+        log('received provider %p for %s (addrs %s)', peerId, cid, pi.multiaddrs.map((m) => m.toString()))
 
         if (!this._peerId.equals(pi.id)) {
           // Add known address to peer store

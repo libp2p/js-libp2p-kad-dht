@@ -1,12 +1,16 @@
 'use strict'
 
-const T = require('../../message').TYPES
+const { Message } = require('../../message')
 const { AddProviderHandler } = require('./add-provider')
 const { FindNodeHandler } = require('./find-node')
 const { GetProvidersHandler } = require('./get-providers')
 const { GetValueHandler } = require('./get-value')
 const { PingHandler } = require('./ping')
 const { PutValueHandler } = require('./put-value')
+
+/**
+ * @typedef {import('../../types').DHTMessageHandler} DHTMessageHandler
+ */
 
 /**
  * @param {import('peer-id')} peerId
@@ -18,13 +22,14 @@ const { PutValueHandler } = require('./put-value')
  * @param {import('libp2p-interfaces/src/types').DhtValidators} validators
  */
 module.exports = (peerId, providers, peerStore, addressable, peerRouting, datastore, validators) => {
+  /** @type {Record<number, DHTMessageHandler>} */
   const handlers = {
-    [T.GET_VALUE]: new GetValueHandler(peerId, peerStore, peerRouting, datastore),
-    [T.PUT_VALUE]: new PutValueHandler(validators, datastore),
-    [T.FIND_NODE]: new FindNodeHandler(peerId, addressable, peerRouting),
-    [T.ADD_PROVIDER]: new AddProviderHandler(peerId, providers, peerStore),
-    [T.GET_PROVIDERS]: new GetProvidersHandler(peerId, peerRouting, providers, datastore, peerStore),
-    [T.PING]: new PingHandler()
+    [Message.TYPES.GET_VALUE]: new GetValueHandler(peerId, peerStore, peerRouting, datastore),
+    [Message.TYPES.PUT_VALUE]: new PutValueHandler(validators, datastore),
+    [Message.TYPES.FIND_NODE]: new FindNodeHandler(peerId, addressable, peerRouting),
+    [Message.TYPES.ADD_PROVIDER]: new AddProviderHandler(peerId, providers, peerStore),
+    [Message.TYPES.GET_PROVIDERS]: new GetProvidersHandler(peerId, peerRouting, providers, datastore, peerStore),
+    [Message.TYPES.PING]: new PingHandler()
   }
 
   /**

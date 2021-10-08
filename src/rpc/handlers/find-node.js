@@ -31,7 +31,7 @@ class FindNodeHandler {
    * @param {Message} msg
    */
   async handle (peerId, msg) {
-    log('start')
+    log('incoming request from %p for peers closer to %b', peerId, msg.key)
 
     let closer
     if (this._peerId.equals(msg.key)) {
@@ -48,7 +48,7 @@ class FindNodeHandler {
     if (closer.length > 0) {
       response.closerPeers = closer
     } else {
-      log('handle FindNode %s: could not find anything', peerId.toB58String())
+      log('could not find any peers closer to %p', peerId)
     }
 
     return response

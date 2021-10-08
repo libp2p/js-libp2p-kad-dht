@@ -1,8 +1,6 @@
 'use strict'
 
 const errcode = require('err-code')
-const c = require('../constants')
-const LimitedPeerList = require('../peer-list/limited-peer-list')
 const { Message } = require('../message')
 const drain = require('it-drain')
 const parallel = require('it-parallel')
@@ -38,18 +36,6 @@ class ContentRouting {
   }
 
   /**
-   * Check for providers from a single node.
-   *
-   * @param {PeerId} peer
-   * @param {CID} key
-   * @param {AbortSignal} signal
-   */
-  async _findProvidersSingle (peer, key, signal) { // eslint-disable-line require-await
-    const msg = new Message(Message.TYPES.GET_PROVIDERS, key.bytes, 0)
-    return this._network.sendRequest(peer, msg, signal)
-  }
-
-  /**
    * Announce to the network that we can provide the value for a given key and
    * are contactable on the given multiaddrs
    *
@@ -77,7 +63,8 @@ class ContentRouting {
      */
     const mapPeer = (peer) => {
       return async () => {
-        log(`putProvider ${key} to ${peer.toB58String()}`)
+        log('putProvider %s to %p', key, peer)
+
         try {
           await this._network.sendMessage(peer, msg, signal)
         } catch (/** @type {any} */ err) {
@@ -108,67 +95,63 @@ class ContentRouting {
    * @param {number} [options.maxNumProviders=5] - maximum number of providers to find
    */
   async * findProviders (key, signal, options = { maxNumProviders: 5 }) {
-    const n = options.maxNumProviders || c.K
+    const toFind = options.maxNumProviders || this._routingTable._kBucketSize
 
     log(`findProviders ${key}`)
 
-    const out = new LimitedPeerList(n)
     const provs = await this._providers.getProviders(key)
-    provs.forEach(id => out.push(id))
 
-    // yield values
-    yield * out.toArray()
+    // yield values, also slice because maybe we got lucky and already have too many?
+    yield * provs.slice(0, toFind)
 
     // All done
-    if (out.length >= n) {
+    if (provs.length >= toFind) {
       return
     }
-
-    // need more, query the network
-    /** @type {LimitedPeerList[]} */
-    const paths = []
 
     /**
      * The query function to use on this particular disjoint path
      *
      * @type {import('../types').QueryFunc<PeerId[]>}
      */
-    const findProvidersQuery = async ({ peer, signal, pathIndex, numPaths }) => {
-      if (!paths[pathIndex]) {
-        // set up the provider list for this path
-        const pathSize = utils.pathSize(n - out.length, numPaths)
-        paths[pathIndex] = new LimitedPeerList(pathSize)
-      }
-
-      const msg = await this._findProvidersSingle(peer, key, signal)
-      const provs = msg.providerPeers
-      log(`Found ${provs.length} provider entries for ${key}`)
-
-      provs.forEach((prov) => {
-        paths[pathIndex].push(prov.id)
-      })
-
-      // hooray we have all that we want
-      if (paths[pathIndex].length >= numPaths) {
+    const findProvidersQuery = async ({ peer, signal }) => {
+      let response
+      try {
+        const request = new Message(Message.TYPES.GET_PROVIDERS, key.bytes, 0)
+        response = await this._network.sendRequest(peer, request, signal)
+      } catch (/** @type {any} */ err) {
         return {
-          done: true,
-          value: provs.map(peerData => peerData.id)
+          done: false,
+          closerPeers: [],
+          err: err
         }
       }
 
-      // it looks like we want some more
+      log(`Found ${response.providerPeers.length} provider entries for ${key} and ${response.closerPeers.length} closer peers`)
+
       return {
-        closerPeers: msg.closerPeers.map(peerData => peerData.id),
-        value: provs.map(peerData => peerData.id)
+        closerPeers: response.closerPeers.map(peerData => peerData.id),
+        value: response.providerPeers.map(peerData => peerData.id)
       }
     }
 
-    const peers = this._routingTable.closestPeers(key.bytes)
+    const providers = new Set(provs.map(p => p.toB58String()))
 
     // TODO: this finds peers by CID bytes, should it be by multihash bytes instead?
-    for await (const res of this._queryManager.run(key.bytes, peers, findProvidersQuery, signal)) {
-      if (res.done && res.value) {
-        yield * res.value
+    for await (const res of this._queryManager.run(key.bytes, this._routingTable.closestPeers(key.bytes), findProvidersQuery, signal)) {
+      if (res.value) {
+        for (const peer of res.value) {
+          if (providers.has(peer.toB58String())) {
+            continue
+          }
+
+          providers.add(peer.toB58String())
+          yield peer
+
+          if (providers.size === toFind) {
+            return
+          }
+        }
       }
     }
   }

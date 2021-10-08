@@ -122,6 +122,11 @@ exports.logger = (name) => {
     return base58btc.baseEncode(v)
   }
 
+  // Add a formatter for stringifying peer ids
+  debug.formatters.p = (p) => {
+    return p.toB58String()
+  }
+
   const logger = Object.assign(debug(name), {
     error: debug(`${name}:error`)
   })

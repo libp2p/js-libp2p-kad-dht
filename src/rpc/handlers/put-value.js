@@ -32,7 +32,7 @@ class PutValueHandler {
    */
   async handle (peerId, msg) {
     const key = msg.key
-    log('key: %b', key)
+    log('asked to store value for key %b', key)
 
     const record = msg.record
 

@@ -23,7 +23,7 @@ export interface QueryTerminationResult<T> {
 export type QueryResult<T> = QueryContinuationResult<T> | QueryTerminationResult<T>
 
 export interface DHTValue {
-  val: Uint8Array
+  value: Uint8Array
   from: PeerId
 }
 

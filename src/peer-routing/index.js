@@ -42,7 +42,7 @@ class PeerRouting {
    * @param {PeerId} peer
    */
   async findPeerLocal (peer) {
-    log(`findPeerLocal ${peer.toB58String()}`)
+    log('findPeerLocal %p', peer)
     const p = await this._routingTable.find(peer)
     const peerData = p && this._peerStore.get(p)
 
@@ -74,7 +74,7 @@ class PeerRouting {
    * @param {AbortSignal} signal
    */
   async closerPeersSingle (key, peer, signal) {
-    log(`closerPeersSingle ${uint8ArrayToString(key, 'base32')} from ${peer.toB58String()}`)
+    log('closerPeersSingle %s from %p', uint8ArrayToString(key, 'base32'), peer)
     const msg = await this.findPeerSingle(peer, new PeerId(key), signal)
 
     return msg.closerPeers
@@ -118,7 +118,7 @@ class PeerRouting {
    * @param {AbortSignal} signal
    */
   async findPeerSingle (peer, target, signal) { // eslint-disable-line require-await
-    log('findPeerSingle %s', peer.toB58String())
+    log('findPeerSingle asking %p if it knows %p', peer, target)
     const msg = new Message(Message.TYPES.FIND_NODE, target.id, 0)
 
     return this._network.sendRequest(peer, msg, signal)
@@ -132,7 +132,7 @@ class PeerRouting {
    * @returns {Promise<{ id: PeerId, multiaddrs: Multiaddr[] } | undefined>}
    */
   async findPeer (id, signal) {
-    log('findPeer %s', id.toB58String())
+    log('findPeer %p', id)
 
     // Try to find locally
     const pi = await this.findPeerLocal(id)
@@ -213,25 +213,35 @@ class PeerRouting {
     const tablePeers = this._routingTable.closestPeers(id)
 
     /**
-     * There is no distinction between the disjoint paths,
-     * so there are no per-path variables in dht scope.
-     * Just return the actual query function.
-     *
      * @type {import('../types').QueryFunc<PeerId[]>}
      */
     const getCloserPeersQuery = async ({ peer, signal }) => {
       const closer = await this.closerPeersSingle(key, peer, signal)
 
+      if (shallow) {
+        return {
+          value: [peer, ...closer],
+          done: true
+        }
+      }
+
       return {
         closerPeers: closer,
-        value: closer,
-        done: (shallow || !closer.length) ? true : undefined
+        value: closer
       }
     }
 
+    const peers = new Set()
+
     for await (const result of this._queryManager.run(key, tablePeers, getCloserPeersQuery, signal)) {
       if (result.value) {
-        yield * result.value
+        for (const peer of result.value) {
+          if (!peers.has(peer.toB58String())) {
+            peers.add(peer.toB58String())
+            log('peer %p was closer to %b', peer, key)
+            yield peer
+          }
+        }
       }
     }
   }
@@ -310,10 +320,12 @@ class PeerRouting {
    * @param {PeerId} closerThan
    */
   async getCloserPeersOffline (key, closerThan) {
-    log('betterPeersToQuery')
-    const ids = this._routingTable.closestPeers(await utils.convertBuffer(key))
+    const id = await utils.convertBuffer(key)
+    const ids = this._routingTable.closestPeers(id)
 
-    return ids
+    log('getCloserPeersOffline found %d peer(s) close to %b', ids.length, key)
+
+    const output = ids
       .map((p) => {
         const peer = this._peerStore.get(p)
 
@@ -323,6 +335,12 @@ class PeerRouting {
         }
       })
       .filter((closer) => !closer.id.equals(closerThan))
+
+    if (!output.length) {
+      log('getCloserPeersOffline none were closer than %p', closerThan)
+    }
+
+    return output
   }
 }
 

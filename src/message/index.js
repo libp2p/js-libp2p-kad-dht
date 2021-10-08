@@ -7,6 +7,7 @@ const Proto = require('./dht')
 
 const MESSAGE_TYPE = Proto.Message.MessageType
 const CONNECTION_TYPE = Proto.Message.ConnectionType
+const MESSAGE_TYPE_LOOKUP = Object.keys(MESSAGE_TYPE)
 
 /**
  * @typedef {0|1|2|3|4} ConnectionType
@@ -137,3 +138,4 @@ function fromPbPeer (peer) {
 }
 
 module.exports.Message = Message
+module.exports.MESSAGE_TYPE_LOOKUP = MESSAGE_TYPE_LOOKUP

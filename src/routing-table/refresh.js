@@ -43,10 +43,8 @@ class RoutingTableRefresh {
   }
 
   async start () {
-    this._refreshTable(true)
-      .catch(err => {
-        log.error('Could not refresh table', err)
-      })
+    log(`refreshing routing table every ${this._refreshInterval}ms`)
+    await this._refreshTable(true)
   }
 
   async stop () {
@@ -70,7 +68,7 @@ class RoutingTableRefresh {
     const refreshCpls = this._getTrackedCommonPrefixLengthsForRefresh(prefixLength)
 
     log(`max common prefix length ${prefixLength}`)
-    log(`tracked CPLs [ ${refreshCpls.map(date => `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`).join(', ')} ]`)
+    log(`tracked CPLs [ ${refreshCpls.map(date => date.toISOString()).join(', ')} ]`)
 
     /**
      * If we see a gap at a common prefix length in the Routing table, we ONLY refresh up until
@@ -124,22 +122,22 @@ class RoutingTableRefresh {
    */
   async _refreshCommonPrefixLength (cpl, lastRefresh, force) {
     if (!force && lastRefresh.getTime() > (Date.now() - this._refreshInterval)) {
-      log(`not running refresh for cpl ${cpl} as time since last refresh not above interval`)
+      log('not running refresh for cpl %s as time since last refresh not above interval', cpl)
       return
     }
 
     // gen a key for the query to refresh the cpl
     const peerId = await this._generateRandomPeerId(cpl)
 
-    log(`starting refreshing cpl ${cpl} with key ${peerId.toB58String()} (routing table size was ${this._routingTable.kb.count()})`)
+    log('starting refreshing cpl %s with key %p (routing table size was %s)', cpl, peerId, this._routingTable.kb.count())
 
     const controller = new TimeoutController(60000)
 
     try {
       const peers = await length(this._peerRouting.getClosestPeers(peerId.toBytes(), controller.signal))
 
-      log(`found ${peers} peers that were close to imaginary peer ${peerId.toB58String()}`)
-      log(`finished refreshing cpl ${cpl} with key ${peerId.toB58String()} (routing table size was ${this._routingTable.kb.count()})`)
+      log(`found ${peers} peers that were close to imaginary peer %p`, peerId)
+      log('finished refreshing cpl %s with key %p (routing table size is now %s)', cpl, peerId, this._routingTable.kb.count())
     } finally {
       controller.clear()
     }
