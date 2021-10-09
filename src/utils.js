@@ -37,7 +37,7 @@ exports.convertPeerId = async (peer) => {
  * @returns {Key}
  */
 exports.bufferToKey = (buf) => {
-  return new Key('/' + exports.encodeBase32(buf), false)
+  return new Key('/' + uint8ArrayToString(buf, 'base32'), false)
 }
 
 /**
@@ -65,25 +65,6 @@ exports.isPublicKeyKey = (key) => {
  */
 exports.fromPublicKeyKey = (key) => {
   return new PeerId(key.slice(4))
-}
-
-/**
- * Get the current time as timestamp.
- *
- * @returns {number}
- */
-exports.now = () => {
-  return Date.now()
-}
-
-/**
- * Encode a given Uint8Array into a base32 string.
- *
- * @param {Uint8Array} buf
- * @returns {string}
- */
-exports.encodeBase32 = (buf) => {
-  return uint8ArrayToString(buf, 'base32')
 }
 
 /**

@@ -15,7 +15,9 @@ describe('multiple nodes', () => {
     this.timeout(10 * 1000)
 
     tdht = new TestDHT()
-    dhts = await tdht.spawn(n)
+    dhts = await tdht.spawn(n, {
+      clientMode: false
+    })
 
     // all nodes except the last one
     const range = Array.from(Array(n - 1).keys())

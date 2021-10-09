@@ -6,6 +6,7 @@ const drain = require('it-drain')
 const parallel = require('it-parallel')
 const map = require('it-map')
 const utils = require('../utils')
+const { ALPHA } = require('../constants')
 
 const log = utils.logger('libp2p:kad-dht:content-routing')
 
@@ -75,7 +76,10 @@ class ContentRouting {
 
     // Notify closest peers
     // TODO: this uses the CID bytes, should it be multihash instead?
-    await drain(parallel(map(this._peerRouting.getClosestPeers(key.bytes, signal), mapPeer)))
+    await drain(parallel(map(this._peerRouting.getClosestPeers(key.bytes, signal), mapPeer), {
+      ordered: false,
+      concurrency: ALPHA
+    }))
 
     if (errors.length) {
       // TODO:

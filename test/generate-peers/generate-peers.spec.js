@@ -6,7 +6,8 @@ const which = require('which')
 const execa = require('execa')
 const { toString: uintArrayToString } = require('uint8arrays/to-string')
 const PeerId = require('peer-id')
-const RoutingTable = require('../../src/routing-table')
+const { RoutingTable } = require('../../src/routing-table')
+const { RoutingTableRefresh } = require('../../src/routing-table/refresh')
 const {
   convertPeerId
 } = require('../../src/utils')
@@ -34,7 +35,7 @@ describe('generate peers', function () {
     return
   }
 
-  let routingTable
+  let refresh
 
   before(async () => {
     await execa(go, ['build', 'generate-peer.go'], {
@@ -46,7 +47,8 @@ describe('generate peers', function () {
     this.timeout(20 * 1000)
     const id = await PeerId.create({ bits: 512 })
 
-    routingTable = new RoutingTable(id, 20)
+    const table = new RoutingTable(id, 20)
+    refresh = new RoutingTableRefresh(null, table)
   })
 
   const TEST_CASES = [{
@@ -72,7 +74,7 @@ describe('generate peers', function () {
       const localKadId = await convertPeerId(peerId)
 
       const goOutput = await fromGo(targetCpl, randPrefix, uintArrayToString(localKadId, 'base64pad'))
-      const jsOutput = await routingTable._makePeerId(localKadId, randPrefix, targetCpl)
+      const jsOutput = await refresh._makePeerId(localKadId, randPrefix, targetCpl)
 
       expect(goOutput).to.deep.equal(jsOutput)
     })

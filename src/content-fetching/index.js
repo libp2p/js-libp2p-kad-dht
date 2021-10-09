@@ -6,7 +6,8 @@ const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const Libp2pRecord = require('libp2p-record')
 const all = require('it-all')
 const {
-  GET_MANY_RECORD_COUNT
+  GET_MANY_RECORD_COUNT,
+  ALPHA
 } = require('../constants')
 const utils = require('../utils')
 const Record = Libp2pRecord.Record
@@ -147,7 +148,10 @@ class ContentFetching {
           log.error('failed to put to peer (%b): %s', peer.id, err)
         }
       }
-    })))
+    }), {
+      ordered: false,
+      concurrency: ALPHA
+    }))
 
     // verify if we were able to put to enough peers
     const minPeers = options.minPeers || counterAll // Ensure we have a default `minPeers`

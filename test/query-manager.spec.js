@@ -2,10 +2,7 @@
 'use strict'
 
 const { expect } = require('aegir/utils/chai')
-const defer = require('p-defer')
 const delay = require('delay')
-// const Query = require('../src/query')
-// const kadUtils = require('../src/utils')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const { QueryManager } = require('../src/query-manager')
 const createPeerId = require('./utils/create-peer-id')
@@ -26,9 +23,12 @@ describe('QueryManager', () => {
   let key
 
   before(async () => {
-    peers = await createPeerId(40)
-    ourPeerId = peers.pop()
-    key = await peers.pop().toBytes()
+    const unsortedPeers = await createPeerId(40)
+    ourPeerId = unsortedPeers.pop()
+    key = unsortedPeers.pop().toBytes()
+
+    // sort remaining peers by XOR distance to the key, low -> high
+    peers = await sortClosestPeers(unsortedPeers, await convertBuffer(key))
   })
 
   it('does not run queries before start', async () => {
@@ -74,7 +74,7 @@ describe('QueryManager', () => {
   })
 
   it('simple run - succeed finding value', async () => {
-    const manager = new QueryManager(ourPeerId, 1)
+    const manager = new QueryManager(ourPeerId, 1, 1)
     manager.start()
 
     const peersQueried = []
@@ -87,7 +87,7 @@ describe('QueryManager', () => {
       if (peersQueried.length === 1) {
         // query more peers
         return {
-          closerPeers: peers.slice(0, 6)
+          closerPeers: peers.slice(0, 5)
         }
       }
 
@@ -100,7 +100,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[7]], queryFunc, new AbortController().signal))
 
     // e.g. our starting peer plus the 5x closerPeers returned n the first iteration
     expect(results).to.have.lengthOf(6)
@@ -115,7 +115,7 @@ describe('QueryManager', () => {
   })
 
   it('simple run - fail to find value', async () => {
-    const manager = new QueryManager(ourPeerId, 1)
+    const manager = new QueryManager(ourPeerId, 1, 1)
     manager.start()
 
     const peersQueried = []
@@ -127,12 +127,12 @@ describe('QueryManager', () => {
       if (peersQueried.length === 1) {
         // query more peers
         return {
-          closerPeers: peers.slice(0, 6)
+          closerPeers: peers.slice(0, 5)
         }
       }
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[7]], queryFunc, new AbortController().signal))
 
     // e.g. our starting peer plus the 5x closerPeers returned n the first iteration
     expect(results).to.have.lengthOf(6)
@@ -275,62 +275,59 @@ describe('QueryManager', () => {
     const manager = new QueryManager(ourPeerId, 1, 1)
     manager.start()
 
-    // sort peers by XOR distance low -> high
-    const sortedPeers = await sortClosestPeers(peers.slice(0, 10), await convertBuffer(key))
-
     // 9 -> 8 -> 7 -> 6 -> 5 -> 0
     //  \-> 4 -> 3 -> 2 -> 1 -> 0     <-- should take this branch
     const topology = {
-      [sortedPeers[9]]: {
+      [peers[9]]: {
         closerPeers: [
-          sortedPeers[8],
-          sortedPeers[4]
+          peers[8],
+          peers[4]
         ]
       },
-      [sortedPeers[8]]: {
+      [peers[8]]: {
         closerPeers: [
-          sortedPeers[7]
+          peers[7]
         ]
       },
-      [sortedPeers[7]]: {
+      [peers[7]]: {
         closerPeers: [
-          sortedPeers[6]
+          peers[6]
         ]
       },
-      [sortedPeers[6]]: {
+      [peers[6]]: {
         closerPeers: [
-          sortedPeers[5]
+          peers[5]
         ]
       },
-      [sortedPeers[5]]: {
+      [peers[5]]: {
         closerPeers: [
-          sortedPeers[0]
-        ]
-      },
-
-      [sortedPeers[4]]: {
-        closerPeers: [
-          sortedPeers[3]
-        ]
-      },
-      [sortedPeers[3]]: {
-        closerPeers: [
-          sortedPeers[2]
+          peers[0]
         ]
       },
 
-      [sortedPeers[2]]: {
+      [peers[4]]: {
         closerPeers: [
-          sortedPeers[1]
+          peers[3]
         ]
       },
-      [sortedPeers[1]]: {
+      [peers[3]]: {
         closerPeers: [
-          sortedPeers[0]
+          peers[2]
         ]
       },
 
-      [sortedPeers[0]]: {
+      [peers[2]]: {
+        closerPeers: [
+          peers[1]
+        ]
+      },
+      [peers[1]]: {
+        closerPeers: [
+          peers[0]
+        ]
+      },
+
+      [peers[0]]: {
         value: 'hello world',
         done: true
       }
@@ -350,46 +347,46 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, [sortedPeers[9]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[9]], queryFunc, new AbortController().signal))
 
     expect(results).to.have.lengthOf(6)
 
     // should include start point
     expect(results).to.deep.containSubset([{
-      peer: sortedPeers[9]
+      peer: peers[9]
     }])
 
     // should not have taken this path
     expect(results).to.not.deep.containSubset([{
-      peer: sortedPeers[8]
+      peer: peers[8]
     }])
     expect(results).to.not.deep.containSubset([{
-      peer: sortedPeers[7]
+      peer: peers[7]
     }])
     expect(results).to.not.deep.containSubset([{
-      peer: sortedPeers[6]
+      peer: peers[6]
     }])
     expect(results).to.not.deep.containSubset([{
-      peer: sortedPeers[5]
+      peer: peers[5]
     }])
 
     // should have taken this path
     expect(results).to.deep.containSubset([{
-      peer: sortedPeers[4]
+      peer: peers[4]
     }])
     expect(results).to.deep.containSubset([{
-      peer: sortedPeers[3]
+      peer: peers[3]
     }])
     expect(results).to.deep.containSubset([{
-      peer: sortedPeers[2]
+      peer: peers[2]
     }])
     expect(results).to.deep.containSubset([{
-      peer: sortedPeers[1]
+      peer: peers[1]
     }])
 
     // should have included result
     expect(results).to.deep.containSubset([{
-      peer: sortedPeers[0],
+      peer: peers[0],
       value: 'hello world'
     }])
 
@@ -397,7 +394,7 @@ describe('QueryManager', () => {
   })
 
   it('only closerPeers', async () => {
-    const manager = new QueryManager(ourPeerId, 1)
+    const manager = new QueryManager(ourPeerId, 1, 1)
     manager.start()
 
     /** @type {import('../src/types').QueryFunc<Uint8Array>} */
@@ -407,7 +404,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[3]], queryFunc, new AbortController().signal))
 
     expect(results).to.have.lengthOf(2)
     expect(results).to.have.nested.deep.property('[0].closerPeers[0]', peers[2])
@@ -420,42 +417,62 @@ describe('QueryManager', () => {
     const manager = new QueryManager(ourPeerId, 3)
     manager.start()
 
-    //  0 -> 7
-    //  1 -> 3 -> 4
-    //       5 -> 6
-    //  2 -> 8 -> 9
+    //  9 -> 2
+    //  8 -> 6 -> 4
+    //       5 -> 3
+    //  7 -> 1 -> 0
     const topology = {
-      [peers[0]]: [
-        peers[7]
-      ],
-      [peers[1]]: [
-        peers[3],
-        peers[5]
-      ],
-      [peers[3]]: [
-        peers[4]
-      ],
-      [peers[5]]: [
-        peers[6]
-      ],
-      [peers[2]]: [
-        peers[8]
-      ],
-      [peers[8]]: [
-        peers[9]
-      ]
+      [peers[0]]: {
+        closerPeers: []
+      },
+      [peers[1]]: {
+        closerPeers: [
+          peers[0]
+        ]
+      },
+      [peers[2]]: {
+        closerPeers: []
+      },
+      [peers[3]]: {
+        closerPeers: []
+      },
+      [peers[4]]: {
+        closerPeers: []
+      },
+      [peers[5]]: {
+        closerPeers: [
+          peers[3]
+        ]
+      },
+      [peers[6]]: {
+        closerPeers: [
+          peers[4],
+          peers[5]
+        ]
+      },
+      [peers[7]]: {
+        closerPeers: [
+          peers[1]
+        ]
+      },
+      [peers[8]]: {
+        closerPeers: [
+          peers[6]
+        ]
+      },
+      [peers[9]]: {
+        closerPeers: [
+          peers[2]
+        ]
+      }
     }
 
     /** @type {import('../src/types').QueryFunc<Uint8Array>} */
     const queryFunc = async ({ peer }) => { // eslint-disable-line require-await
-      const closer = topology[peer]
-
-      return {
-        closerPeers: closer || []
-      }
+      return topology[peer]
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[9], peers[8], peers[7]], queryFunc, new AbortController().signal))
 
     // Should visit all peers
     expect(results).to.have.lengthOf(10)
@@ -467,60 +484,70 @@ describe('QueryManager', () => {
     const manager = new QueryManager(ourPeerId, 1, 1)
     manager.start()
 
-    // 0 -> 1 -> 2 -> 3
+    // 3 -> 2 -> 1 -> 0
     const topology = {
+      // Should not reach here because previous query returns done: true
       [peers[0]]: {
-        closer: [peers[1]]
+        value: false
       },
       // Should stop here because done is true
       [peers[1]]: {
-        closer: [peers[3]],
+        closerPeers: [
+          peers[0]
+        ],
         done: true,
         value: true
       },
-      // Should not reach here because previous query returns done: true
+      [peers[2]]: {
+        closerPeers: [
+          peers[1]
+        ]
+      },
       [peers[3]]: {
-        closer: [peers[4]]
+        closerPeers: [
+          peers[2]
+        ]
       }
     }
 
     /** @type {import('../src/types').QueryFunc<boolean>} */
     const queryFunc = async ({ peer }) => { // eslint-disable-line require-await
-      const res = topology[peer] || {}
-
-      return {
-        closerPeers: res.closer || [],
-        value: res.value,
-        done: res.done
-      }
+      return topology[peer]
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[3]], queryFunc, new AbortController().signal))
 
-    // Should not visit peer 3
-    expect(results).to.have.lengthOf(2)
-    expect(results).to.have.nested.property('[1].value', true)
+    // Should not visit peer 0
+    expect(results).to.have.lengthOf(3)
+    expect(results).to.have.nested.property('[2].value', true)
 
     manager.stop()
   })
 
-  it('all queries stop after shutdown', async () => {
-    const deferShutdown = defer()
-
-    const manager = new QueryManager(ourPeerId, 1)
+  it('queries stop after shutdown', async () => {
+    const manager = new QueryManager(ourPeerId, 1, 1)
     manager.start()
 
-    // 1 -> 2 -> 3 -> 4
+    // 3 -> 2 -> 1 -> 0
     const topology = {
       [peers[0]]: {
-        closer: [peers[1]]
-      },
-      [peers[1]]: {
-        closer: [peers[2]]
+        closerPeers: []
       },
       // Should not reach here because query gets shut down
+      [peers[1]]: {
+        closerPeers: [
+          peers[0]
+        ]
+      },
       [peers[2]]: {
-        closer: [peers[3]]
+        closerPeers: [
+          peers[1]
+        ]
+      },
+      [peers[3]]: {
+        closerPeers: [
+          peers[2]
+        ]
       }
     }
 
@@ -531,21 +558,17 @@ describe('QueryManager', () => {
       visited.push(peer)
 
       const getResult = async () => {
-        const res = topology[peer] || {}
+        const res = topology[peer]
         // this delay is necessary so `dhtA.stop` has time to stop the
         // requests before they all complete
         await delay(100)
 
-        return {
-          closerPeers: res.closer || []
-        }
+        return res
       }
 
-      // Shut down after visiting peers[1]
-      if (peer === peers[1]) {
+      // Shut down after visiting peers[2]
+      if (peer === peers[2]) {
         manager.stop()
-
-        setTimeout(checkExpectations, 100)
 
         return getResult()
       }
@@ -553,18 +576,13 @@ describe('QueryManager', () => {
       return getResult()
     }
 
-    await drain(manager.run(key, peers, queryFunc, new AbortController().signal))
+    // shutdown will cause the query to stop early but without an error
+    await drain(manager.run(key, [peers[3]], queryFunc, new AbortController().signal))
 
-    function checkExpectations () {
-      // Should only visit peers up to the point where we shut down
-      expect(visited).to.have.lengthOf(2)
-      expect(visited).to.deep.include(peers[0])
-      expect(visited).to.deep.include(peers[1])
-
-      deferShutdown.resolve()
-    }
-
-    return deferShutdown.promise
+    // Should only visit peers up to the point where we shut down
+    expect(visited).to.have.lengthOf(2)
+    expect(visited).to.deep.include(peers[3])
+    expect(visited).to.deep.include(peers[2])
   })
 
   it('disjoint path values', async () => {
@@ -573,30 +591,32 @@ describe('QueryManager', () => {
 
     const values = ['v0', 'v1'].map((str) => uint8ArrayFromString(str))
 
-    // 0 -> 2 -> 3 (v0)
-    // 1 -> 4 (v1)
+    // 2 -> 1 -> 0 (v0)
+    // 4 -> 3 (v1)
     const topology = {
-      // Top level node
       [peers[0]]: {
-        closerPeers: [peers[2]]
-      },
-      [peers[2]]: {
-        closerPeers: [peers[3]]
-      },
-      // v0
-      [peers[3]]: {
         value: values[0],
         done: true
       },
-
       // Top level node
       [peers[1]]: {
-        closerPeers: [peers[4]]
+        closerPeers: [
+          peers[0]
+        ]
       },
-      // v1
-      [peers[4]]: {
+      [peers[2]]: {
+        closerPeers: [
+          peers[1]
+        ]
+      },
+      [peers[3]]: {
         value: values[1],
         done: true
+      },
+      [peers[4]]: {
+        closerPeers: [
+          peers[3]
+        ]
       }
     }
 
@@ -605,7 +625,7 @@ describe('QueryManager', () => {
       return topology[peer]
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[2], peers[4]], queryFunc, new AbortController().signal))
 
     // visited all the nodes
     expect(results).to.have.lengthOf(5)
@@ -627,43 +647,43 @@ describe('QueryManager', () => {
     const manager = new QueryManager(ourPeerId, 2)
     manager.start()
 
-    const values = ['v0', 'v1']
-
-    // 0 -> 2 (delay) -> 3
-    // 1 -> 4 [query complete]
+    // 2 -> 1 (delay) -> 0
+    // 4 -> 3 [query complete]
     const topology = {
-      // Top level node
+      // Query has stopped by the time we reach here, should be ignored
       [peers[0]]: {
-        closerPeers: [peers[2]]
+        value: false
       },
       // This query has a delay which means it only returns after the other
       // path has already indicated the query is complete, so its result
       // should be ignored
-      [peers[2]]: {
+      [peers[1]]: {
         delay: 100,
         done: true,
-        closerPeers: [peers[3]]
+        closerPeers: [
+          peers[0]
+        ]
       },
-      // Query has stopped by the time we reach here, should be ignored
-      [peers[3]]: {
-        value: values[0],
-        done: true
-      },
-
-      // Top level node
-      [peers[1]]: {
-        closerPeers: [peers[4]]
+      [peers[2]]: {
+        closerPeers: [
+          peers[1]
+        ]
       },
       // This peer indicates that the query is complete
-      [peers[4]]: {
-        value: values[1],
+      [peers[3]]: {
+        value: true,
         done: true
+      },
+      [peers[4]]: {
+        closerPeers: [
+          peers[3]
+        ]
       }
     }
 
     const visited = []
 
-    /** @type {import('../src/types').QueryFunc<string>} */
+    /** @type {import('../src/types').QueryFunc<boolean>} */
     const queryFunc = async ({ peer }) => {
       visited.push(peer)
 
@@ -676,15 +696,15 @@ describe('QueryManager', () => {
       return res
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[2], peers[4]], queryFunc, new AbortController().signal))
 
     expect(results).to.not.deep.containSubset([{
       done: true,
-      value: values[0]
+      value: false
     }])
     expect(results).to.deep.containSubset([{
       done: true,
-      value: values[1]
+      value: true
     }])
 
     manager.stop()
@@ -694,47 +714,47 @@ describe('QueryManager', () => {
     const manager = new QueryManager(ourPeerId, 2)
     manager.start()
 
-    const values = ['v0', 'v1']
-
-    // 0 -> 2 (delay) -> 3 [pathComplete]
-    // 1 -> 4 [error] -> 5
+    // 2 -> 1 (delay) -> 0 [pathComplete]
+    // 5 -> 4 [error] -> 3
     const topology = {
-      // Top level node
       [peers[0]]: {
-        closerPeers: [peers[2]]
+        done: true,
+        value: true
       },
       // This query has a delay which means it only returns after the other
       // path has already returned an error
-      [peers[2]]: {
-        delay: 100,
-        closerPeers: [peers[3]]
-      },
-      // Success peer, should get this value back at the end
-      [peers[3]]: {
-        value: values[0],
-        done: true
-      },
-
-      // Top level node
       [peers[1]]: {
-        closerPeers: [peers[4]]
+        delay: 100,
+        closerPeers: [
+          peers[0]
+        ]
       },
-      // Return an error at this point
+      [peers[2]]: {
+        closerPeers: [
+          peers[1]
+        ]
+      },
+      [peers[3]]: {
+        value: false
+      },
+      // Return an error at this point, also done
       [peers[4]]: {
-        closerPeers: [peers[5]],
+        closerPeers: [
+          peers[3]
+        ],
         err: new Error('Nooo!'),
         done: true
       },
-      // Should never reach here
       [peers[5]]: {
-        value: values[1],
-        done: true
+        closerPeers: [
+          peers[4]
+        ]
       }
     }
 
     const visited = []
 
-    /** @type {import('../src/types').QueryFunc<string>} */
+    /** @type {import('../src/types').QueryFunc<boolean>} */
     const queryFunc = async ({ peer }) => {
       visited.push(peer)
 
@@ -747,15 +767,13 @@ describe('QueryManager', () => {
       return res
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[2], peers[5]], queryFunc, new AbortController().signal))
 
     expect(results).to.deep.containSubset([{
-      done: true,
-      value: values[0]
+      value: true
     }])
     expect(results).to.not.deep.containSubset([{
-      done: true,
-      value: values[1]
+      value: false
     }])
 
     manager.stop()
@@ -765,40 +783,40 @@ describe('QueryManager', () => {
     const manager = new QueryManager(ourPeerId, 2)
     manager.start()
 
-    const values = ['v0', 'v1']
     const err = new Error('Nooo!')
 
-    // 0 -> 2 (delay) -> 3 [pathComplete]
-    // 1 -> 4 [error] -> 5
+    // 2 -> 1 (delay) -> 0 [pathComplete]
+    // 5 -> 4 [error] -> 3
     const topology = {
-      // Top level node
       [peers[0]]: {
-        closerPeers: [peers[2]]
+        value: true
       },
       // This query has a delay which means it only returns after the other
       // path has already thrown an error
-      [peers[2]]: {
-        closerPeers: [peers[3]]
-      },
-      // Should never reach here
-      [peers[3]]: {
-        value: values[0],
-        done: true
-      },
-
-      // Top level node
       [peers[1]]: {
-        closerPeers: [peers[4]]
+        closerPeers: [
+          peers[0]
+        ]
+      },
+      [peers[2]]: {
+        closerPeers: [
+          peers[1]
+        ]
+      },
+      [peers[3]]: {
+        value: false
       },
       // Throw an error at this point
       [peers[4]]: {
-        closerPeers: [peers[5]],
+        closerPeers: [
+          peers[3]
+        ],
         err
       },
-      // Should never reach here
       [peers[5]]: {
-        value: values[1],
-        done: true
+        closerPeers: [
+          peers[4]
+        ]
       }
     }
 
@@ -821,10 +839,73 @@ describe('QueryManager', () => {
       return res
     }
 
-    await expect(all(manager.run(key, peers, queryFunc, new AbortController().signal))).to.eventually.be.rejectedWith(err)
+    await expect(all(manager.run(key, [peers[2], peers[5]], queryFunc, new AbortController().signal))).to.eventually.be.rejectedWith(err)
 
     manager.stop()
   })
+
+  it('should end paths when they have no closer peers to those already queried', async () => {
+    const manager = new QueryManager(ourPeerId, 1, 1)
+    manager.start()
+
+    // 3 -> 2 -> 1 -> 4 -> 5 -> 6 // should stop at 1
+    const topology = {
+      [peers[1]]: {
+        closerPeers: [
+          peers[4]
+        ]
+      },
+      [peers[2]]: {
+        closerPeers: [
+          peers[1]
+        ]
+      },
+      [peers[3]]: {
+        closerPeers: [
+          peers[2]
+        ]
+      },
+      [peers[4]]: {
+        closerPeers: [
+          peers[5]
+        ]
+      },
+      [peers[5]]: {
+        closerPeers: [
+          peers[6]
+        ]
+      },
+      [peers[6]]: {
+        closerPeers: []
+      }
+    }
+
+    const seenPeers = new Set()
+
+    /** @type {import('../src/types').QueryFunc<Uint8Array>} */
+    const queryFunc = async ({ peer }) => { // eslint-disable-line require-await
+      seenPeers.add(peer.toB58String())
+      return topology[peer]
+    }
+
+    const results = await all(manager.run(key, [peers[3]], queryFunc, new AbortController().signal))
+
+    // should not have a value
+    expect(results.find(res => Boolean(res.value))).to.not.be.ok()
+
+    // should have traversed peers 3, 2 & 1
+    expect(seenPeers).to.contain(peers[3].toB58String())
+    expect(seenPeers).to.contain(peers[2].toB58String())
+    expect(seenPeers).to.contain(peers[1].toB58String())
+
+    // should not have traversed peers 4, 5 & 6
+    expect(seenPeers).to.not.contain(peers[4].toB58String())
+    expect(seenPeers).to.not.contain(peers[5].toB58String())
+    expect(seenPeers).to.not.contain(peers[6].toB58String())
+
+    manager.stop()
+  })
+
 /*
   it.skip('stop after finding k closest peers', async () => {
     // Sort peers by distance from dht.peerId

@@ -7,7 +7,7 @@ const defer = require('p-defer')
 const errCode = require('err-code')
 const { convertPeerId } = require('../utils')
 
-const MAX_XOR = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -42,15 +42,16 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
    * other path has passed through this peer
    *
    * @param {PeerId} peer
+   * @param {Uint8Array} peerKadId
    */
-  async function queryPeer (peer) {
+  function queryPeer (peer, peerKadId) {
     if (!peer || peersSeen.has(peer.toB58String()) || ourPeerId.equals(peer)) {
       return
     }
 
     peersSeen.add(peer.toB58String())
 
-    const peerKadId = await convertPeerId(peer)
+    const peerXor = BigInt('0x' + toString(xor(peerKadId, kadId), 'base16'))
 
     queue.add(async () => {
       try {
@@ -66,11 +67,17 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
           return
         }
 
-        // if there are closer peers and the query has not been aborted, continue the query
-        if (result && !result.done && result.closerPeers && !signal.aborted) {
-          await Promise.all(
-            result.closerPeers.map(closer => queryPeer(closer))
-          )
+        // if there are closer peers and the query has not completed, continue the query
+        if (result && !result.done && result.closerPeers) {
+          for (const closerPeer of result.closerPeers) {
+            const closerPeerKadId = await convertPeerId(closerPeer)
+            const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))
+
+            // only continue query if "closer" peer is actually closer
+            if (closerPeerXor < peerXor) {
+              queryPeer(closerPeer, closerPeerKadId)
+            }
+          }
         }
 
         // @ts-ignore simulate p-queue@7.x.x event
@@ -89,13 +96,17 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
       }
     }, {
       // use xor value as the queue priority - closer peers should execute first
-      // subtract it from MAX_XOR because higher priority numbers execute sooner
-      priority: MAX_XOR - parseInt(toString(xor(peerKadId, kadId), 'base16'), 16)
+      // subtract it from MAX_XOR because higher priority values execute sooner
+
+      // @ts-expect-error this is supposed to be a Number but it's ok to use BigInts
+      // as long as all priorities are BigInts since we won't mix BigInts and Number
+      // values in arithmetic operations
+      priority: MAX_XOR - peerXor
     })
   }
 
   // begin the query with the starting peer
-  queryPeer(startingPeer)
+  queryPeer(startingPeer, await convertPeerId(startingPeer))
 
   // yield results as they come in
   yield * toGenerator(queue, signal)
@@ -132,6 +143,8 @@ async function * toGenerator (queue, signal) {
   })
 
   while (running) { // eslint-disable-line no-unmodified-loop-condition
+    // TODO: ensure we can break out of this loop early - this promise needs to
+    // be resolved manually and will leak memory otherwise
     await deferred.promise
     deferred = defer()
 

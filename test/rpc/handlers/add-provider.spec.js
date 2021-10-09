@@ -7,7 +7,7 @@ const { Multiaddr } = require('multiaddr')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
 const { Message } = require('../../../src/message')
-const handler = require('../../../src/rpc/handlers/add-provider')
+const { AddProviderHandler } = require('../../../src/rpc/handlers/add-provider')
 
 const createPeerId = require('../../utils/create-peer-id')
 const createValues = require('../../utils/create-values')
@@ -18,6 +18,7 @@ describe('rpc - handlers - AddProvider', () => {
   let values
   let tdht
   let dht
+  let handler
 
   before(async () => {
     [peerIds, values] = await Promise.all([
@@ -31,6 +32,12 @@ describe('rpc - handlers - AddProvider', () => {
 
     const dhts = await tdht.spawn(1)
     dht = dhts[0]
+
+    handler = new AddProviderHandler(
+      dht._libp2p.peerId,
+      dht._providers,
+      dht._libp2p.peerStore
+    )
   })
 
   afterEach(() => tdht.teardown())
@@ -47,7 +54,7 @@ describe('rpc - handlers - AddProvider', () => {
     tests.forEach((t) => {
       it(t.error.toString(), async () => {
         try {
-          await handler(dht)(peerIds[0], t.message)
+          await handler.handle(peerIds[0], t.message)
         } catch (/** @type {any} */ err) {
           expect(err).to.exist()
           expect(err.code).to.eql(t.error)
@@ -76,13 +83,13 @@ describe('rpc - handlers - AddProvider', () => {
       }
     ]
 
-    await handler(dht)(peerIds[0], msg)
+    await handler.handle(peerIds[0], msg)
 
-    const provs = await dht.providers.getProviders(cid)
+    const provs = await dht._providers.getProviders(cid)
     expect(provs).to.have.length(1)
     expect(provs[0].id).to.eql(peerIds[0].id)
 
-    const bookEntry = dht.peerStore.get(peerIds[0])
+    const bookEntry = dht._libp2p.peerStore.get(peerIds[0])
     expect(bookEntry.addresses.map((address) => address.multiaddr)).to.eql([ma1])
   })
 
@@ -95,11 +102,11 @@ describe('rpc - handlers - AddProvider', () => {
       multiaddrs: []
     }]
 
-    await handler(dht)(peerIds[0], msg)
+    await handler.handle(peerIds[0], msg)
 
-    const provs = await dht.providers.getProviders(cid)
+    const provs = await dht._providers.getProviders(cid)
 
-    expect(dht.peerStore.get(peerIds[0])).to.equal(undefined)
+    expect(dht._libp2p.peerStore.get(peerIds[0])).to.equal(undefined)
     expect(provs).to.have.length(1)
     expect(provs[0].id).to.eql(peerIds[0].id)
   })

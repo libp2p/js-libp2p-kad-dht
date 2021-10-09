@@ -8,10 +8,8 @@ const { Record } = require('libp2p-record')
 const errcode = require('err-code')
 const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
-const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 
 const all = require('async-iterator-all')
-const pMapSeries = require('p-map-series')
 const pEachSeries = require('p-each-series')
 const delay = require('delay')
 
@@ -417,7 +415,7 @@ describe('KadDHT', () => {
       })
 
       // Simulate returning a peer id to query
-      sinon.stub(dht._routingTable, 'closestPeers').returns([peerIds[1]]),
+      sinon.stub(dht._routingTable, 'closestPeers').returns([peerIds[1]])
       // Simulate going out to the network and returning the record
       sinon.stub(dht._peerRouting, 'getValueOrPeers').callsFake(async () => ({ record: rec })) // eslint-disable-line require-await
 

@@ -3,7 +3,7 @@
 
 const { expect } = require('aegir/utils/chai')
 const { Message } = require('../../../src/message')
-const handler = require('../../../src/rpc/handlers/get-value')
+const { GetValueHandler } = require('../../../src/rpc/handlers/get-value')
 const utils = require('../../../src/utils')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 
@@ -16,6 +16,7 @@ describe('rpc - handlers - GetValue', () => {
   let peerIds
   let tdht
   let dht
+  let handler
 
   before(async () => {
     peerIds = await createPeerId(2)
@@ -26,6 +27,13 @@ describe('rpc - handlers - GetValue', () => {
 
     const dhts = await tdht.spawn(1)
     dht = dhts[0]
+
+    handler = new GetValueHandler(
+      dht._libp2p.peerId,
+      dht._libp2p.peerStore,
+      dht._peerRouting,
+      dht._datastore
+    )
   })
 
   afterEach(() => tdht.teardown())
@@ -34,7 +42,7 @@ describe('rpc - handlers - GetValue', () => {
     const msg = new Message(T, new Uint8Array(0), 0)
 
     try {
-      await handler(dht)(peerIds[0], msg)
+      await handler.handle(peerIds[0], msg)
     } catch (/** @type {any} */ err) {
       expect(err.code).to.eql('ERR_INVALID_KEY')
       return
@@ -49,7 +57,7 @@ describe('rpc - handlers - GetValue', () => {
     const msg = new Message(T, key, 0)
 
     await dht.put(key, value)
-    const response = await handler(dht)(peerIds[0], msg)
+    const response = await handler.handle(peerIds[0], msg)
 
     expect(response.record).to.exist()
     expect(response.record.key).to.eql(key)
@@ -61,8 +69,8 @@ describe('rpc - handlers - GetValue', () => {
     const msg = new Message(T, key, 0)
     const other = peerIds[1]
 
-    await dht._add(other)
-    const response = await handler(dht)(peerIds[0], msg)
+    await dht._routingTable.add(other)
+    const response = await handler.handle(peerIds[0], msg)
 
     expect(response.closerPeers).to.have.length(1)
     expect(response.closerPeers[0].id.toB58String()).to.be.eql(other.toB58String())
@@ -70,13 +78,13 @@ describe('rpc - handlers - GetValue', () => {
 
   describe('public key', () => {
     it('self', async () => {
-      const key = utils.keyForPublicKey(dht.peerId)
+      const key = utils.keyForPublicKey(dht._libp2p.peerId)
 
       const msg = new Message(T, key, 0)
-      const response = await handler(dht)(peerIds[0], msg)
+      const response = await handler.handle(peerIds[0], msg)
 
       expect(response.record).to.exist()
-      expect(response.record.value).to.eql(dht.peerId.pubKey.bytes)
+      expect(response.record.value).to.eql(dht._libp2p.peerId.pubKey.bytes)
     })
 
     it('other in peerstore', async () => {
@@ -85,11 +93,11 @@ describe('rpc - handlers - GetValue', () => {
 
       const msg = new Message(T, key, 0)
 
-      dht.peerStore.addressBook.add(other, [])
-      dht.peerStore.keyBook.set(other, other.pubKey)
+      dht._libp2p.peerStore.addressBook.add(other, [])
+      dht._libp2p.peerStore.keyBook.set(other, other.pubKey)
 
-      await dht._add(other)
-      const response = await handler(dht)(peerIds[0], msg)
+      await dht._routingTable.add(other)
+      const response = await handler.handle(peerIds[0], msg)
       expect(response.record).to.exist()
       expect(response.record.value).to.eql(other.pubKey.bytes)
     })
@@ -99,7 +107,7 @@ describe('rpc - handlers - GetValue', () => {
       const key = utils.keyForPublicKey(other)
 
       const msg = new Message(T, key, 0)
-      const response = await handler(dht)(peerIds[0], msg)
+      const response = await handler.handle(peerIds[0], msg)
       expect(response.record).to.not.exist()
     })
   })

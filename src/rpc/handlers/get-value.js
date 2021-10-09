@@ -119,7 +119,7 @@ class GetValueHandler {
 
     // Check validity: compare time received with max record age
     if (record.timeReceived == null ||
-      utils.now() - record.timeReceived.getTime() > MAX_RECORD_AGE) {
+      Date.now() - record.timeReceived.getTime() > MAX_RECORD_AGE) {
       // If record is bad delete it and return
       await this._datastore.delete(dsKey)
       return undefined
