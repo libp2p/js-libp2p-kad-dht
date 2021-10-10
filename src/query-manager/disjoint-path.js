@@ -86,13 +86,12 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
             const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))
 
             // only continue query if closer peer is actually closer
-            if (closerPeerXor < peerXor) {
-              log('adding %p to query', closerPeer)
-              // queryPeer(closerPeer, closerPeerKadId)
-            } else {
+            if (closerPeerXor > peerXor) {
               log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
+              // continue
             }
 
+            log('adding %p to query', closerPeer)
             queryPeer(closerPeer, closerPeerKadId)
           }
         }
