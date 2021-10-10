@@ -126,7 +126,7 @@ class Network {
 
     const { stream } = await this._dialer.dialProtocol(to, this._protocol, { signal })
 
-    return this._writeMessage(stream, msg.serialize(), signal)
+    await this._writeMessage(stream, msg.serialize(), signal)
   }
 
   /**

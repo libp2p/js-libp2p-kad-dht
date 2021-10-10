@@ -356,7 +356,7 @@ class KadDHT extends EventEmitter {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    */
-  async provide (key, options = {}) { // eslint-disable-line require-await
+  async * provide (key, options = {}) { // eslint-disable-line require-await
     let timeoutController
     let signal = options.signal
 
@@ -366,7 +366,7 @@ class KadDHT extends EventEmitter {
     }
 
     try {
-      return await this._contentRouting.provide(key, this._libp2p.multiaddrs, signal)
+      yield * this._contentRouting.provide(key, this._libp2p.multiaddrs, signal)
     } finally {
       if (timeoutController) {
         timeoutController.clear()

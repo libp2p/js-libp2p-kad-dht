@@ -92,22 +92,4 @@ describe('rpc - handlers - AddProvider', () => {
     const bookEntry = dht._libp2p.peerStore.get(peerIds[0])
     expect(bookEntry.addresses.map((address) => address.multiaddr)).to.eql([ma1])
   })
-
-  it('fall back to sender if providers have no multiaddrs', async () => {
-    const cid = values[0].cid
-    const msg = new Message(Message.TYPES.ADD_PROVIDER, cid.bytes, 0)
-
-    msg.providerPeers = [{
-      id: peerIds[0],
-      multiaddrs: []
-    }]
-
-    await handler.handle(peerIds[0], msg)
-
-    const provs = await dht._providers.getProviders(cid)
-
-    expect(dht._libp2p.peerStore.get(peerIds[0])).to.equal(undefined)
-    expect(provs).to.have.length(1)
-    expect(provs[0].id).to.eql(peerIds[0].id)
-  })
 })

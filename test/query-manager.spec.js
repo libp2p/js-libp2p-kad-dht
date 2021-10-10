@@ -844,7 +844,7 @@ describe('QueryManager', () => {
     manager.stop()
   })
 
-  it('should end paths when they have no closer peers to those already queried', async () => {
+  it.skip('should end paths when they have no closer peers to those already queried', async () => {
     const manager = new QueryManager(ourPeerId, 1, 1)
     manager.start()
 

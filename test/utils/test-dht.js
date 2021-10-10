@@ -39,6 +39,10 @@ class TestDHT {
         (node) => node._libp2p.peerId.equals(peer)
       )
 
+      if (remoteDht._clientMode) {
+        throw new Error('Cannot connect to remote DHT client')
+      }
+
       const localOnConnect = regRecord[protocol].onConnect
       const remoteOnConnect = remoteDht.regRecord[protocol].onConnect
       const remoteHandler = remoteDht.regRecord[protocol].handler
@@ -46,13 +50,12 @@ class TestDHT {
       // Notice peers of connection
       const [c0, c1] = ConnectionPair()
 
-      if (remoteDht._clientMode) {
-        throw new Error('Cannot connect to remote DHT client')
-      }
-
       // Trigger on connect for servers connecting
-      if (!remoteDht._clientMode) await localOnConnect(remoteDht._libp2p.peerId, c1)
-      if (!localDHT._clientMode) await remoteOnConnect(peerId, c0)
+      await localOnConnect(remoteDht._libp2p.peerId, c1)
+
+      if (!localDHT._clientMode) {
+        await remoteOnConnect(peerId, c0)
+      }
 
       await remoteHandler({
         protocol: protocol,

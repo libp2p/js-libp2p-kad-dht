@@ -40,10 +40,15 @@ class AddProviderHandler {
     /** @type {CID} */
     let cid
     try {
+      // this is actually just the multihash, not the whole CID
       cid = CID.decode(msg.key)
     } catch (/** @type {any} */ err) {
       const errMsg = `Invalid CID: ${err.message}`
       throw errcode(new Error(errMsg), 'ERR_INVALID_CID')
+    }
+
+    if (!msg.providerPeers || !msg.providerPeers.length) {
+      log.error('no providers found in message')
     }
 
     await Promise.all(
@@ -69,14 +74,7 @@ class AddProviderHandler {
       })
     )
 
-    // TODO: Previous versions of the JS DHT sent erroneous providers in the
-    // `providerPeers` field. In order to accommodate older clients that have
-    // this bug, we fall back to assuming the originator is the provider if
-    // we can't find any valid providers in the payload.
-    // https://github.com/libp2p/js-libp2p-kad-dht/pull/127
-    // https://github.com/libp2p/js-libp2p-kad-dht/issues/128
-    await this._providers.addProvider(cid, peerId)
-
+    // typescript requires a return value
     return undefined
   }
 }

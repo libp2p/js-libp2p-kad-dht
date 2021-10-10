@@ -9,6 +9,7 @@ const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const { convertBuffer, logger } = require('../utils')
 const { disjointPathQuery } = require('./disjoint-path')
 const merge = require('it-merge')
+const { EventEmitter } = require('events')
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -82,6 +83,7 @@ class QueryManager {
     // query a subset of peers up to `kBucketSize / 2` in length
     const peersToQuery = peers.slice(0, Math.min(this._disjointPaths, peers.length))
     const startTime = Date.now()
+    const cleanUp = new EventEmitter()
 
     try {
       log('query:start')
@@ -110,7 +112,8 @@ class QueryManager {
           queryFunc,
           index,
           peersToQuery.length,
-          this._alpha
+          this._alpha,
+          cleanUp
         )
       })
 
@@ -143,10 +146,10 @@ class QueryManager {
         throw err
       }
     } finally {
+      this._controllers.delete(abortController)
+      cleanUp.emit('cleanup')
       log(`query:done in ${Date.now() - (startTime || 0)}ms`)
     }
-
-    this._controllers.delete(abortController)
   }
 }
 

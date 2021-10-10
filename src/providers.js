@@ -105,7 +105,6 @@ class Providers {
    */
   _cleanup () {
     return this.syncQueue.add(async () => {
-      log('start cleanup')
       const start = Date.now()
 
       let count = 0
@@ -139,11 +138,13 @@ class Providers {
           log.error(err.message)
         }
       }
-      log('deleting %d / %d entries', deleteCount, count)
 
       // Commit the deletes to the datastore
       if (deleted.size) {
+        log('deleting %d / %d entries', deleteCount, count)
         await batch.commit()
+      } else {
+        log('nothing to delete')
       }
 
       // Clear expired entries from the cache

@@ -8,9 +8,8 @@ const { Record } = require('libp2p-record')
 const errcode = require('err-code')
 const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
-
+const drain = require('it-drain')
 const all = require('async-iterator-all')
-const pEachSeries = require('p-each-series')
 const delay = require('delay')
 
 const kadUtils = require('../src/utils')
@@ -446,7 +445,7 @@ describe('KadDHT', () => {
       ])
 
       // provide values
-      await Promise.all(values.map((value) => dhts[3].provide(value.cid)))
+      await Promise.all(values.map((value) => drain(dhts[3].provide(value.cid))))
 
       // Expect an ADD_PROVIDER message to be sent to each peer for each value
       const fn = dhts[3]._network.sendMessage
@@ -463,13 +462,13 @@ describe('KadDHT', () => {
 
       // Expect each DHT to find the provider of each value
       let n = 0
-      await pEachSeries(values, async (v) => {
+      for (const v of values) {
         n = (n + 1) % 3
 
         const provs = await all(dhts[n].findProviders(v.cid))
         expect(provs).to.have.length(1)
         expect(provs[0].id).to.equalBytes(ids[3].id)
-      })
+      }
     })
 
     it('find providers', async function () {
@@ -487,7 +486,7 @@ describe('KadDHT', () => {
         tdht.connect(dhts[1], dhts[2])
       ])
 
-      await Promise.all(dhts.map((dht) => dht.provide(val.cid)))
+      await Promise.all(dhts.map((dht) => drain(dht.provide(val.cid))))
 
       const res0 = await all(dhts[0].findProviders(val.cid))
       const res1 = await all(dhts[0].findProviders(val.cid, { maxNumProviders: 2 }))
@@ -506,7 +505,7 @@ describe('KadDHT', () => {
 
       const val = values[0]
 
-      const dhts = await tdht.spawn(2, {
+      const dhts = await tdht.spawn(3, {
         clientMode: false
       })
       const [clientDHT] = await tdht.spawn(1, { clientMode: true })
@@ -514,19 +513,20 @@ describe('KadDHT', () => {
       // Connect
       await Promise.all([
         tdht.connect(clientDHT, dhts[0]),
-        tdht.connect(dhts[0], dhts[1])
+        tdht.connect(dhts[0], dhts[1]),
+        tdht.connect(dhts[1], dhts[2])
       ])
 
-      await Promise.all(dhts.map((dht) => dht.provide(val.cid)))
+      await Promise.all(dhts.map((dht) => drain(dht.provide(val.cid))))
 
       const res0 = await all(clientDHT.findProviders(val.cid))
       const res1 = await all(clientDHT.findProviders(val.cid, { maxNumProviders: 1 }))
 
-      // find providers find all the 2 providers
+      // find providers find all the 3 providers
       expect(res0).to.exist()
-      expect(res0).to.have.length(2)
+      expect(res0).to.have.length(3)
 
-      // find providers limited to a maxium of 1 providers
+      // find providers limited to a maximum of 1 providers
       expect(res1).to.exist()
       expect(res1).to.have.length(1)
     })
@@ -547,7 +547,7 @@ describe('KadDHT', () => {
         tdht.connect(dhts[0], dhts[1])
       ])
 
-      await clientDHT.provide(val.cid)
+      await drain(clientDHT.provide(val.cid))
 
       await delay(1e3)
 

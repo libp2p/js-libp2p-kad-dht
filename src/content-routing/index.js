@@ -2,7 +2,6 @@
 
 const errcode = require('err-code')
 const { Message } = require('../message')
-const drain = require('it-drain')
 const parallel = require('it-parallel')
 const map = require('it-map')
 const utils = require('../utils')
@@ -44,8 +43,8 @@ class ContentRouting {
    * @param {Multiaddr[]} multiaddrs
    * @param {AbortSignal} signal
    */
-  async provide (key, multiaddrs, signal) {
-    log(`provide: ${key}`)
+  async * provide (key, multiaddrs, signal) {
+    log('provide %s', key)
 
     /** @type {Error[]} */
     const errors = []
@@ -67,26 +66,40 @@ class ContentRouting {
         log('putProvider %s to %p', key, peer)
 
         try {
+          log('sending provider record for %s to %p', key, peer)
           await this._network.sendMessage(peer, msg, signal)
+          log('sent provider record for %s to %p', key, peer)
+
+          return peer
         } catch (/** @type {any} */ err) {
+          log.error('error sending provide record to peer %p', peer, err)
           errors.push(err)
         }
       }
     }
 
+    let sent = 0
+
     // Notify closest peers
-    // TODO: this uses the CID bytes, should it be multihash instead?
-    await drain(parallel(map(this._peerRouting.getClosestPeers(key.bytes, signal), mapPeer), {
+    for await (const peer of parallel(map(this._peerRouting.getClosestPeers(key.multihash.bytes, signal), mapPeer), {
       ordered: false,
       concurrency: ALPHA
-    }))
+    })) {
+      if (peer) {
+        yield peer
+        sent++
+      }
+    }
 
-    if (errors.length) {
-      // TODO:
-      // This should be infrequent. This means a peer we previously connected
-      // to failed to exchange the provide message. If getClosestPeers was an
-      // iterator, we could continue to pull until we announce to kBucketSize peers.
-      throw errcode(new Error(`Failed to provide to ${errors.length} of ${this._routingTable._kBucketSize} peers`), 'ERR_SOME_PROVIDES_FAILED', { errors })
+    log('sent provider records to %d peers', sent)
+
+    if (sent === 0) {
+      if (errors.length) {
+        // if all sends failed, throw an error to inform the caller
+        throw errcode(new Error(`Failed to provide to ${errors.length} of ${this._routingTable._kBucketSize} peers`), 'ERR_PROVIDES_FAILED', { errors })
+      }
+
+      throw errcode(new Error('Failed to provide - no peers found'), 'ERR_PROVIDES_FAILED')
     }
   }
 
@@ -141,8 +154,7 @@ class ContentRouting {
 
     const providers = new Set(provs.map(p => p.toB58String()))
 
-    // TODO: this finds peers by CID bytes, should it be by multihash bytes instead?
-    for await (const res of this._queryManager.run(key.bytes, this._routingTable.closestPeers(key.bytes), findProvidersQuery, signal)) {
+    for await (const res of this._queryManager.run(key.multihash.bytes, this._routingTable.closestPeers(key.bytes), findProvidersQuery, signal)) {
       if (res.value) {
         for (const peer of res.value) {
           if (providers.has(peer.toB58String())) {

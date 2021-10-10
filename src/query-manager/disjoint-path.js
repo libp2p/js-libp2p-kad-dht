@@ -5,7 +5,8 @@ const { xor } = require('uint8arrays/xor')
 const { toString } = require('uint8arrays/to-string')
 const defer = require('p-defer')
 const errCode = require('err-code')
-const { convertPeerId } = require('../utils')
+const { convertPeerId, logger } = require('../utils')
+const log = logger('libp2p:kad-dht:query-manager:disjoint-path')
 
 const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
 
@@ -29,8 +30,9 @@ const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
  * @param {number} pathIndex - which disjoint path we are following
  * @param {number} numPaths - the total number of disjoint paths being executed
  * @param {number} alpha - how many concurrent node/value lookups to run
+ * @param {import('events').EventEmitter} cleanUp
  */
-module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadId, startingPeer, ourPeerId, peersSeen, signal, query, pathIndex, numPaths, alpha) {
+module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadId, startingPeer, ourPeerId, peersSeen, signal, query, pathIndex, numPaths, alpha, cleanUp) {
   // Only ALPHA node/value lookups are allowed at any given time for each process
   // https://github.com/libp2p/specs/tree/master/kad-dht#alpha-concurrency-parameter-%CE%B1
   const queue = new Queue({
@@ -45,7 +47,17 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
    * @param {Uint8Array} peerKadId
    */
   function queryPeer (peer, peerKadId) {
-    if (!peer || peersSeen.has(peer.toB58String()) || ourPeerId.equals(peer)) {
+    if (!peer) {
+      return
+    }
+
+    if (peersSeen.has(peer.toB58String())) {
+      log('already seen %p in query', peer)
+      return
+    }
+
+    if (ourPeerId.equals(peer)) {
+      log('not querying ourselves')
       return
     }
 
@@ -73,10 +85,15 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
             const closerPeerKadId = await convertPeerId(closerPeer)
             const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))
 
-            // only continue query if "closer" peer is actually closer
+            // only continue query if closer peer is actually closer
             if (closerPeerXor < peerXor) {
-              queryPeer(closerPeer, closerPeerKadId)
+              log('adding %p to query', closerPeer)
+              // queryPeer(closerPeer, closerPeerKadId)
+            } else {
+              log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
             }
+
+            queryPeer(closerPeer, closerPeerKadId)
           }
         }
 
@@ -109,14 +126,15 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
   queryPeer(startingPeer, await convertPeerId(startingPeer))
 
   // yield results as they come in
-  yield * toGenerator(queue, signal)
+  yield * toGenerator(queue, signal, cleanUp)
 }
 
 /**
  * @param {Queue} queue
  * @param {AbortSignal} signal
+ * @param {import('events').EventEmitter} cleanUp
  */
-async function * toGenerator (queue, signal) {
+async function * toGenerator (queue, signal, cleanUp) {
   let deferred = defer()
   let running = true
   /** @type {QueryResult[]} */
@@ -129,17 +147,38 @@ async function * toGenerator (queue, signal) {
   })
   // @ts-expect-error 'error' event is in p-queue@7.x.x
   queue.on('error', err => {
+    log('queue error', err)
+    running = false
+    queue.clear()
+    results.splice(0, results.length)
     deferred.reject(err)
   })
   queue.on('idle', () => {
+    log('queue idle')
     running = false
     deferred.resolve()
   })
 
   // clear the queue and throw if the query is aborted
   signal.addEventListener('abort', () => {
+    log('abort queue')
     queue.clear()
     deferred.reject(errCode(new Error('Query aborted'), 'ERR_QUERY_ABORTED'))
+  })
+
+  // the user broke out of the loop early, ensure we resolve the deferred result
+  // promise and clear the queue of any remaining jobs
+  cleanUp.on('cleanup', () => {
+    if (!running) {
+      return
+    }
+
+    log('clean up queue, results %d, queue size %d, pending tasks %d', results.length, queue.size, queue.pending)
+
+    running = false
+    queue.clear()
+    results.splice(0, results.length)
+    deferred.resolve()
   })
 
   while (running) { // eslint-disable-line no-unmodified-loop-condition

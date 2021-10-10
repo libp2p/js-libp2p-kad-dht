@@ -32,7 +32,7 @@ export interface DHT extends EventEmitter {
   get: (key: Uint8Array, options?: { signal?: AbortSignal }) => Promise<Uint8Array>
   getMany: (key: Uint8Array, nvals: number, options?: { signal?: AbortSignal }) => AsyncGenerator<DHTValue, void, undefined>
   removeLocal: (key: Uint8Array) => Promise<void>
-  provide: (key: CID, options?: { signal?: AbortSignal }) => Promise<void>
+  provide: (key: CID, options?: { signal?: AbortSignal }) => AsyncGenerator<PeerId, void, undefined>
   findProviders: (key: CID, options?: { signal?: AbortSignal, maxNumProviders?: number }) => AsyncGenerator<PeerId, void, undefined>
   findPeer: (id: PeerId, options?: { signal?: AbortSignal }) => Promise<{ id: PeerId, multiaddrs: Multiaddr[] } | undefined>
   getClosestPeers: (key: Uint8Array, options?: { shallow?: boolean, signal?: AbortSignal }) => AsyncGenerator<PeerId, void, undefined>
