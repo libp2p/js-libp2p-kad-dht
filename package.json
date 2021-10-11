@@ -5,6 +5,7 @@
   "leadMaintainer": "Vasco Santos <vasco.santos@moxy.studio>",
   "main": "src/index.js",
   "scripts": {
+    "prepare": "npm run build",
     "lint": "aegir ts -p check && aegir lint",
     "build": "npm run build:proto && npm run build:proto-types && aegir build",
     "build:proto": "pbjs -t static-module -w commonjs -r libp2p-dht-message --force-number --no-verify --no-delimited --no-create --no-beautify --no-defaults --lint eslint-disable -o src/message/dht.js ./src/message/dht.proto",

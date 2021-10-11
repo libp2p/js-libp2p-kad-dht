@@ -52,7 +52,6 @@ class KadDHT extends EventEmitter {
    * @param {boolean} [props.forceProtocolLegacy = false] - WARNING: this is not recommended and should only be used for legacy purposes
    * @param {number} props.kBucketSize - k-bucket size (default 20)
    * @param {boolean} props.clientMode - If true, the DHT will not respond to queries. This should be true if your node will not be dialable. (default: false)
-   * @param {Datastore} props.datastore - datastore (default MemoryDatastore)
    * @param {import('libp2p-interfaces/src/types').DhtValidators} props.validators - validators object with namespace as keys and function(key, record, callback)
    * @param {object} props.selectors - selectors object with namespace as keys and function(key, records)
    */
@@ -60,7 +59,6 @@ class KadDHT extends EventEmitter {
     libp2p,
     protocolPrefix = '/ipfs',
     forceProtocolLegacy = false,
-    datastore = new MemoryDatastore(),
     kBucketSize = K,
     clientMode = true,
     validators = {},
@@ -108,14 +106,14 @@ class KadDHT extends EventEmitter {
      *
      * @type {Datastore}
      */
-    this._datastore = datastore
+    this._datastore = libp2p.datastore || new MemoryDatastore()
 
     /**
      * Provider management
      *
      * @type {Providers}
      */
-    this._providers = new Providers(datastore)
+    this._providers = new Providers(this._datastore)
 
     this._validators = {
       pk: libp2pRecord.validator.validators.pk,
@@ -156,7 +154,7 @@ class KadDHT extends EventEmitter {
     )
     this._contentFetching = new ContentFetching(
       libp2p.peerId,
-      datastore,
+      this._datastore,
       this._validators,
       this._selectors,
       this._peerRouting,
@@ -183,7 +181,7 @@ class KadDHT extends EventEmitter {
       libp2p.peerStore,
       libp2p,
       this._peerRouting,
-      datastore,
+      this._datastore,
       this._validators
     )
   }
