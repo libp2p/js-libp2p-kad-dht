@@ -86,17 +86,13 @@ class Network {
    *
    * @param {PeerId} peerId - remote peer id
    */
-  _onPeerConnected (peerId) {
-    this._routingTable.find(peerId)
-      .then(async res => {
-        if (!res) {
-          await this._routingTable.add(peerId)
-          log('added %p to the routing table', peerId)
-        }
-      })
-      .catch(err => {
-        log('error adding %p to the routing table:', peerId, err)
-      })
+  async _onPeerConnected (peerId) {
+    try {
+      await this._routingTable.add(peerId)
+      log('added %p to the routing table', peerId)
+    } catch (err) {
+      log('error adding %p to the routing table:', peerId, err)
+    }
   }
 
   /**
