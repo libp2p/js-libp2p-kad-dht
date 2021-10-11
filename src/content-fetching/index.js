@@ -78,9 +78,10 @@ class ContentFetching {
    * @param {Uint8Array} key
    * @param {import('../types').DHTValue[]} vals - values retrieved from the DHT
    * @param {Uint8Array} best - the best record that was found
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async sendCorrectionRecord (key, vals, best, signal) {
+  async sendCorrectionRecord (key, vals, best, options = {}) {
     log('sendCorrection for %b', key)
     const fixupRec = await utils.createPutRecord(key, best)
 
@@ -106,7 +107,7 @@ class ContentFetching {
 
         // send correction
         try {
-          await this._peerRouting.putValueToPeer(key, fixupRec, v.from, signal)
+          await this._peerRouting.putValueToPeer(key, fixupRec, v.from, options)
         } catch (/** @type {any} */ err) {
           log.error('Failed error correcting entry', err)
         }
@@ -119,11 +120,11 @@ class ContentFetching {
    *
    * @param {Uint8Array} key
    * @param {Uint8Array} value
-   * @param {AbortSignal} signal
    * @param {object} [options] - put options
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
+   * @param {AbortSignal} [options.signal]
    */
-  async put (key, value, signal, options = {}) {
+  async put (key, value, options = {}) {
     log('put value %b', key)
 
     // create record in the dht format
@@ -138,11 +139,11 @@ class ContentFetching {
     let counterAll = 0
     let counterSuccess = 0
 
-    await drain(parallel(map(this._peerRouting.getClosestPeers(key, signal, { shallow: true }), (peer) => {
+    await drain(parallel(map(this._peerRouting.getClosestPeers(key, { signal: options.signal, shallow: true }), (peer) => {
       return async () => {
         try {
           counterAll += 1
-          await this._peerRouting.putValueToPeer(key, record, peer, signal)
+          await this._peerRouting.putValueToPeer(key, record, peer, options)
           counterSuccess += 1
         } catch (/** @type {any} */ err) {
           log.error('failed to put to peer (%b): %s', peer.id, err)
@@ -167,12 +168,13 @@ class ContentFetching {
    * Get the value to the given key
    *
    * @param {Uint8Array} key
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async get (key, signal) {
+  async get (key, options = {}) {
     log('get %b', key)
 
-    const vals = await all(this.getMany(key, GET_MANY_RECORD_COUNT, signal))
+    const vals = await all(this.getMany(key, GET_MANY_RECORD_COUNT, options))
     const recs = vals.map((v) => v.value)
     let i = 0
 
@@ -192,7 +194,7 @@ class ContentFetching {
       throw errcode(new Error('best value was not found'), 'ERR_NOT_FOUND')
     }
 
-    await this.sendCorrectionRecord(key, vals, best, signal)
+    await this.sendCorrectionRecord(key, vals, best, options)
 
     return best
   }
@@ -202,9 +204,10 @@ class ContentFetching {
    *
    * @param {Uint8Array} key
    * @param {number} nvals
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async * getMany (key, nvals, signal) {
+  async * getMany (key, nvals, options = {}) {
     log('getMany want %s values for %b', nvals, key)
 
     let yielded = 0
@@ -258,7 +261,7 @@ class ContentFetching {
 
       let rec, peers, lookupErr
       try {
-        const results = await this._peerRouting.getValueOrPeers(peer, key, signal)
+        const results = await this._peerRouting.getValueOrPeers(peer, key, options)
         rec = results.record
         peers = results.peers
       } catch (/** @type {any} */ err) {
@@ -314,7 +317,7 @@ class ContentFetching {
     try {
       let err
 
-      for await (const res of this._queryManager.run(key, rtp, getValueQuery, signal)) {
+      for await (const res of this._queryManager.run(key, rtp, getValueQuery, options.signal)) {
         if (res.value) {
           yield res.value
         }

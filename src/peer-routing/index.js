@@ -69,11 +69,12 @@ class PeerRouting {
    *
    * @param {PeerId} peer
    * @param {Uint8Array} key
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async _getValueSingle (peer, key, signal) { // eslint-disable-line require-await
+  async _getValueSingle (peer, key, options = {}) { // eslint-disable-line require-await
     const msg = new Message(Message.TYPES.GET_VALUE, key, 0)
-    return this._network.sendRequest(peer, msg, signal)
+    return this._network.sendRequest(peer, msg, options)
   }
 
   /**
@@ -81,11 +82,12 @@ class PeerRouting {
    *
    * @param {Uint8Array} key
    * @param {PeerId} peer
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async closerPeersSingle (key, peer, signal) {
+  async closerPeersSingle (key, peer, options = {}) {
     log('closerPeersSingle %s from %p', uint8ArrayToString(key, 'base32'), peer)
-    const peers = await this.findPeerSingle(peer, key, signal)
+    const peers = await this.findPeerSingle(peer, key, options)
 
     return peers
       .filter((peer) => !this._peerId.equals(peer))
@@ -95,11 +97,12 @@ class PeerRouting {
    * Get the public key directly from a node.
    *
    * @param {PeerId} peer
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async getPublicKeyFromNode (peer, signal) {
+  async getPublicKeyFromNode (peer, options) {
     const pkKey = utils.keyForPublicKey(peer)
-    const msg = await this._getValueSingle(peer, pkKey, signal)
+    const msg = await this._getValueSingle(peer, pkKey, options)
 
     if (!msg.record || !msg.record.value) {
       throw errcode(new Error(`Node not responding with its public key: ${peer.toB58String()}`), 'ERR_INVALID_RECORD')
@@ -120,12 +123,13 @@ class PeerRouting {
    *
    * @param {PeerId} peer
    * @param {Uint8Array} target
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async findPeerSingle (peer, target, signal) { // eslint-disable-line require-await
+  async findPeerSingle (peer, target, options = {}) { // eslint-disable-line require-await
     log('findPeerSingle asking %p if it knows %b', peer, target)
     const request = new Message(Message.TYPES.FIND_NODE, target, 0)
-    const response = await this._network.sendRequest(peer, request, signal)
+    const response = await this._network.sendRequest(peer, request, options)
 
     return response.closerPeers.map(peerData => peerData.id)
   }
@@ -134,10 +138,10 @@ class PeerRouting {
    * Search for a peer with the given ID.
    *
    * @param {PeerId} id
-   * @param {AbortSignal} signal
-   * @returns {Promise<{ id: PeerId, multiaddrs: Multiaddr[] } | undefined>}
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async findPeer (id, signal) {
+  async findPeer (id, options = {}) {
     log('findPeer %p', id)
 
     // Try to find locally
@@ -175,7 +179,7 @@ class PeerRouting {
      * @type {import('../types').QueryFunc<PeerId>}
      */
     const findPeerQuery = async ({ peer, signal }) => {
-      const peers = await this.findPeerSingle(peer, id.toBytes(), signal)
+      const peers = await this.findPeerSingle(peer, id.toBytes(), { signal })
       const match = peers.find((p) => p.equals(id))
 
       // found it
@@ -192,7 +196,7 @@ class PeerRouting {
       }
     }
 
-    for await (const result of this._queryManager.run(id.id, peers, findPeerQuery, signal)) {
+    for await (const result of this._queryManager.run(id.id, peers, findPeerQuery, options.signal)) {
       if (result.done && result.value) {
         const peerData = this._peerStore.get(result.value)
 
@@ -212,11 +216,11 @@ class PeerRouting {
    * Kademlia 'node lookup' operation
    *
    * @param {Uint8Array} key
-   * @param {AbortSignal} signal
    * @param {object} [options]
    * @param {boolean} [options.shallow=false] - shallow query
+   * @param {AbortSignal} [options.signal]
    */
-  async * getClosestPeers (key, signal, options = { shallow: false }) {
+  async * getClosestPeers (key, options = { shallow: false }) {
     log('getClosestPeers to %b', key)
     const { shallow } = options
     const id = await utils.convertBuffer(key)
@@ -226,7 +230,7 @@ class PeerRouting {
      * @type {import('../types').QueryFunc<PeerId[]>}
      */
     const getCloserPeersQuery = async ({ peer, signal }) => {
-      const closer = await this.closerPeersSingle(key, peer, signal)
+      const closer = await this.closerPeersSingle(key, peer, { signal })
 
       if (shallow) {
         return {
@@ -243,7 +247,7 @@ class PeerRouting {
 
     const peers = new Set()
 
-    for await (const result of this._queryManager.run(key, tablePeers, getCloserPeersQuery, signal)) {
+    for await (const result of this._queryManager.run(key, tablePeers, getCloserPeersQuery, options.signal)) {
       if (result.value) {
         for (const peer of result.value) {
           if (!peers.has(peer.toB58String())) {
@@ -264,13 +268,14 @@ class PeerRouting {
    * @param {Uint8Array} key
    * @param {Uint8Array} rec - encoded record
    * @param {PeerId} target
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async putValueToPeer (key, rec, target, signal) {
+  async putValueToPeer (key, rec, target, options = {}) {
     const msg = new Message(Message.TYPES.PUT_VALUE, key, 0)
     msg.record = Record.deserialize(rec)
 
-    const resp = await this._network.sendRequest(target, msg, signal)
+    const resp = await this._network.sendRequest(target, msg, options)
 
     if (resp.record && !uint8ArrayEquals(resp.record.value, Record.deserialize(rec).value)) {
       throw errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID')
@@ -285,10 +290,11 @@ class PeerRouting {
    *
    * @param {PeerId} peer
    * @param {Uint8Array} key
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async getValueOrPeers (peer, key, signal) {
-    const msg = await this._getValueSingle(peer, key, signal)
+  async getValueOrPeers (peer, key, options = {}) {
+    const msg = await this._getValueSingle(peer, key, options)
 
     const peers = msg.closerPeers
     const record = msg.record

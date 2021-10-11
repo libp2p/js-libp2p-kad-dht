@@ -103,15 +103,16 @@ class Network {
    * Send a request and record RTT for latency measurements
    *
    * @param {PeerId} to - The peer that should receive a message
-   * @param {Message} msg - The message to send.
-   * @param {AbortSignal} signal
+   * @param {Message} msg - The message to send
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async sendRequest (to, msg, signal) {
+  async sendRequest (to, msg, options = {}) {
     log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
 
-    const { stream } = await this._dialer.dialProtocol(to, this._protocol, { signal })
+    const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
 
-    return this._writeReadMessage(stream, msg.serialize(), signal)
+    return this._writeReadMessage(stream, msg.serialize(), options)
   }
 
   /**
@@ -119,14 +120,15 @@ class Network {
    *
    * @param {PeerId} to
    * @param {Message} msg
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async sendMessage (to, msg, signal) {
+  async sendMessage (to, msg, options = {}) {
     log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
 
-    const { stream } = await this._dialer.dialProtocol(to, this._protocol, { signal })
+    const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
 
-    await this._writeMessage(stream, msg.serialize(), signal)
+    await this._writeMessage(stream, msg.serialize(), options)
   }
 
   /**
@@ -134,11 +136,11 @@ class Network {
    *
    * @param {MuxedStream} stream - the stream to use
    * @param {Uint8Array} msg - the message to send
-   * @param {AbortSignal} signal
-   * @returns {Promise<void>}
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  _writeMessage (stream, msg, signal) {
-    return pipe(
+  async _writeMessage (stream, msg, options = {}) {
+    await pipe(
       [msg],
       lp.encode(),
       stream,
@@ -153,9 +155,10 @@ class Network {
    *
    * @param {MuxedStream} stream - the stream to use
    * @param {Uint8Array} msg - the message to send
-   * @param {AbortSignal} signal
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    */
-  async _writeReadMessage (stream, msg, signal) {
+  async _writeReadMessage (stream, msg, options = {}) {
     const res = await pipe(
       [msg],
       lp.encode(),

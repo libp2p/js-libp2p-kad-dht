@@ -134,7 +134,7 @@ class RoutingTableRefresh {
     const controller = new TimeoutController(60000)
 
     try {
-      const peers = await length(this._peerRouting.getClosestPeers(peerId.toBytes(), controller.signal))
+      const peers = await length(this._peerRouting.getClosestPeers(peerId.toBytes(), { signal: controller.signal }))
 
       log(`found ${peers} peers that were close to imaginary peer %p`, peerId)
       log('finished refreshing cpl %s with key %p (routing table size is now %s)', cpl, peerId, this._routingTable.kb.count())

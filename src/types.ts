@@ -65,7 +65,7 @@ export interface QueryFunc<T> { (context: QueryContext): Promise<QueryResult<T> 
 
 // Implemented by libp2p, should be moved to libp2p-interfaces eventually
 export interface Dialer {
-  dialProtocol: (peer: PeerId, protocol: string, options: { signal: AbortSignal }) => Promise<{ stream: MuxedStream }>
+  dialProtocol: (peer: PeerId, protocol: string, options?: { signal?: AbortSignal }) => Promise<{ stream: MuxedStream }>
 }
 
 // Implemented by libp2p, should be moved to libp2p-interfaces eventually

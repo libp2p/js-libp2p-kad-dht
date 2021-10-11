@@ -6,7 +6,6 @@ const crypto = require('libp2p-crypto')
 const libp2pRecord = require('libp2p-record')
 const { MemoryDatastore } = require('datastore-core/memory')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
-const { TimeoutController } = require('timeout-abort-controller')
 const { RoutingTable } = require('./routing-table')
 const { RoutingTableRefresh } = require('./routing-table/refresh')
 const utils = require('./utils')
@@ -259,21 +258,7 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
    */
   async put (key, value, options = {}) { // eslint-disable-line require-await
-    let timeoutController
-    let signal = options.signal
-
-    if (!signal) {
-      timeoutController = new TimeoutController(60000)
-      signal = timeoutController.signal
-    }
-
-    try {
-      return await this._contentFetching.put(key, value, signal, options)
-    } finally {
-      if (timeoutController) {
-        timeoutController.clear()
-      }
-    }
+    return this._contentFetching.put(key, value, options)
   }
 
   /**
@@ -285,21 +270,7 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async get (key, options = {}) { // eslint-disable-line require-await
-    let timeoutController
-    let signal = options.signal
-
-    if (!signal) {
-      timeoutController = new TimeoutController(60000)
-      signal = timeoutController.signal
-    }
-
-    try {
-      return await this._contentFetching.get(key, signal)
-    } finally {
-      if (timeoutController) {
-        timeoutController.clear()
-      }
-    }
+    return this._contentFetching.get(key, options)
   }
 
   /**
@@ -311,21 +282,7 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async * getMany (key, nvals, options = {}) { // eslint-disable-line require-await
-    let timeoutController
-    let signal = options.signal
-
-    if (!signal) {
-      timeoutController = new TimeoutController(60000)
-      signal = timeoutController.signal
-    }
-
-    try {
-      yield * this._contentFetching.getMany(key, nvals, signal)
-    } finally {
-      if (timeoutController) {
-        timeoutController.clear()
-      }
-    }
+    yield * this._contentFetching.getMany(key, nvals, options)
   }
 
   /**
@@ -357,21 +314,7 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async * provide (key, options = {}) { // eslint-disable-line require-await
-    let timeoutController
-    let signal = options.signal
-
-    if (!signal) {
-      timeoutController = new TimeoutController(60000)
-      signal = timeoutController.signal
-    }
-
-    try {
-      yield * this._contentRouting.provide(key, this._libp2p.multiaddrs, signal)
-    } finally {
-      if (timeoutController) {
-        timeoutController.clear()
-      }
-    }
+    yield * this._contentRouting.provide(key, this._libp2p.multiaddrs, options)
   }
 
   /**
@@ -384,21 +327,7 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async * findProviders (key, options = { timeout: 6000, maxNumProviders: 5 }) {
-    let timeoutController
-    let signal = options.signal
-
-    if (!signal) {
-      timeoutController = new TimeoutController(60000)
-      signal = timeoutController.signal
-    }
-
-    try {
-      yield * this._contentRouting.findProviders(key, signal, options)
-    } finally {
-      if (timeoutController) {
-        timeoutController.clear()
-      }
-    }
+    yield * this._contentRouting.findProviders(key, options)
   }
 
   // ----------- Peer Routing -----------
@@ -411,21 +340,7 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async findPeer (id, options = {}) { // eslint-disable-line require-await
-    let timeoutController
-    let signal = options.signal
-
-    if (!signal) {
-      timeoutController = new TimeoutController(60000)
-      signal = timeoutController.signal
-    }
-
-    try {
-      return await this._peerRouting.findPeer(id, signal)
-    } finally {
-      if (timeoutController) {
-        timeoutController.clear()
-      }
-    }
+    return this._peerRouting.findPeer(id, options)
   }
 
   /**
@@ -437,21 +352,7 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async * getClosestPeers (key, options = { shallow: false }) {
-    let timeoutController
-    let signal = options.signal
-
-    if (!signal) {
-      timeoutController = new TimeoutController(60000)
-      signal = timeoutController.signal
-    }
-
-    try {
-      yield * this._peerRouting.getClosestPeers(key, signal, options)
-    } finally {
-      if (timeoutController) {
-        timeoutController.clear()
-      }
-    }
+    yield * this._peerRouting.getClosestPeers(key, options)
   }
 
   /**
@@ -477,28 +378,16 @@ class KadDHT extends EventEmitter {
       return peerData.id.pubKey
     }
 
-    let timeoutController
-    let signal = options.signal
-
-    if (!signal) {
-      timeoutController = new TimeoutController(60000)
-      signal = timeoutController.signal
-    }
-
     // try the node directly
     let pk
 
     try {
-      pk = await this._peerRouting.getPublicKeyFromNode(peer, signal)
+      pk = await this._peerRouting.getPublicKeyFromNode(peer, options)
     } catch (/** @type {any} */ err) {
       // try dht directly
       const pkKey = utils.keyForPublicKey(peer)
-      const value = await this.get(pkKey, { ...options, signal })
+      const value = await this.get(pkKey, options)
       pk = crypto.keys.unmarshalPublicKey(value)
-    } finally {
-      if (timeoutController) {
-        timeoutController.clear()
-      }
     }
 
     const peerId = new PeerId(peer.id, undefined, pk)
