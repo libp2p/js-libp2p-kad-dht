@@ -170,6 +170,7 @@ class ContentFetching {
    * @param {Uint8Array} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async get (key, options = {}) {
     log('get %b', key)
@@ -206,6 +207,7 @@ class ContentFetching {
    * @param {number} nvals
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async * getMany (key, nvals, options = {}) {
     log('getMany want %s values for %b', nvals, key)
@@ -261,7 +263,7 @@ class ContentFetching {
 
       let rec, peers, lookupErr
       try {
-        const results = await this._peerRouting.getValueOrPeers(peer, key, options)
+        const results = await this._peerRouting.getValueOrPeers(peer, key, { signal })
         rec = results.record
         peers = results.peers
       } catch (/** @type {any} */ err) {
@@ -317,7 +319,7 @@ class ContentFetching {
     try {
       let err
 
-      for await (const res of this._queryManager.run(key, rtp, getValueQuery, options.signal)) {
+      for await (const res of this._queryManager.run(key, rtp, getValueQuery, options)) {
         if (res.value) {
           yield res.value
         }

@@ -268,6 +268,7 @@ class KadDHT extends EventEmitter {
    * @param {Uint8Array} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async get (key, options = {}) { // eslint-disable-line require-await
     return this._contentFetching.get(key, options)
@@ -280,6 +281,7 @@ class KadDHT extends EventEmitter {
    * @param {number} nvals
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async * getMany (key, nvals, options = {}) { // eslint-disable-line require-await
     yield * this._contentFetching.getMany(key, nvals, options)
@@ -325,6 +327,7 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.timeout=60000] - how long the query should maximally run, in milliseconds (default: 60000)
    * @param {number} [options.maxNumProviders=5] - maximum number of providers to find
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async * findProviders (key, options = { timeout: 6000, maxNumProviders: 5 }) {
     yield * this._contentRouting.findProviders(key, options)
@@ -338,6 +341,7 @@ class KadDHT extends EventEmitter {
    * @param {PeerId} id
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async findPeer (id, options = {}) { // eslint-disable-line require-await
     return this._peerRouting.findPeer(id, options)
@@ -350,6 +354,7 @@ class KadDHT extends EventEmitter {
    * @param {object} [options]
    * @param {boolean} [options.shallow = false] - shallow query
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async * getClosestPeers (key, options = { shallow: false }) {
     yield * this._peerRouting.getClosestPeers(key, options)

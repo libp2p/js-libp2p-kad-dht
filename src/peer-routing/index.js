@@ -140,6 +140,7 @@ class PeerRouting {
    * @param {PeerId} id
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async findPeer (id, options = {}) {
     log('findPeer %p', id)
@@ -196,7 +197,7 @@ class PeerRouting {
       }
     }
 
-    for await (const result of this._queryManager.run(id.id, peers, findPeerQuery, options.signal)) {
+    for await (const result of this._queryManager.run(id.id, peers, findPeerQuery, options)) {
       if (result.done && result.value) {
         const peerData = this._peerStore.get(result.value)
 
@@ -219,6 +220,7 @@ class PeerRouting {
    * @param {object} [options]
    * @param {boolean} [options.shallow=false] - shallow query
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async * getClosestPeers (key, options = { shallow: false }) {
     log('getClosestPeers to %b', key)
@@ -247,7 +249,7 @@ class PeerRouting {
 
     const peers = new Set()
 
-    for await (const result of this._queryManager.run(key, tablePeers, getCloserPeersQuery, options.signal)) {
+    for await (const result of this._queryManager.run(key, tablePeers, getCloserPeersQuery, options)) {
       if (result.value) {
         for (const peer of result.value) {
           if (!peers.has(peer.toB58String())) {

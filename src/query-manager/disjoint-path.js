@@ -5,8 +5,10 @@ const { xor } = require('uint8arrays/xor')
 const { toString } = require('uint8arrays/to-string')
 const defer = require('p-defer')
 const errCode = require('err-code')
-const { convertPeerId, logger } = require('../utils')
+const { convertPeerId, convertBuffer, logger } = require('../utils')
 const log = logger('libp2p:kad-dht:query-manager:disjoint-path')
+const { TimeoutController } = require('timeout-abort-controller')
+const { anySignal } = require('any-signal')
 
 const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
 
@@ -20,24 +22,28 @@ const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
  * Walks a path through the DHT, calling the passed query function for
  * every peer encountered that we have not seen before.
  *
- * @param {Uint8Array} key - what are we trying to find
- * @param {Uint8Array} kadId - sha256(key)
- * @param {PeerId} startingPeer - where we start our query
- * @param {PeerId} ourPeerId - who we are
- * @param {Set<string>} peersSeen - list of peers all paths have traversed
- * @param {AbortSignal} signal - when to stop querying
- * @param {QueryFunc} query - the query function to run with each peer
- * @param {number} pathIndex - which disjoint path we are following
- * @param {number} numPaths - the total number of disjoint paths being executed
- * @param {number} alpha - how many concurrent node/value lookups to run
- * @param {import('events').EventEmitter} cleanUp
+ * @param {object} context
+ * @param {Uint8Array} context.key - what are we trying to find
+ * @param {PeerId} context.startingPeer - where we start our query
+ * @param {PeerId} context.ourPeerId - who we are
+ * @param {Set<string>} context.peersSeen - list of base58btc peer IDs all paths have traversed
+ * @param {AbortSignal} context.signal - when to stop querying
+ * @param {QueryFunc} context.query - the query function to run with each peer
+ * @param {number} context.pathIndex - which disjoint path we are following
+ * @param {number} context.numPaths - the total number of disjoint paths being executed
+ * @param {number} context.alpha - how many concurrent node/value lookups to run
+ * @param {import('events').EventEmitter} context.cleanUp - will emit a 'cleanup' event if the caller exits the for..await of early
+ * @param {number} [context.queryFuncTimeout] - a timeout for queryFunc in ms
  */
-module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadId, startingPeer, ourPeerId, peersSeen, signal, query, pathIndex, numPaths, alpha, cleanUp) {
+module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, startingPeer, ourPeerId, peersSeen, signal, query, pathIndex, numPaths, alpha, cleanUp, queryFuncTimeout }) {
   // Only ALPHA node/value lookups are allowed at any given time for each process
   // https://github.com/libp2p/specs/tree/master/kad-dht#alpha-concurrency-parameter-%CE%B1
   const queue = new Queue({
     concurrency: alpha
   })
+
+  // perform lookups on kadId, not the actual value
+  const kadId = await convertBuffer(key)
 
   /**
    * Adds the passed peer to the query queue if it's not us and no
@@ -66,14 +72,24 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
     const peerXor = BigInt('0x' + toString(xor(peerKadId, kadId), 'base16'))
 
     queue.add(async () => {
+      let timeout
+      const signals = [signal]
+
+      if (queryFuncTimeout != null) {
+        timeout = new TimeoutController(queryFuncTimeout)
+        signals.push(timeout.signal)
+      }
+
       try {
         const result = await query({
           key,
           peer,
-          signal,
+          signal: anySignal(signals),
           pathIndex,
           numPaths
         })
+
+        timeout && timeout.clear()
 
         if (signal.aborted) {
           return
@@ -107,8 +123,21 @@ module.exports.disjointPathQuery = async function * disjointPathQuery (key, kadI
           queue.clear()
         }
       } catch (err) {
+        if (timeout && timeout.signal.aborted) {
+          // do not abort the whole query, just this worker
+          // @ts-ignore simulate p-queue@7.x.x event
+          queue.emit('completed', {
+            peer,
+            err
+          })
+
+          return
+        }
+
         // @ts-ignore simulate p-queue@7.x.x event
         queue.emit('error', err)
+      } finally {
+        timeout && timeout.clear()
       }
     }, {
       // use xor value as the queue priority - closer peers should execute first

@@ -6,10 +6,14 @@ const {
   ALPHA
 } = require('../constants')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
-const { convertBuffer, logger } = require('../utils')
+const { logger } = require('../utils')
 const { disjointPathQuery } = require('./disjoint-path')
 const merge = require('it-merge')
-const { EventEmitter } = require('events')
+const {
+  EventEmitter,
+  // @ts-expect-error only available in node 15+
+  setMaxListeners
+} = require('events')
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -60,11 +64,13 @@ class QueryManager {
    * @param {Uint8Array} key
    * @param {PeerId[]} peers
    * @param {import('../types').QueryFunc<T>} queryFunc
-   * @param {AbortSignal} [signal]
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    *
    * @returns {AsyncIterable<import('../types').QueryResult<T>>}
    */
-  async * run (key, peers, queryFunc, signal) {
+  async * run (key, peers, queryFunc, options = {}) {
     if (!this._running) {
       throw new Error('QueryManager not started')
     }
@@ -73,10 +79,12 @@ class QueryManager {
     const abortController = new AbortController()
     this._controllers.add(abortController)
     const signals = [abortController.signal]
+    options.signal && signals.push(options.signal)
+    const signal = anySignal(signals)
 
-    if (signal) {
-      signals.push(signal)
-    }
+    // this signal will get listened to for every invocation of queryFunc
+    // so make sure we don't make a lot of noise in the logs
+    setMaxListeners && setMaxListeners(0, signal)
 
     const log = logger('libp2p:kad-dht:query:' + uint8ArrayToString(key, 'base58btc'))
 
@@ -97,24 +105,21 @@ class QueryManager {
       // traverse the same peer
       const peersSeen = new Set()
 
-      // perform lookups on kadId, not the actual value
-      const keyKadId = await convertBuffer(key)
-
       // Create disjoint paths
       const paths = peersToQuery.map((peer, index) => {
-        return disjointPathQuery(
+        return disjointPathQuery({
           key,
-          keyKadId,
-          peer,
-          this._peerId,
+          startingPeer: peer,
+          ourPeerId: this._peerId,
           peersSeen,
-          anySignal(signals),
-          queryFunc,
-          index,
-          peersToQuery.length,
-          this._alpha,
-          cleanUp
-        )
+          signal,
+          query: queryFunc,
+          pathIndex: index,
+          numPaths: peersToQuery.length,
+          alpha: this._alpha,
+          cleanUp,
+          queryFuncTimeout: options.queryFuncTimeout
+        })
       })
 
       /** @type {Error[]} */

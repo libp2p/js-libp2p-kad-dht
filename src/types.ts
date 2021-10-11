@@ -27,15 +27,23 @@ export interface DHTValue {
   from: PeerId
 }
 
+export interface AbortOptions {
+  signal?: AbortSignal
+}
+
+export interface QueryOptions {
+  queryFuncTimeout?: number
+}
+
 export interface DHT extends EventEmitter {
-  put: (key: Uint8Array, value: Uint8Array, options?: { signal?: AbortSignal, minPeers?: number }) => Promise<void>
-  get: (key: Uint8Array, options?: { signal?: AbortSignal }) => Promise<Uint8Array>
-  getMany: (key: Uint8Array, nvals: number, options?: { signal?: AbortSignal }) => AsyncGenerator<DHTValue, void, undefined>
+  put: (key: Uint8Array, value: Uint8Array, options?: AbortOptions & { minPeers?: number }) => Promise<void>
+  get: (key: Uint8Array, options?: AbortOptions & QueryOptions) => Promise<Uint8Array>
+  getMany: (key: Uint8Array, nvals: number, options?: AbortOptions & QueryOptions) => AsyncGenerator<DHTValue, void, undefined>
   removeLocal: (key: Uint8Array) => Promise<void>
-  provide: (key: CID, options?: { signal?: AbortSignal }) => AsyncGenerator<PeerId, void, undefined>
-  findProviders: (key: CID, options?: { signal?: AbortSignal, maxNumProviders?: number }) => AsyncGenerator<PeerId, void, undefined>
-  findPeer: (id: PeerId, options?: { signal?: AbortSignal }) => Promise<{ id: PeerId, multiaddrs: Multiaddr[] } | undefined>
-  getClosestPeers: (key: Uint8Array, options?: { shallow?: boolean, signal?: AbortSignal }) => AsyncGenerator<PeerId, void, undefined>
+  provide: (key: CID, options?: AbortOptions) => AsyncGenerator<PeerId, void, undefined>
+  findProviders: (key: CID, options?: AbortOptions & QueryOptions & { maxNumProviders?: number }) => AsyncGenerator<PeerId, void, undefined>
+  findPeer: (id: PeerId, options?: AbortOptions & QueryOptions) => Promise<{ id: PeerId, multiaddrs: Multiaddr[] }>
+  getClosestPeers: (key: Uint8Array, options?: AbortOptions & QueryOptions & { shallow?: boolean }) => AsyncGenerator<PeerId, void, undefined>
   getPublicKey: (peer: PeerId) => Promise<PublicKey>
   enableServerMode: () => void
   enableClientMode: () => void

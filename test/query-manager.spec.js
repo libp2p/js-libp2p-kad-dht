@@ -62,7 +62,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, peers, queryFunc))
 
     expect(results).to.have.lengthOf(1)
     expect(results).to.deep.containSubset([{
@@ -100,7 +100,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, [peers[7]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[7]], queryFunc))
 
     // e.g. our starting peer plus the 5x closerPeers returned n the first iteration
     expect(results).to.have.lengthOf(6)
@@ -132,7 +132,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, [peers[7]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[7]], queryFunc))
 
     // e.g. our starting peer plus the 5x closerPeers returned n the first iteration
     expect(results).to.have.lengthOf(6)
@@ -200,9 +200,78 @@ describe('QueryManager', () => {
       controller.abort()
     }, 10)
 
-    await expect(all(manager.run(key, peers, queryFunc, controller.signal))).to.eventually.be.rejected().with.property('code', 'ERR_QUERY_ABORTED')
+    await expect(all(manager.run(key, peers, queryFunc, { signal: controller.signal }))).to.eventually.be.rejected().with.property('code', 'ERR_QUERY_ABORTED')
 
     expect(aborted).to.be.true()
+
+    manager.stop()
+  })
+
+  it('should allow a sub-query to timeout without aborting the whole query', async () => {
+    const manager = new QueryManager(ourPeerId, 2, 2)
+    manager.start()
+
+    // 2 -> 1 -> 0
+    // 4 -> 3 -> 0
+    const topology = {
+      [peers[0]]: {
+        value: true
+      },
+      [peers[1]]: {
+        delay: 1000,
+        closerPeers: [
+          peers[0]
+        ]
+      },
+      [peers[2]]: {
+        delay: 1000,
+        closerPeers: [
+          peers[1]
+        ]
+      },
+
+      [peers[3]]: {
+        delay: 10,
+        closerPeers: [
+          peers[0]
+        ]
+      },
+      [peers[4]]: {
+        delay: 10,
+        closerPeers: [
+          peers[3]
+        ]
+      }
+    }
+
+    /** @type {import('../src/types').QueryFunc<boolean>} */
+    const queryFunc = async ({ peer, signal }) => { // eslint-disable-line require-await
+      let aborted = false
+
+      signal.addEventListener('abort', () => {
+        aborted = true
+      })
+
+      const res = topology[peer]
+
+      if (res.delay) {
+        await delay(res.delay)
+        delete res.delay
+      }
+
+      if (aborted) {
+        throw new Error('Aborted by signal')
+      }
+
+      return res
+    }
+
+    const result = await all(manager.run(key, [peers[2], peers[4]], queryFunc, { queryFuncTimeout: 500 }))
+
+    // should have traversed through the three nodes to the value and the one that timed out
+    expect(result).to.have.lengthOf(4)
+    expect(result).to.have.nested.property('[2].value', true)
+    expect(result).to.have.nested.property('[3].err.message', 'Aborted by signal')
 
     manager.stop()
   })
@@ -218,7 +287,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, peers, queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, peers, queryFunc))
 
     // didn't add any extra peers during the query
     expect(results).to.have.lengthOf(manager._disjointPaths)
@@ -247,7 +316,7 @@ describe('QueryManager', () => {
       }
     }
 
-    await expect(all(manager.run(key, peers, queryFunc, new AbortController().signal))).to.eventually.be.rejectedWith(/Urk!/)
+    await expect(all(manager.run(key, peers, queryFunc))).to.eventually.be.rejectedWith(/Urk!/)
 
     manager.stop()
   })
@@ -264,7 +333,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, [], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [], queryFunc))
 
     expect(results).to.have.lengthOf(0)
 
@@ -347,7 +416,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, [peers[9]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[9]], queryFunc))
 
     expect(results).to.have.lengthOf(6)
 
@@ -404,7 +473,7 @@ describe('QueryManager', () => {
       }
     }
 
-    const results = await all(manager.run(key, [peers[3]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[3]], queryFunc))
 
     expect(results).to.have.lengthOf(2)
     expect(results).to.have.nested.deep.property('[0].closerPeers[0]', peers[2])
@@ -472,7 +541,7 @@ describe('QueryManager', () => {
       return topology[peer]
     }
 
-    const results = await all(manager.run(key, [peers[9], peers[8], peers[7]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[9], peers[8], peers[7]], queryFunc))
 
     // Should visit all peers
     expect(results).to.have.lengthOf(10)
@@ -515,7 +584,7 @@ describe('QueryManager', () => {
       return topology[peer]
     }
 
-    const results = await all(manager.run(key, [peers[3]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[3]], queryFunc))
 
     // Should not visit peer 0
     expect(results).to.have.lengthOf(3)
@@ -577,7 +646,7 @@ describe('QueryManager', () => {
     }
 
     // shutdown will cause the query to stop early but without an error
-    await drain(manager.run(key, [peers[3]], queryFunc, new AbortController().signal))
+    await drain(manager.run(key, [peers[3]], queryFunc))
 
     // Should only visit peers up to the point where we shut down
     expect(visited).to.have.lengthOf(2)
@@ -625,7 +694,7 @@ describe('QueryManager', () => {
       return topology[peer]
     }
 
-    const results = await all(manager.run(key, [peers[2], peers[4]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[2], peers[4]], queryFunc))
 
     // visited all the nodes
     expect(results).to.have.lengthOf(5)
@@ -696,7 +765,7 @@ describe('QueryManager', () => {
       return res
     }
 
-    const results = await all(manager.run(key, [peers[2], peers[4]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[2], peers[4]], queryFunc))
 
     expect(results).to.not.deep.containSubset([{
       done: true,
@@ -767,7 +836,7 @@ describe('QueryManager', () => {
       return res
     }
 
-    const results = await all(manager.run(key, [peers[2], peers[5]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[2], peers[5]], queryFunc))
 
     expect(results).to.deep.containSubset([{
       value: true
@@ -839,7 +908,7 @@ describe('QueryManager', () => {
       return res
     }
 
-    await expect(all(manager.run(key, [peers[2], peers[5]], queryFunc, new AbortController().signal))).to.eventually.be.rejectedWith(err)
+    await expect(all(manager.run(key, [peers[2], peers[5]], queryFunc))).to.eventually.be.rejectedWith(err)
 
     manager.stop()
   })
@@ -888,7 +957,7 @@ describe('QueryManager', () => {
       return topology[peer]
     }
 
-    const results = await all(manager.run(key, [peers[3]], queryFunc, new AbortController().signal))
+    const results = await all(manager.run(key, [peers[3]], queryFunc))
 
     // should not have a value
     expect(results.find(res => Boolean(res.value))).to.not.be.ok()

@@ -111,6 +111,7 @@ class ContentRouting {
    * @param {object} [options] - findProviders options
    * @param {number} [options.maxNumProviders=5] - maximum number of providers to find
    * @param {AbortSignal} [options.signal]
+   * @param {number} [options.queryFuncTimeout]
    */
   async * findProviders (key, options = { maxNumProviders: 5 }) {
     const toFind = options.maxNumProviders || this._routingTable._kBucketSize
@@ -155,7 +156,7 @@ class ContentRouting {
 
     const providers = new Set(provs.map(p => p.toB58String()))
 
-    for await (const res of this._queryManager.run(key.multihash.bytes, this._routingTable.closestPeers(key.bytes), findProvidersQuery, options.signal)) {
+    for await (const res of this._queryManager.run(key.multihash.bytes, this._routingTable.closestPeers(key.bytes), findProvidersQuery, options)) {
       if (res.value) {
         for (const peer of res.value) {
           if (providers.has(peer.toB58String())) {
