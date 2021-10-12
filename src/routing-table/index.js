@@ -89,7 +89,7 @@ class RoutingTable {
               await stream.close()
               responded++
             } catch (err) {
-              log.error('Could not ping peer', err)
+              log.error('Could not ping peer %p', oldContact.peer, err)
               log(`Evicting old contact after ping failed ${oldContact.peer}`)
               this.kb.remove(oldContact.id)
             } finally {

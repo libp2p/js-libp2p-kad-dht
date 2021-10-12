@@ -21,6 +21,7 @@ const { Providers } = require('./providers')
 const { QueryManager } = require('./query-manager')
 const { RPC } = require('./rpc')
 const { TopologyListener } = require('./topology-listener')
+const { QuerySelf } = require('./query-self')
 
 const log = utils.logger('libp2p:kad-dht')
 
@@ -33,6 +34,16 @@ const log = utils.logger('libp2p:kad-dht')
  * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
  * @typedef {import('./types').DHT} DHT
+ *
+ * @typedef {object} KadDHTOps
+ * @property {Libp2p} libp2p - the libp2p instance
+ * @property {string} [protocolPrefix = '/ipfs'] - libp2p registrar handle protocol
+ * @property {boolean} [forceProtocolLegacy = false] - WARNING: this is not recommended and should only be used for legacy purposes
+ * @property {number} kBucketSize - k-bucket size (default 20)
+ * @property {boolean} clientMode - If true, the DHT will not respond to queries. This should be true if your node will not be dialable. (default: false)
+ * @property {import('libp2p-interfaces/src/types').DhtValidators} validators - validators object with namespace as keys and function(key, record, callback)
+ * @property {object} selectors - selectors object with namespace as keys and function(key, records)
+ * @property {number} querySelfInterval - how often to search the network for peers close to ourselves
  */
 
 /**
@@ -43,14 +54,7 @@ class KadDHT extends EventEmitter {
   /**
    * Create a new KadDHT.
    *
-   * @param {object} props
-   * @param {Libp2p} props.libp2p - the libp2p instance
-   * @param {string} [props.protocolPrefix = '/ipfs'] - libp2p registrar handle protocol
-   * @param {boolean} [props.forceProtocolLegacy = false] - WARNING: this is not recommended and should only be used for legacy purposes
-   * @param {number} props.kBucketSize - k-bucket size (default 20)
-   * @param {boolean} props.clientMode - If true, the DHT will not respond to queries. This should be true if your node will not be dialable. (default: false)
-   * @param {import('libp2p-interfaces/src/types').DhtValidators} props.validators - validators object with namespace as keys and function(key, record, callback)
-   * @param {object} props.selectors - selectors object with namespace as keys and function(key, records)
+   * @param {KadDHTOps} opts
    */
   constructor ({
     libp2p,
@@ -59,7 +63,8 @@ class KadDHT extends EventEmitter {
     kBucketSize = K,
     clientMode = true,
     validators = {},
-    selectors = {}
+    selectors = {},
+    querySelfInterval = 60000
   }) {
     super()
 
@@ -182,6 +187,12 @@ class KadDHT extends EventEmitter {
       libp2p.registrar,
       this._protocol
     )
+    this._querySelf = new QuerySelf(
+      libp2p.peerId,
+      this._peerRouting,
+      kBucketSize,
+      querySelfInterval
+    )
 
     // handle peers being discovered during processing of DHT messages
     this._network.on('peer', (peerData) => {
@@ -241,7 +252,8 @@ class KadDHT extends EventEmitter {
       this._network.start(),
       this._routingTable.start(),
       this._routingTableRefresh.start(),
-      this._topologyListener.start()
+      this._topologyListener.start(),
+      this._querySelf.start()
     ])
   }
 
@@ -258,7 +270,8 @@ class KadDHT extends EventEmitter {
       this._network.stop(),
       this._routingTable.stop(),
       this._routingTableRefresh.stop(),
-      this._topologyListener.stop()
+      this._topologyListener.stop(),
+      this._querySelf.stop()
     ])
   }
 
@@ -419,7 +432,7 @@ class KadDHT extends EventEmitter {
 
 module.exports = {
   /**
-   * @param {*} opts
+   * @param {KadDHTOps} opts
    * @returns {DHT}
    */
   create: (opts) => {
