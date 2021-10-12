@@ -84,7 +84,9 @@ class QueryManager {
 
     // this signal will get listened to for every invocation of queryFunc
     // so make sure we don't make a lot of noise in the logs
-    setMaxListeners && setMaxListeners(0, signal)
+    try {
+      setMaxListeners && setMaxListeners(0, signal)
+    } catch {} // fails on node < 15
 
     const log = logger('libp2p:kad-dht:query:' + uint8ArrayToString(key, 'base58btc'))
 
