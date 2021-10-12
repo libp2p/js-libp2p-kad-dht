@@ -63,6 +63,7 @@
     "it-merge": "^1.0.3",
     "it-parallel": "^2.0.1",
     "it-pipe": "^1.1.0",
+    "it-take": "^1.0.2",
     "k-bucket": "^5.1.0",
     "libp2p-crypto": "^0.19.5",
     "libp2p-interfaces": "^1.0.0",
