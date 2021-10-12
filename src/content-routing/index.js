@@ -136,7 +136,7 @@ class ContentRouting {
     const findProvidersQuery = async ({ peer, signal }) => {
       let response
       try {
-        const request = new Message(Message.TYPES.GET_PROVIDERS, key.bytes, 0)
+        const request = new Message(Message.TYPES.GET_PROVIDERS, key.multihash.bytes, 0)
         response = await this._network.sendRequest(peer, request, options)
       } catch (/** @type {any} */ err) {
         return {

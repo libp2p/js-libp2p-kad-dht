@@ -20,6 +20,7 @@ const { PeerRouting } = require('./peer-routing')
 const { Providers } = require('./providers')
 const { QueryManager } = require('./query-manager')
 const { RPC } = require('./rpc')
+const { TopologyListener } = require('./topology-listener')
 
 const log = utils.logger('libp2p:kad-dht')
 
@@ -31,10 +32,6 @@ const log = utils.logger('libp2p:kad-dht')
  * @typedef {import('libp2p/src/registrar')} Registrar
  * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
- * @typedef {object} PeerData
- * @property {PeerId} id
- * @property {Multiaddr[]} multiaddrs
- *
  * @typedef {import('./types').DHT} DHT
  */
 
@@ -127,12 +124,8 @@ class KadDHT extends EventEmitter {
 
     this._network = new Network(
       libp2p,
-      libp2p.registrar,
-      this._routingTable,
-      libp2p.peerStore.addressBook,
       this._protocol
     )
-
     /**
      * Keeps track of running queries
      *
@@ -143,6 +136,7 @@ class KadDHT extends EventEmitter {
       // Number of disjoint query paths to use - This is set to `kBucketSize/2` per the S/Kademlia paper
       Math.ceil(kBucketSize / 2)
     )
+
     // DHT components
     this._peerRouting = new PeerRouting(
       libp2p.peerId,
@@ -184,6 +178,26 @@ class KadDHT extends EventEmitter {
       this._datastore,
       this._validators
     )
+    this._topologyListener = new TopologyListener(
+      libp2p.registrar,
+      this._protocol
+    )
+
+    // handle peers being discovered during processing of DHT messages
+    this._network.on('peer', (peerData) => {
+      this._routingTable.add(peerData.id).catch(err => {
+        log.error(`Could not add ${peerData.id} to routing table`, err)
+      })
+
+      this.emit('peer', peerData)
+    })
+
+    // handle peers being discovered via other peer discovery mechanisms
+    this._topologyListener.on('peer', (peerId) => {
+      this._routingTable.add(peerId).catch(err => {
+        log.error(`Could not add ${peerId} to routing table`, err)
+      })
+    })
   }
 
   /**
@@ -226,7 +240,8 @@ class KadDHT extends EventEmitter {
       this._queryManager.start(),
       this._network.start(),
       this._routingTable.start(),
-      this._routingTableRefresh.start()
+      this._routingTableRefresh.start(),
+      this._topologyListener.start()
     ])
   }
 
@@ -242,7 +257,8 @@ class KadDHT extends EventEmitter {
       this._queryManager.stop(),
       this._network.stop(),
       this._routingTable.stop(),
-      this._routingTableRefresh.stop()
+      this._routingTableRefresh.stop(),
+      this._topologyListener.stop()
     ])
   }
 
@@ -322,12 +338,11 @@ class KadDHT extends EventEmitter {
    *
    * @param {CID} key
    * @param {object} [options] - findProviders options
-   * @param {number} [options.timeout=60000] - how long the query should maximally run, in milliseconds (default: 60000)
    * @param {number} [options.maxNumProviders=5] - maximum number of providers to find
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
    */
-  async * findProviders (key, options = { timeout: 6000, maxNumProviders: 5 }) {
+  async * findProviders (key, options = { maxNumProviders: 5 }) {
     yield * this._contentRouting.findProviders(key, options)
   }
 

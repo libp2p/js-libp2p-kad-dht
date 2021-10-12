@@ -7,6 +7,11 @@ import type { Message } from './message'
 import type { MuxedStream } from 'libp2p/src/upgrader'
 import type Topology from 'libp2p-interfaces/src/topology'
 
+export interface PeerData {
+  id: PeerId
+  multiaddrs: Multiaddr[]
+}
+
 export interface QueryContinuationResult<T> {
   done?: false
   closerPeers?: PeerId[]
@@ -36,17 +41,27 @@ export interface QueryOptions {
 }
 
 export interface DHT extends EventEmitter {
-  put: (key: Uint8Array, value: Uint8Array, options?: AbortOptions & { minPeers?: number }) => Promise<void>
+  // query/client methods
   get: (key: Uint8Array, options?: AbortOptions & QueryOptions) => Promise<Uint8Array>
   getMany: (key: Uint8Array, nvals: number, options?: AbortOptions & QueryOptions) => AsyncGenerator<DHTValue, void, undefined>
-  removeLocal: (key: Uint8Array) => Promise<void>
-  provide: (key: CID, options?: AbortOptions) => AsyncGenerator<PeerId, void, undefined>
   findProviders: (key: CID, options?: AbortOptions & QueryOptions & { maxNumProviders?: number }) => AsyncGenerator<PeerId, void, undefined>
   findPeer: (id: PeerId, options?: AbortOptions & QueryOptions) => Promise<{ id: PeerId, multiaddrs: Multiaddr[] }>
   getClosestPeers: (key: Uint8Array, options?: AbortOptions & QueryOptions & { shallow?: boolean }) => AsyncGenerator<PeerId, void, undefined>
   getPublicKey: (peer: PeerId) => Promise<PublicKey>
+
+  // publish/server methods
+  provide: (key: CID, options?: AbortOptions) => AsyncGenerator<PeerId, void, undefined>
+  put: (key: Uint8Array, value: Uint8Array, options?: AbortOptions & { minPeers?: number }) => Promise<void>
+
+  // enable/disable publishing
   enableServerMode: () => void
   enableClientMode: () => void
+
+  // housekeeping
+  removeLocal: (key: Uint8Array) => Promise<void>
+
+  // events
+  on: (event: 'peer', handler: (peerData: PeerData) => void) => this
 }
 
 export interface DHTMessageHandler {

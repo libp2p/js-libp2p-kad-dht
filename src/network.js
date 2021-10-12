@@ -5,9 +5,9 @@ const { pipe } = require('it-pipe')
 const lp = require('it-length-prefixed')
 const drain = require('it-drain')
 const first = require('it-first')
-const MulticodecTopology = require('libp2p-interfaces/src/topology/multicodec-topology')
 const { Message, MESSAGE_TYPE_LOOKUP } = require('./message')
 const utils = require('./utils')
+const { EventEmitter } = require('events')
 
 const log = utils.logger('libp2p:kad-dht:network')
 
@@ -19,23 +19,18 @@ const log = utils.logger('libp2p:kad-dht:network')
 /**
  * Handle network operations for the dht
  */
-class Network {
+class Network extends EventEmitter {
   /**
    * Create a new network
    *
    * @param {import('./types').Dialer} dialer
-   * @param {import('./types').Registrar} registrar
-   * @param {import('./routing-table').RoutingTable} routingTable
-   * @param {import('./types').AddressBook} addressBook
    * @param {string} protocol
    */
-  constructor (dialer, registrar, routingTable, addressBook, protocol) {
-    this._onPeerConnected = this._onPeerConnected.bind(this)
+  constructor (dialer, protocol) {
+    super()
+
     this._running = false
     this._dialer = dialer
-    this._registrar = registrar
-    this._addressBook = addressBook
-    this._routingTable = routingTable
     this._protocol = protocol
   }
 
@@ -48,16 +43,6 @@ class Network {
     }
 
     this._running = true
-
-    // register protocol with topology
-    const topology = new MulticodecTopology({
-      multicodecs: [this._protocol],
-      handlers: {
-        onConnect: this._onPeerConnected,
-        onDisconnect: () => {}
-      }
-    })
-    this._registrarId = this._registrar.register(topology)
   }
 
   /**
@@ -65,11 +50,6 @@ class Network {
    */
   stop () {
     this._running = false
-
-    // unregister protocol and handlers
-    if (this._registrarId) {
-      this._registrar.unregister(this._registrarId)
-    }
   }
 
   /**
@@ -79,20 +59,6 @@ class Network {
    */
   get isStarted () {
     return this._running
-  }
-
-  /**
-   * Registrar notifies a connection successfully with dht protocol
-   *
-   * @param {PeerId} peerId - remote peer id
-   */
-  async _onPeerConnected (peerId) {
-    try {
-      await this._routingTable.add(peerId)
-      log('added %p to the routing table', peerId)
-    } catch (err) {
-      log('error adding %p to the routing table:', peerId, err)
-    }
   }
 
   /**
@@ -178,18 +144,12 @@ class Network {
 
     const message = Message.deserialize(res)
 
-    // add any observed peers to the address book
+    // tell any listeners about new peers we've seen
     message.closerPeers.forEach(peerData => {
-      this._addressBook.add(peerData.id, peerData.multiaddrs)
-      this._routingTable.add(peerData.id).catch(err => {
-        log.error(`Could not add ${peerData.id} to routing table`, err)
-      })
+      this.emit('peer', peerData)
     })
     message.providerPeers.forEach(peerData => {
-      this._addressBook.add(peerData.id, peerData.multiaddrs)
-      this._routingTable.add(peerData.id).catch(err => {
-        log.error(`Could not add ${peerData.id} to routing table`, err)
-      })
+      this.emit('peer', peerData)
     })
 
     return message

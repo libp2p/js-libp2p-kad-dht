@@ -5,8 +5,7 @@ const { xor } = require('uint8arrays/xor')
 const { toString } = require('uint8arrays/to-string')
 const defer = require('p-defer')
 const errCode = require('err-code')
-const { convertPeerId, convertBuffer, logger } = require('../utils')
-const log = logger('libp2p:kad-dht:query-manager:disjoint-path')
+const { convertPeerId, convertBuffer } = require('../utils')
 const { TimeoutController } = require('timeout-abort-controller')
 const { anySignal } = require('any-signal')
 
@@ -34,8 +33,9 @@ const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
  * @param {number} context.alpha - how many concurrent node/value lookups to run
  * @param {import('events').EventEmitter} context.cleanUp - will emit a 'cleanup' event if the caller exits the for..await of early
  * @param {number} [context.queryFuncTimeout] - a timeout for queryFunc in ms
+ * @param {ReturnType<import('../utils').logger>} context.log
  */
-module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, startingPeer, ourPeerId, peersSeen, signal, query, pathIndex, numPaths, alpha, cleanUp, queryFuncTimeout }) {
+module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, startingPeer, ourPeerId, peersSeen, signal, query, pathIndex, numPaths, alpha, cleanUp, queryFuncTimeout, log }) {
   // Only ALPHA node/value lookups are allowed at any given time for each process
   // https://github.com/libp2p/specs/tree/master/kad-dht#alpha-concurrency-parameter-%CE%B1
   const queue = new Queue({
@@ -57,16 +57,6 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
       return
     }
 
-    if (peersSeen.has(peer.toB58String())) {
-      log('already seen %p in query', peer)
-      return
-    }
-
-    if (ourPeerId.equals(peer)) {
-      log('not querying ourselves')
-      return
-    }
-
     peersSeen.add(peer.toB58String())
 
     const peerXor = BigInt('0x' + toString(xor(peerKadId, kadId), 'base16'))
@@ -80,18 +70,20 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
         signals.push(timeout.signal)
       }
 
+      const compoundSignal = anySignal(signals)
+
       try {
         const result = await query({
           key,
           peer,
-          signal: anySignal(signals),
+          signal: compoundSignal,
           pathIndex,
           numPaths
         })
 
         timeout && timeout.clear()
 
-        if (signal.aborted) {
+        if (compoundSignal.aborted) {
           return
         }
 
@@ -103,11 +95,21 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
 
             // only continue query if closer peer is actually closer
             if (closerPeerXor > peerXor) {
-              log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
+              // log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
               // continue
             }
 
-            log('adding %p to query', closerPeer)
+            if (peersSeen.has(closerPeer.toB58String())) {
+              // log('already seen %p in query', closerPeer)
+              continue
+            }
+
+            if (ourPeerId.equals(closerPeer)) {
+              // log('not querying ourselves')
+              continue
+            }
+
+            log('querying closer peer %p', closerPeer)
             queryPeer(closerPeer, closerPeerKadId)
           }
         }
@@ -123,19 +125,16 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
           queue.clear()
         }
       } catch (err) {
-        if (timeout && timeout.signal.aborted) {
-          // do not abort the whole query, just this worker
+        if (signal.aborted) {
+          // @ts-ignore simulate p-queue@7.x.x event
+          queue.emit('error', err)
+        } else {
           // @ts-ignore simulate p-queue@7.x.x event
           queue.emit('completed', {
             peer,
             err
           })
-
-          return
         }
-
-        // @ts-ignore simulate p-queue@7.x.x event
-        queue.emit('error', err)
       } finally {
         timeout && timeout.clear()
       }
@@ -154,19 +153,32 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
   queryPeer(startingPeer, await convertPeerId(startingPeer))
 
   // yield results as they come in
-  yield * toGenerator(queue, signal, cleanUp)
+  yield * toGenerator(queue, signal, cleanUp, log)
 }
 
 /**
  * @param {Queue} queue
  * @param {AbortSignal} signal
  * @param {import('events').EventEmitter} cleanUp
+ * @param {ReturnType<import('../utils').logger>} log
  */
-async function * toGenerator (queue, signal, cleanUp) {
+async function * toGenerator (queue, signal, cleanUp, log) {
   let deferred = defer()
   let running = true
   /** @type {QueryResult[]} */
   const results = []
+
+  const cleanup = () => {
+    if (!running) {
+      return
+    }
+
+    log('clean up queue, results %d, queue size %d, pending tasks %d', results.length, queue.size, queue.pending)
+
+    running = false
+    queue.clear()
+    results.splice(0, results.length)
+  }
 
   // @ts-expect-error 'completed' event is in p-queue@7.x.x
   queue.on('completed', result => {
@@ -176,9 +188,7 @@ async function * toGenerator (queue, signal, cleanUp) {
   // @ts-expect-error 'error' event is in p-queue@7.x.x
   queue.on('error', err => {
     log('queue error', err)
-    running = false
-    queue.clear()
-    results.splice(0, results.length)
+    cleanup()
     deferred.reject(err)
   })
   queue.on('idle', () => {
@@ -190,22 +200,18 @@ async function * toGenerator (queue, signal, cleanUp) {
   // clear the queue and throw if the query is aborted
   signal.addEventListener('abort', () => {
     log('abort queue')
-    queue.clear()
-    deferred.reject(errCode(new Error('Query aborted'), 'ERR_QUERY_ABORTED'))
+    const wasRunning = running
+    cleanup()
+
+    if (wasRunning) {
+      deferred.reject(errCode(new Error('Query aborted'), 'ERR_QUERY_ABORTED'))
+    }
   })
 
   // the user broke out of the loop early, ensure we resolve the deferred result
   // promise and clear the queue of any remaining jobs
   cleanUp.on('cleanup', () => {
-    if (!running) {
-      return
-    }
-
-    log('clean up queue, results %d, queue size %d, pending tasks %d', results.length, queue.size, queue.pending)
-
-    running = false
-    queue.clear()
-    results.splice(0, results.length)
+    cleanup()
     deferred.resolve()
   })
 

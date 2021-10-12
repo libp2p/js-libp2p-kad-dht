@@ -101,6 +101,16 @@ class TestDHT {
       ...options
     })
 
+    // simulate libp2p._onDiscoveryPeer
+    dht.on('peer', (peerData) => {
+      if (peerData.id.toB58String() === peerId.toB58String()) {
+        return
+      }
+
+      peerData.multiaddrs && peerStore.addressBook.add(peerData.id, peerData.multiaddrs)
+      peerData.protocols && peerStore.protoBook.set(peerData.id, peerData.protocols)
+    })
+
     if (autoStart) {
       dht.start()
     }

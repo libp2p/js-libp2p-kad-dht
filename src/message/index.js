@@ -17,7 +17,7 @@ const MESSAGE_TYPE_LOOKUP = Object.keys(MESSAGE_TYPE)
  * @property {Uint8Array[]} addrs
  * @property {ConnectionType} connection
  *
- * @typedef {import('../index').PeerData} PeerData
+ * @typedef {import('../types').PeerData} PeerData
  */
 
 /**

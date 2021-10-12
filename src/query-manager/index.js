@@ -118,7 +118,8 @@ class QueryManager {
           numPaths: peersToQuery.length,
           alpha: this._alpha,
           cleanUp,
-          queryFuncTimeout: options.queryFuncTimeout
+          queryFuncTimeout: options.queryFuncTimeout,
+          log
         })
       })
 
