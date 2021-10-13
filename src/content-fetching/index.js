@@ -19,7 +19,7 @@ const log = utils.logger('libp2p:kad-dht:content-fetching')
 
 /**
  * @typedef {import('peer-id')} PeerId
- *
+ * @typedef {import('../types').QueryEventHandler} QueryEventHandler
  * @typedef {object} ContentFetchValue
  * @property {PeerId} from
  * @property {Uint8Array} value
@@ -80,6 +80,7 @@ class ContentFetching {
    * @param {Uint8Array} best - the best record that was found
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async sendCorrectionRecord (key, vals, best, options = {}) {
     log('sendCorrection for %b', key)
@@ -123,6 +124,7 @@ class ContentFetching {
    * @param {object} [options] - put options
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async put (key, value, options = {}) {
     log('put value %b', key)

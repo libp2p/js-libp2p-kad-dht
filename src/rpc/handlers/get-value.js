@@ -42,7 +42,7 @@ class GetValueHandler {
   async handle (peerId, msg) {
     const key = msg.key
 
-    log('asked for key %b', key)
+    log('%p asked for key %b', peerId, key)
 
     if (!key || key.length === 0) {
       throw errcode(new Error('Invalid key'), 'ERR_INVALID_KEY')

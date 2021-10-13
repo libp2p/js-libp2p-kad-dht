@@ -137,6 +137,7 @@ class QueryManager {
         yield res
 
         if (res.err) {
+          log('error', res.err)
           errors.push(res.err)
         }
       }

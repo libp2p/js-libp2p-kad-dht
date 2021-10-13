@@ -79,7 +79,11 @@ class TestDHT {
         registrar,
         handle: (protocol, fn) => {
           registrar.handle(protocol, fn)
-        }
+        },
+        unhandle: (protocol) => {
+          registrar.unhandle(protocol)
+        },
+        on: () => {}
       },
       validators: {
         v: {

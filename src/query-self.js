@@ -2,6 +2,7 @@
 
 const { EventEmitter } = require('events')
 const take = require('it-take')
+const length = require('it-length')
 const { QUERY_SELF_INTERVAL } = require('./constants')
 const { logger } = require('./utils')
 const log = logger('libp2p:kad-dht:query-self')
@@ -59,11 +60,11 @@ class QuerySelf extends EventEmitter {
     try {
       this._controller = new AbortController()
 
-      await take(this._peerRouting.getClosestPeers(this._peerId.toBytes(), {
+      const found = await length(await take(this._peerRouting.getClosestPeers(this._peerId.toBytes(), {
         signal: this._controller.signal
-      }), this._count)
+      }), this._count))
 
-      log('query ran successfully')
+      log('query ran successfully - found %d peers', found)
     } catch (err) {
       log('query error', err)
     } finally {

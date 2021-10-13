@@ -4,15 +4,16 @@ const errcode = require('err-code')
 const { Message } = require('../message')
 const parallel = require('it-parallel')
 const map = require('it-map')
-const utils = require('../utils')
+const { convertBuffer, logger } = require('../utils')
 const { ALPHA } = require('../constants')
 
-const log = utils.logger('libp2p:kad-dht:content-routing')
+const log = logger('libp2p:kad-dht:content-routing')
 
 /**
  * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
+ * @typedef {import('../types').QueryEventHandler} QueryEventHandler
  */
 
 class ContentRouting {
@@ -43,6 +44,7 @@ class ContentRouting {
    * @param {Multiaddr[]} multiaddrs
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * provide (key, multiaddrs, options = {}) {
     log('provide %s', key)
@@ -112,9 +114,12 @@ class ContentRouting {
    * @param {number} [options.maxNumProviders=5] - maximum number of providers to find
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * findProviders (key, options = { maxNumProviders: 5 }) {
     const toFind = options.maxNumProviders || this._routingTable._kBucketSize
+    const target = key.multihash.bytes
+    const id = await convertBuffer(target)
 
     log(`findProviders ${key}`)
 
@@ -136,8 +141,8 @@ class ContentRouting {
     const findProvidersQuery = async ({ peer, signal }) => {
       let response
       try {
-        const request = new Message(Message.TYPES.GET_PROVIDERS, key.multihash.bytes, 0)
-        response = await this._network.sendRequest(peer, request, options)
+        const request = new Message(Message.TYPES.GET_PROVIDERS, target, 0)
+        response = await this._network.sendRequest(peer, request, { signal, onQueryEvent: options.onQueryEvent })
       } catch (/** @type {any} */ err) {
         return {
           done: false,
@@ -156,7 +161,7 @@ class ContentRouting {
 
     const providers = new Set(provs.map(p => p.toB58String()))
 
-    for await (const res of this._queryManager.run(key.multihash.bytes, this._routingTable.closestPeers(key.bytes), findProvidersQuery, options)) {
+    for await (const res of this._queryManager.run(target, this._routingTable.closestPeers(id), findProvidersQuery, options)) {
       if (res.value) {
         for (const peer of res.value) {
           if (providers.has(peer.toB58String())) {

@@ -44,7 +44,7 @@ class GetProvidersHandler {
       throw errcode(new Error(`Invalid CID: ${err.message}`), 'ERR_INVALID_CID')
     }
 
-    log('%s', cid.toString())
+    log('%p asking for providers for %s', peerId, cid.toString())
     const dsKey = utils.bufferToKey(cid.bytes)
 
     const [has, peers, closer] = await Promise.all([

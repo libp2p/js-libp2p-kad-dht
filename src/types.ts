@@ -38,7 +38,64 @@ export interface AbortOptions {
 
 export interface QueryOptions {
   queryFuncTimeout?: number
+  onQueryEvent?: QueryEventHandler
 }
+
+export interface QueryEventHandler { (evt: QueryEvent): void }
+
+export interface SendingQueryEvent {
+  peer: PeerId
+  type: 0
+  event: 'sendingQuery'
+}
+
+export interface PeerResponseEvent {
+  peer: PeerId
+  type: 1
+  event: 'peerResponse'
+  closerPeers: PeerData[]
+}
+
+export interface FinalPeerEvent {
+  peer: PeerId
+  type: 2
+  event: 'finalPeer'
+}
+
+export interface QueryErrorEvent {
+  peer: PeerId
+  type: 3
+  event: 'queryError'
+  error: Error
+}
+
+export interface ProviderEvent {
+  peer: PeerId
+  type: 4
+  event: 'provider'
+  providerPeers: PeerData[]
+}
+
+export interface ValueEvent {
+  peer: PeerId
+  type: 5
+  event: 'value'
+  value: Uint8Array
+}
+
+export interface AddingPeerEvent {
+  peer: PeerId
+  type: 6
+  event: 'addingPeer'
+}
+
+export interface DialingPeerEvent {
+  peer: PeerId
+  type: 7
+  event: 'dialingPeer'
+}
+
+export type QueryEvent = SendingQueryEvent | PeerResponseEvent | FinalPeerEvent | QueryErrorEvent | ProviderEvent | ValueEvent | AddingPeerEvent | DialingPeerEvent
 
 export interface DHT extends EventEmitter {
   // query/client methods

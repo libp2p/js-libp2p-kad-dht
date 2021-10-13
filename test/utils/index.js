@@ -12,6 +12,9 @@ const createMockRegistrar = (registrarRecord) => {
         handler
       }
     },
+    unhandle: (multicodec) => {
+      delete registrarRecord[multicodec]
+    },
     register: ({ multicodecs, _onConnect, _onDisconnect }) => {
       const rec = registrarRecord[multicodecs[0]] || {}
 

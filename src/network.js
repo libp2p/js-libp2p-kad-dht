@@ -10,10 +10,13 @@ const utils = require('./utils')
 const { EventEmitter } = require('events')
 
 const log = utils.logger('libp2p:kad-dht:network')
+const noop = () => {}
 
 /**
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('libp2p-interfaces/src/stream-muxer/types').MuxedStream} MuxedStream
+ * @typedef {import('./types').QueryEvent} QueryEvent
+ * @typedef {import('./types').PeerData} PeerData
  */
 
 /**
@@ -68,13 +71,35 @@ class Network extends EventEmitter {
    * @param {Message} msg - The message to send
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {(evt: QueryEvent) => void} [options.onQueryEvent]
    */
   async sendRequest (to, msg, options = {}) {
     log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
+    const onQueryEvent = options.onQueryEvent || noop
+
+    onQueryEvent(sendingQueryEvent({
+      peer: to
+    }))
 
     const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
 
-    return this._writeReadMessage(stream, msg.serialize(), options)
+    try {
+      const response = await this._writeReadMessage(stream, msg.serialize(), options)
+
+      onQueryEvent(peerResponseEvent({
+        peer: to,
+        closerPeers: response.closerPeers
+      }))
+
+      return response
+    } catch (/** @type {any} */ err) {
+      onQueryEvent(queryErrorEvent({
+        peer: to,
+        error: err
+      }))
+
+      throw err
+    }
   }
 
   /**
@@ -84,13 +109,31 @@ class Network extends EventEmitter {
    * @param {Message} msg
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {(evt: QueryEvent) => void} [options.onQueryEvent]
    */
   async sendMessage (to, msg, options = {}) {
     log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
+    const onQueryEvent = options.onQueryEvent || noop
+
+    onQueryEvent(sendingQueryEvent({ peer: to }))
 
     const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
 
-    await this._writeMessage(stream, msg.serialize(), options)
+    try {
+      await this._writeMessage(stream, msg.serialize(), options)
+
+      onQueryEvent(peerResponseEvent({
+        peer: to,
+        closerPeers: []
+      }))
+    } catch (/** @type {any} */ err) {
+      onQueryEvent(queryErrorEvent({
+        peer: to,
+        error: err
+      }))
+
+      throw err
+    }
   }
 
   /**
@@ -157,3 +200,44 @@ class Network extends EventEmitter {
 }
 
 module.exports.Network = Network
+
+/**
+ * @param {object} fields
+ * @param {PeerId} fields.peer
+ * @returns {import('./types').SendingQueryEvent}
+ */
+function sendingQueryEvent (fields) {
+  return {
+    ...fields,
+    event: 'sendingQuery',
+    type: 0
+  }
+}
+
+/**
+ * @param {object} fields
+ * @param {PeerId} fields.peer
+ * @param {PeerData[]} fields.closerPeers
+ * @returns {import('./types').PeerResponseEvent}
+ */
+function peerResponseEvent (fields) {
+  return {
+    ...fields,
+    event: 'peerResponse',
+    type: 1
+  }
+}
+
+/**
+ * @param {object} fields
+ * @param {PeerId} fields.peer
+ * @param {Error} fields.error
+ * @returns {import('./types').QueryErrorEvent}
+ */
+function queryErrorEvent (fields) {
+  return {
+    event: 'queryError',
+    type: 3,
+    ...fields
+  }
+}

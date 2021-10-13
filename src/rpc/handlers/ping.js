@@ -20,7 +20,7 @@ class PingHandler {
    * @param {Message} msg
    */
   async handle (peerId, msg) {
-    log(`from ${peerId}`)
+    log(`ping from ${peerId}`)
     return msg
   }
 }

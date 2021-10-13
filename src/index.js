@@ -34,6 +34,7 @@ const log = utils.logger('libp2p:kad-dht')
  * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
  * @typedef {import('./types').DHT} DHT
+ * @typedef {import('./types').QueryEventHandler} QueryEventHandler
  *
  * @typedef {object} KadDHTOps
  * @property {Libp2p} libp2p - the libp2p instance
@@ -204,10 +205,23 @@ class KadDHT extends EventEmitter {
     })
 
     // handle peers being discovered via other peer discovery mechanisms
-    this._topologyListener.on('peer', (peerId) => {
+    this._topologyListener.on('peer', async (peerId) => {
       this._routingTable.add(peerId).catch(err => {
         log.error(`Could not add ${peerId} to routing table`, err)
       })
+    })
+
+    // when we find new peers, add them to the routing table
+    libp2p.on('peer:discovery', async peerId => {
+      try {
+        const has = await this._routingTable.find(peerId)
+
+        if (!has) {
+          await this._routingTable.add(peerId)
+        }
+      } catch (err) {
+        log.error('Could not add %p to routing table', peerId, err)
+      }
     })
   }
 
@@ -222,6 +236,7 @@ class KadDHT extends EventEmitter {
    * Whether we are in client or server mode
    */
   enableServerMode () {
+    log('enabling server mode')
     this._clientMode = false
     this._libp2p.handle(this._protocol, this._rpc.onIncomingStream.bind(this._rpc))
   }
@@ -230,6 +245,7 @@ class KadDHT extends EventEmitter {
    * Whether we are in client or server mode
    */
   enableClientMode () {
+    log('enabling client mode')
     this._clientMode = true
     this._libp2p.unhandle(this._protocol)
   }
@@ -241,8 +257,9 @@ class KadDHT extends EventEmitter {
     this._running = true
 
     // Only respond to queries when not in client mode
-    if (!this._clientMode) {
-      // Incoming streams
+    if (this._clientMode) {
+      this.enableClientMode()
+    } else {
       this.enableServerMode()
     }
 
@@ -283,6 +300,7 @@ class KadDHT extends EventEmitter {
    * @param {object} [options] - put options
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async put (key, value, options = {}) { // eslint-disable-line require-await
     return this._contentFetching.put(key, value, options)
@@ -296,6 +314,7 @@ class KadDHT extends EventEmitter {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async get (key, options = {}) { // eslint-disable-line require-await
     return this._contentFetching.get(key, options)
@@ -309,6 +328,7 @@ class KadDHT extends EventEmitter {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * getMany (key, nvals, options = {}) { // eslint-disable-line require-await
     yield * this._contentFetching.getMany(key, nvals, options)
@@ -341,6 +361,7 @@ class KadDHT extends EventEmitter {
    * @param {CID} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * provide (key, options = {}) { // eslint-disable-line require-await
     yield * this._contentRouting.provide(key, this._libp2p.multiaddrs, options)
@@ -354,6 +375,7 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.maxNumProviders=5] - maximum number of providers to find
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * findProviders (key, options = { maxNumProviders: 5 }) {
     yield * this._contentRouting.findProviders(key, options)
@@ -368,6 +390,7 @@ class KadDHT extends EventEmitter {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async findPeer (id, options = {}) { // eslint-disable-line require-await
     return this._peerRouting.findPeer(id, options)
@@ -381,6 +404,7 @@ class KadDHT extends EventEmitter {
    * @param {boolean} [options.shallow = false] - shallow query
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * getClosestPeers (key, options = { shallow: false }) {
     yield * this._peerRouting.getClosestPeers(key, options)

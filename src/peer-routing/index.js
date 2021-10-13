@@ -12,6 +12,7 @@ const log = utils.logger('libp2p:kad-dht:peer-routing')
 
 /**
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
+ * @typedef {import('../types').QueryEventHandler} QueryEventHandler
  */
 
 /**
@@ -71,6 +72,7 @@ class PeerRouting {
    * @param {Uint8Array} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async _getValueSingle (peer, key, options = {}) { // eslint-disable-line require-await
     const msg = new Message(Message.TYPES.GET_VALUE, key, 0)
@@ -84,6 +86,7 @@ class PeerRouting {
    * @param {PeerId} peer
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async closerPeersSingle (key, peer, options = {}) {
     log('closerPeersSingle %s from %p', uint8ArrayToString(key, 'base32'), peer)
@@ -125,6 +128,7 @@ class PeerRouting {
    * @param {Uint8Array} target
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async findPeerSingle (peer, target, options = {}) { // eslint-disable-line require-await
     log('findPeerSingle asking %p if it knows %b', peer, target)
@@ -141,6 +145,7 @@ class PeerRouting {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async findPeer (id, options = {}) {
     log('findPeer %p', id)
@@ -180,7 +185,7 @@ class PeerRouting {
      * @type {import('../types').QueryFunc<PeerId>}
      */
     const findPeerQuery = async ({ peer, signal }) => {
-      const peers = await this.findPeerSingle(peer, id.toBytes(), { signal })
+      const peers = await this.findPeerSingle(peer, id.toBytes(), { signal, onQueryEvent: options.onQueryEvent })
       const match = peers.find((p) => p.equals(id))
 
       // found it
@@ -221,6 +226,7 @@ class PeerRouting {
    * @param {boolean} [options.shallow=false] - shallow query
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * getClosestPeers (key, options = { shallow: false }) {
     log('getClosestPeers to %b', key)
@@ -232,7 +238,7 @@ class PeerRouting {
      * @type {import('../types').QueryFunc<PeerId[]>}
      */
     const getCloserPeersQuery = async ({ peer, signal }) => {
-      const closer = await this.closerPeersSingle(key, peer, { signal })
+      const closer = await this.closerPeersSingle(key, peer, { signal, onQueryEvent: options.onQueryEvent })
 
       if (shallow) {
         return {
@@ -272,6 +278,7 @@ class PeerRouting {
    * @param {PeerId} target
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async putValueToPeer (key, rec, target, options = {}) {
     const msg = new Message(Message.TYPES.PUT_VALUE, key, 0)
@@ -294,6 +301,7 @@ class PeerRouting {
    * @param {Uint8Array} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async getValueOrPeers (peer, key, options = {}) {
     const msg = await this._getValueSingle(peer, key, options)
