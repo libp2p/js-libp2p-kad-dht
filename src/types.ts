@@ -1,31 +1,18 @@
-import type { EventEmitter } from 'events'
 import type PeerId from 'peer-id'
 import type { Multiaddr } from 'multiaddr'
-import type { PublicKey } from 'libp2p-crypto'
 import type { CID } from 'multiformats/cid'
-import type { Message } from './message'
 import type { MuxedStream } from 'libp2p/src/upgrader'
 import type Topology from 'libp2p-interfaces/src/topology'
+import type { Message } from './message'
+
+export enum MessageTypes {
+
+}
 
 export interface PeerData {
   id: PeerId
   multiaddrs: Multiaddr[]
 }
-
-export interface QueryContinuationResult<T> {
-  done?: false
-  closerPeers?: PeerId[]
-  value?: T
-  err?: Error
-}
-
-export interface QueryTerminationResult<T> {
-  done: true
-  value?: T
-  err?: Error
-}
-
-export type QueryResult<T> = QueryContinuationResult<T> | QueryTerminationResult<T>
 
 export interface DHTValue {
   value: Uint8Array
@@ -36,79 +23,82 @@ export interface AbortOptions {
   signal?: AbortSignal
 }
 
-export interface QueryOptions {
+export interface QueryOptions extends AbortOptions {
   queryFuncTimeout?: number
-  onQueryEvent?: QueryEventHandler
 }
-
-export interface QueryEventHandler { (evt: QueryEvent): void }
 
 export interface SendingQueryEvent {
   peer: PeerId
   type: 0
-  event: 'sendingQuery'
+  name: 'sendingQuery'
+  message: string
+  messageType: number
 }
 
 export interface PeerResponseEvent {
   peer: PeerId
   type: 1
-  event: 'peerResponse'
-  closerPeers: PeerData[]
+  name: 'peerResponse'
+  closerPeers?: PeerData[]
+  response?: Message
 }
 
 export interface FinalPeerEvent {
-  peer: PeerId
+  peer: PeerData
   type: 2
-  event: 'finalPeer'
+  name: 'finalPeer'
 }
 
 export interface QueryErrorEvent {
   peer: PeerId
   type: 3
-  event: 'queryError'
+  name: 'queryError'
   error: Error
 }
 
 export interface ProviderEvent {
   peer: PeerId
   type: 4
-  event: 'provider'
+  name: 'provider'
   providerPeers: PeerData[]
 }
 
 export interface ValueEvent {
   peer: PeerId
   type: 5
-  event: 'value'
+  name: 'value'
   value: Uint8Array
 }
 
 export interface AddingPeerEvent {
   peer: PeerId
   type: 6
-  event: 'addingPeer'
+  name: 'addingPeer'
 }
 
 export interface DialingPeerEvent {
   peer: PeerId
   type: 7
-  event: 'dialingPeer'
+  name: 'dialingPeer'
 }
 
 export type QueryEvent = SendingQueryEvent | PeerResponseEvent | FinalPeerEvent | QueryErrorEvent | ProviderEvent | ValueEvent | AddingPeerEvent | DialingPeerEvent
 
-export interface DHT extends EventEmitter {
+export interface DHT {
   // query/client methods
-  get: (key: Uint8Array, options?: AbortOptions & QueryOptions) => Promise<Uint8Array>
-  getMany: (key: Uint8Array, nvals: number, options?: AbortOptions & QueryOptions) => AsyncGenerator<DHTValue, void, undefined>
-  findProviders: (key: CID, options?: AbortOptions & QueryOptions & { maxNumProviders?: number }) => AsyncGenerator<PeerId, void, undefined>
-  findPeer: (id: PeerId, options?: AbortOptions & QueryOptions) => Promise<{ id: PeerId, multiaddrs: Multiaddr[] }>
-  getClosestPeers: (key: Uint8Array, options?: AbortOptions & QueryOptions & { shallow?: boolean }) => AsyncGenerator<PeerId, void, undefined>
-  getPublicKey: (peer: PeerId) => Promise<PublicKey>
+
+  /**
+   * Get a value from the DHT, the final ValueEvent will be the best value
+   */
+  get: (key: Uint8Array, options?: QueryOptions) => AsyncIterable<QueryEvent>
+  findProviders: (key: CID, options?: QueryOptions) => AsyncIterable<QueryEvent>
+  findPeer: (id: PeerId, options?: QueryOptions) => AsyncIterable<QueryEvent>
+  getClosestPeers: (key: Uint8Array, options?: QueryOptions) => AsyncIterable<QueryEvent>
+  getPublicKey: (peer: PeerId, options?: QueryOptions) => AsyncIterable<QueryEvent>
 
   // publish/server methods
-  provide: (key: CID, options?: AbortOptions) => AsyncGenerator<PeerId, void, undefined>
-  put: (key: Uint8Array, value: Uint8Array, options?: AbortOptions & { minPeers?: number }) => Promise<void>
+  provide: (key: CID, options?: QueryOptions) => AsyncIterable<QueryEvent>
+  put: (key: Uint8Array, value: Uint8Array, options?: QueryOptions) => AsyncIterable<QueryEvent>
 
   // enable/disable publishing
   enableServerMode: () => void
@@ -120,28 +110,6 @@ export interface DHT extends EventEmitter {
   // events
   on: (event: 'peer', handler: (peerData: PeerData) => void) => this
 }
-
-export interface DHTMessageHandler {
-  handle: (peerId: PeerId, msg: Message) => Promise<Message | undefined>
-}
-
-export interface QueryContext {
-  // the key we are looking up
-  key: Uint8Array
-  // the current peer being queried
-  peer: PeerId
-  // if this signal emits an 'abort' event, any long-lived processes or requests started as part of this query should be terminated
-  signal: AbortSignal
-  // which disjoint path we are following
-  pathIndex: number
-  // the total number of disjoint paths being executed
-  numPaths: number
-}
-
-/**
- * Query function
- */
-export interface QueryFunc<T> { (context: QueryContext): Promise<QueryResult<T> | undefined> }
 
 // Implemented by libp2p, should be moved to libp2p-interfaces eventually
 export interface Dialer {
@@ -168,4 +136,5 @@ export interface PeerStore {
 // Implemented by libp2p.peerStore.addressStore, should be moved to libp2p-interfaces eventually
 export interface AddressBook {
   add: (peerId: PeerId, addresses: Multiaddr[]) => void
+  get: (peerId: PeerId) => Array<{ multiaddr: Multiaddr }> | undefined
 }

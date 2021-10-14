@@ -4,25 +4,25 @@ const errcode = require('err-code')
 const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const Libp2pRecord = require('libp2p-record')
-const all = require('it-all')
 const {
-  GET_MANY_RECORD_COUNT,
   ALPHA
 } = require('../constants')
 const utils = require('../utils')
 const Record = Libp2pRecord.Record
-const drain = require('it-drain')
 const parallel = require('it-parallel')
 const map = require('it-map')
+const {
+  valueEvent,
+  queryErrorEvent
+} = require('../query/events')
+const { Message } = require('../message')
+const { pipe } = require('it-pipe')
 
 const log = utils.logger('libp2p:kad-dht:content-fetching')
 
 /**
  * @typedef {import('peer-id')} PeerId
- * @typedef {import('../types').QueryEventHandler} QueryEventHandler
- * @typedef {object} ContentFetchValue
- * @property {PeerId} from
- * @property {Uint8Array} value
+ * @typedef {import('../types').ValueEvent} ValueEvent
  */
 
 class ContentFetching {
@@ -32,10 +32,11 @@ class ContentFetching {
    * @param {import('libp2p-interfaces/src/types').DhtValidators} validators
    * @param {import('libp2p-interfaces/src/types').DhtSelectors} selectors
    * @param {import('../peer-routing').PeerRouting} peerRouting
-   * @param {import('../query-manager').QueryManager} queryManager
+   * @param {import('../query/manager').QueryManager} queryManager
    * @param {import('../routing-table').RoutingTable} routingTable
+   * @param {import('../network').Network} network
    */
-  constructor (peerId, datastore, validators, selectors, peerRouting, queryManager, routingTable) {
+  constructor (peerId, datastore, validators, selectors, peerRouting, queryManager, routingTable, network) {
     this._peerId = peerId
     this._datastore = datastore
     this._validators = validators
@@ -43,6 +44,7 @@ class ContentFetching {
     this._peerRouting = peerRouting
     this._queryManager = queryManager
     this._routingTable = routingTable
+    this._network = network
   }
 
   /**
@@ -76,44 +78,53 @@ class ContentFetching {
    * Send the best record found to any peers that have an out of date record.
    *
    * @param {Uint8Array} key
-   * @param {import('../types').DHTValue[]} vals - values retrieved from the DHT
+   * @param {ValueEvent[]} vals - values retrieved from the DHT
    * @param {Uint8Array} best - the best record that was found
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async sendCorrectionRecord (key, vals, best, options = {}) {
+  async * sendCorrectionRecord (key, vals, best, options = {}) {
     log('sendCorrection for %b', key)
     const fixupRec = await utils.createPutRecord(key, best)
 
-    return Promise.all(
-      vals.map(async (v) => {
-        // no need to do anything
-        if (uint8ArrayEquals(v.value, best)) {
-          return
-        }
+    for (const { value, peer } of vals) {
+      // no need to do anything
+      if (uint8ArrayEquals(value, best)) {
+        return
+      }
 
-        // correct ourself
-        if (this._peerId.equals(v.from)) {
-          try {
-            const dsKey = utils.bufferToKey(key)
-            log(`Storing corrected record for key ${dsKey}`)
-            await this._datastore.put(dsKey, fixupRec)
-          } catch (/** @type {any} */ err) {
-            log.error('Failed error correcting self', err)
-          }
-
-          return
-        }
-
-        // send correction
+      // correct ourself
+      if (this._peerId.equals(peer)) {
         try {
-          await this._peerRouting.putValueToPeer(key, fixupRec, v.from, options)
+          const dsKey = utils.bufferToKey(key)
+          log(`Storing corrected record for key ${dsKey}`)
+          await this._datastore.put(dsKey, fixupRec)
         } catch (/** @type {any} */ err) {
-          log.error('Failed error correcting entry', err)
+          log.error('Failed error correcting self', err)
         }
-      })
-    )
+
+        return
+      }
+
+      // send correction
+      let sentCorrection = false
+      const request = new Message(Message.TYPES.PUT_VALUE, key, 0)
+      request.record = Record.deserialize(fixupRec)
+
+      for await (const event of this._network.sendRequest(peer, request, options)) {
+        if (event.name === 'peerResponse' && event.response && event.response.record && uint8ArrayEquals(event.response.record.value, Record.deserialize(fixupRec).value)) {
+          sentCorrection = true
+        }
+
+        yield event
+      }
+
+      if (!sentCorrection) {
+        yield queryErrorEvent({ peer, error: errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID') })
+      }
+
+      log.error('Failed error correcting entry')
+    }
   }
 
   /**
@@ -124,9 +135,8 @@ class ContentFetching {
    * @param {object} [options] - put options
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
    * @param {AbortSignal} [options.signal]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async put (key, value, options = {}) {
+  async * put (key, value, options = {}) {
     log('put value %b', key)
 
     // create record in the dht format
@@ -141,20 +151,44 @@ class ContentFetching {
     let counterAll = 0
     let counterSuccess = 0
 
-    await drain(parallel(map(this._peerRouting.getClosestPeers(key, { signal: options.signal, shallow: true }), (peer) => {
-      return async () => {
-        try {
+    yield * pipe(
+      this._peerRouting.getClosestPeers(key, { signal: options.signal }),
+      (source) => map(source, (event) => {
+        return async () => {
+          if (event.name !== 'finalPeer') {
+            return [event]
+          }
+
           counterAll += 1
-          await this._peerRouting.putValueToPeer(key, record, peer, options)
-          counterSuccess += 1
-        } catch (/** @type {any} */ err) {
-          log.error('failed to put to peer (%b): %s', peer.id, err)
+          const events = []
+
+          const msg = new Message(Message.TYPES.PUT_VALUE, key, 0)
+          msg.record = Record.deserialize(record)
+
+          for await (const putEvent of this._network.sendRequest(event.peer.id, msg, options)) {
+            events.push(putEvent)
+
+            if (putEvent.name === 'peerResponse' && putEvent.response && putEvent.response.record && uint8ArrayEquals(putEvent.response.record.value, Record.deserialize(record).value)) {
+              counterSuccess += 1
+              events.push(putEvent)
+            } else {
+              events.push(queryErrorEvent({ peer: event.peer.id, error: errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID') }))
+            }
+          }
+
+          return events
+        }
+      }),
+      (source) => parallel(source, {
+        ordered: false,
+        concurrency: ALPHA
+      }),
+      async function * (source) {
+        for await (const events of source) {
+          yield * events
         }
       }
-    }), {
-      ordered: false,
-      concurrency: ALPHA
-    }))
+    )
 
     // verify if we were able to put to enough peers
     const minPeers = options.minPeers || counterAll // Ensure we have a default `minPeers`
@@ -174,15 +208,25 @@ class ContentFetching {
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
    */
-  async get (key, options = {}) {
+  async * get (key, options = {}) {
     log('get %b', key)
 
-    const vals = await all(this.getMany(key, GET_MANY_RECORD_COUNT, options))
-    const recs = vals.map((v) => v.value)
+    /** @type {ValueEvent[]} */
+    const vals = []
+
+    for await (const event of this.getMany(key, options)) {
+      if (event.name === 'value') {
+        vals.push(event)
+      }
+
+      yield event
+    }
+
+    const records = vals.map((v) => v.value)
     let i = 0
 
     try {
-      i = Libp2pRecord.selection.bestRecord(this._selectors, key, recs)
+      i = Libp2pRecord.selection.bestRecord(this._selectors, key, records)
     } catch (/** @type {any} */ err) {
       // Assume the first record if no selector available
       if (err.code !== 'ERR_NO_SELECTOR_FUNCTION_FOR_RECORD_KEY') {
@@ -190,52 +234,43 @@ class ContentFetching {
       }
     }
 
-    const best = recs[i]
+    const best = records[i]
     log('GetValue %b %s', key, best)
 
     if (!best) {
       throw errcode(new Error('best value was not found'), 'ERR_NOT_FOUND')
     }
 
-    await this.sendCorrectionRecord(key, vals, best, options)
+    yield * this.sendCorrectionRecord(key, vals, best, options)
 
-    return best
+    yield vals[i]
   }
 
   /**
    * Get the `n` values to the given key without sorting.
    *
    * @param {Uint8Array} key
-   * @param {number} nvals
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
    */
-  async * getMany (key, nvals, options = {}) {
-    log('getMany want %s values for %b', nvals, key)
+  async * getMany (key, options = {}) {
+    log('getMany values for %b', key)
 
-    let yielded = 0
+    let foundValue = false
     let localRec
 
     try {
       localRec = await this.getLocal(key)
-    } catch (/** @type {any} */ err) {
-      if (nvals === 0) {
-        throw err
-      }
-    }
 
-    if (localRec) {
-      yielded++
+      foundValue = true
 
-      yield {
+      yield valueEvent({
         value: localRec.value,
-        from: this._peerId
-      }
-
-      if (nvals === 1) {
-        return
-      }
+        peer: this._peerId
+      })
+    } catch (/** @type {any} */ err) {
+      log('error getting local value for %b', key)
     }
 
     const id = await utils.convertBuffer(key)
@@ -247,99 +282,46 @@ class ContentFetching {
       const errMsg = 'Failed to lookup key! No peers from routing table!'
       log.error(errMsg)
 
-      if (yielded === 0) {
+      if (!foundValue) {
         throw errcode(new Error(errMsg), 'ERR_NO_PEERS_IN_ROUTING_TABLE')
       }
 
       return
     }
 
-    const valsLength = yielded
-    let queryResults = 0
+    const self = this
 
     /**
-     * @type {import('../types').QueryFunc<ContentFetchValue>}
+     * @type {import('../query/types').QueryFunc}
      */
-    const getValueQuery = async ({ peer, signal, numPaths }) => {
-      const resultsWanted = utils.pathSize(nvals - valsLength, numPaths)
+    const getValueQuery = async function * ({ peer, signal }) {
+      for await (const event of self._peerRouting.getValueOrPeers(peer, key, { signal })) {
+        yield event
 
-      let rec, peers, lookupErr
-      try {
-        const results = await this._peerRouting.getValueOrPeers(peer, key, { signal })
-        rec = results.record
-        peers = results.peers
-      } catch (/** @type {any} */ err) {
-        // If we have an invalid record we just want to continue and fetch a new one.
-        if (err.code !== 'ERR_INVALID_RECORD') {
-          throw err
-        }
-
-        lookupErr = err
-      }
-
-      // there was an error getting the value or peers
-      if (lookupErr) {
-        queryResults++
-
-        return {
-          closerPeers: [],
-          err: lookupErr
-        }
-      }
-
-      // didn't get a value, continue looking
-      if (!rec) {
-        return {
-          closerPeers: (peers || []).map(peerData => peerData.id)
-        }
-      }
-
-      queryResults++
-
-      // got enough values, all done
-      if (queryResults >= resultsWanted) {
-        return {
-          done: true,
-          value: {
-            from: peer,
-            value: rec.value
-          }
-        }
-      }
-
-      // not got enough values, continue looking
-      return {
-        closerPeers: (peers || []).map(peerData => peerData.id),
-        value: {
-          from: peer,
-          value: rec.value
+        if (event.name === 'peerResponse' && event.response && event.response.record) {
+          yield valueEvent({ peer, value: event.response.record.value })
         }
       }
     }
 
     // we have peers, lets send the actual query to them
-    try {
-      let err
+    let err
 
-      for await (const res of this._queryManager.run(key, rtp, getValueQuery, options)) {
-        if (res.value) {
-          yield res.value
-        }
+    for await (const event of this._queryManager.run(key, rtp, getValueQuery, options)) {
+      yield event
 
-        if (res.err) {
-          log.error(err)
-          err = res.err
-        }
+      if (event.name === 'value') {
+        foundValue = true
       }
 
-      // if we didn't find any values but had errors, propagate the last error
-      if (!yielded && err) {
-        throw err
+      if (event.name === 'queryError') {
+        err = event.error
       }
-    } catch (/** @type {any} */ err) {
-      if (!yielded) {
-        throw err
-      }
+    }
+
+    // if we didn't find any values but had errors, propagate the last error
+    if (!foundValue && err) {
+      throw err
     }
   }
 }

@@ -8,9 +8,14 @@ const first = require('it-first')
 const { Message, MESSAGE_TYPE_LOOKUP } = require('./message')
 const utils = require('./utils')
 const { EventEmitter } = require('events')
+const {
+  dialingPeerEvent,
+  sendingQueryEvent,
+  peerResponseEvent,
+  queryErrorEvent
+} = require('./query/events')
 
 const log = utils.logger('libp2p:kad-dht:network')
-const noop = () => {}
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -71,34 +76,22 @@ class Network extends EventEmitter {
    * @param {Message} msg - The message to send
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
-   * @param {(evt: QueryEvent) => void} [options.onQueryEvent]
    */
-  async sendRequest (to, msg, options = {}) {
+  async * sendRequest (to, msg, options = {}) {
     log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
-    const onQueryEvent = options.onQueryEvent || noop
-
-    onQueryEvent(sendingQueryEvent({
-      peer: to
-    }))
-
-    const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
 
     try {
+      yield dialingPeerEvent({ peer: to })
+
+      const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
+
+      yield sendingQueryEvent({ peer: to, type: msg.type })
+
       const response = await this._writeReadMessage(stream, msg.serialize(), options)
 
-      onQueryEvent(peerResponseEvent({
-        peer: to,
-        closerPeers: response.closerPeers
-      }))
-
-      return response
+      yield peerResponseEvent({ peer: to, closerPeers: response.closerPeers, response })
     } catch (/** @type {any} */ err) {
-      onQueryEvent(queryErrorEvent({
-        peer: to,
-        error: err
-      }))
-
-      throw err
+      yield queryErrorEvent({ peer: to, error: err })
     }
   }
 
@@ -109,30 +102,22 @@ class Network extends EventEmitter {
    * @param {Message} msg
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
-   * @param {(evt: QueryEvent) => void} [options.onQueryEvent]
    */
-  async sendMessage (to, msg, options = {}) {
+  async * sendMessage (to, msg, options = {}) {
     log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
-    const onQueryEvent = options.onQueryEvent || noop
 
-    onQueryEvent(sendingQueryEvent({ peer: to }))
+    yield dialingPeerEvent({ peer: to })
 
     const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
+
+    yield sendingQueryEvent({ peer: to, type: msg.type })
 
     try {
       await this._writeMessage(stream, msg.serialize(), options)
 
-      onQueryEvent(peerResponseEvent({
-        peer: to,
-        closerPeers: []
-      }))
+      yield peerResponseEvent({ peer: to })
     } catch (/** @type {any} */ err) {
-      onQueryEvent(queryErrorEvent({
-        peer: to,
-        error: err
-      }))
-
-      throw err
+      yield queryErrorEvent({ peer: to, error: err })
     }
   }
 
@@ -200,44 +185,3 @@ class Network extends EventEmitter {
 }
 
 module.exports.Network = Network
-
-/**
- * @param {object} fields
- * @param {PeerId} fields.peer
- * @returns {import('./types').SendingQueryEvent}
- */
-function sendingQueryEvent (fields) {
-  return {
-    ...fields,
-    event: 'sendingQuery',
-    type: 0
-  }
-}
-
-/**
- * @param {object} fields
- * @param {PeerId} fields.peer
- * @param {PeerData[]} fields.closerPeers
- * @returns {import('./types').PeerResponseEvent}
- */
-function peerResponseEvent (fields) {
-  return {
-    ...fields,
-    event: 'peerResponse',
-    type: 1
-  }
-}
-
-/**
- * @param {object} fields
- * @param {PeerId} fields.peer
- * @param {Error} fields.error
- * @returns {import('./types').QueryErrorEvent}
- */
-function queryErrorEvent (fields) {
-  return {
-    event: 'queryError',
-    type: 3,
-    ...fields
-  }
-}

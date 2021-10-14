@@ -8,7 +8,7 @@ const log = utils.logger('libp2p:kad-dht:rpc:handlers:put-value')
 /**
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('../../message').Message} Message
- * @typedef {import('../../types').DHTMessageHandler} DHTMessageHandler
+ * @typedef {import('../types').DHTMessageHandler} DHTMessageHandler
  */
 
 /**

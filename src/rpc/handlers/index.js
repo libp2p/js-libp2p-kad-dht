@@ -9,7 +9,7 @@ const { PingHandler } = require('./ping')
 const { PutValueHandler } = require('./put-value')
 
 /**
- * @typedef {import('../../types').DHTMessageHandler} DHTMessageHandler
+ * @typedef {import('../types').DHTMessageHandler} DHTMessageHandler
  */
 
 /**

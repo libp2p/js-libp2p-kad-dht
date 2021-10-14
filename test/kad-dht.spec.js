@@ -11,7 +11,7 @@ const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const drain = require('it-drain')
 const all = require('async-iterator-all')
 const delay = require('delay')
-
+const last = require('it-last')
 const kadUtils = require('../src/utils')
 const c = require('../src/constants')
 const { Message, MESSAGE_TYPE_LOOKUP } = require('../src/message')
@@ -59,7 +59,6 @@ describe('KadDHT', () => {
 
       expect(dht).to.have.property('put')
       expect(dht).to.have.property('get')
-      expect(dht).to.have.property('getMany')
       expect(dht).to.have.property('removeLocal')
       expect(dht).to.have.property('provide')
       expect(dht).to.have.property('findProviders')
@@ -141,10 +140,10 @@ describe('KadDHT', () => {
       })
 
       // Exchange data through the dht
-      await dht.put(key, value)
+      await drain(dht.put(key, value))
 
-      const res = await dht.get(key)
-      expect(res).to.eql(value)
+      const res = await last(dht.get(key))
+      expect(res.value).to.eql(value)
     })
 
     it('put - removeLocal', async function () {
@@ -157,10 +156,10 @@ describe('KadDHT', () => {
         clientMode: false
       })
 
-      await dht.put(key, value)
+      await drain(dht.put(key, value))
 
-      const res = await dht.get(key)
-      expect(res).to.eql(value)
+      const res = await last(dht.get(key))
+      expect(res.value).to.eql(value)
 
       // remove from the local datastore
       await dht.removeLocal(key)
@@ -182,13 +181,13 @@ describe('KadDHT', () => {
       await tdht.connect(dhtA, dhtB)
 
       // Exchange data through the dht
-      await dhtA.put(key, value)
+      await drain(dhtA.put(key, value))
 
-      const res = await dhtB.get(uint8ArrayFromString('/v/hello'))
-      expect(res).to.eql(value)
+      const res = await last(dhtB.get(key))
+      expect(res.value).to.eql(value)
     })
 
-    it('put - should require a minimum number of peers to have successful puts', async function () {
+    it.only('put - should require a minimum number of peers to have successful puts', async function () {
       this.timeout(10 * 1000)
 
       const errCode = 'ERR_NOT_AVAILABLE'
@@ -213,10 +212,14 @@ describe('KadDHT', () => {
       ])
 
       // DHT operations
-      await dhtA.put(key, value, { minPeers: 2 })
-      const res = await dhtB.get(key)
+      for await (const event of dhtA.put(key, value, { minPeers: 2 })) {
+        console.info(event)
+      }
 
-      expect(res).to.eql(value)
+      await drain(dhtA.put(key, value, { minPeers: 2 }))
+
+      const res = await last(dhtB.get(key))
+      expect(res.value).to.eql(value)
     })
 
     it('put - should fail if not enough peers can be written to', async function () {
@@ -248,7 +251,7 @@ describe('KadDHT', () => {
       ])
 
       // DHT operations
-      await expect(dhtA.put(key, value, { minPeers: 2 })).to.eventually.be.rejected().property('code', 'ERR_NOT_ENOUGH_PUT_PEERS')
+      await expect(drain(dhtA.put(key, value, { minPeers: 2 }))).to.eventually.be.rejected().property('code', 'ERR_NOT_ENOUGH_PUT_PEERS')
     })
 
     it('put - should require all peers to be put to successfully if no minPeers specified', async function () {

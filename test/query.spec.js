@@ -4,7 +4,7 @@
 const { expect } = require('aegir/utils/chai')
 const delay = require('delay')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
-const { QueryManager } = require('../src/query-manager')
+const { QueryManager } = require('../src/query/manager')
 const createPeerId = require('./utils/create-peer-id')
 const all = require('it-all')
 const drain = require('it-drain')

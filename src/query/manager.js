@@ -63,12 +63,12 @@ class QueryManager {
    *
    * @param {Uint8Array} key
    * @param {PeerId[]} peers
-   * @param {import('../types').QueryFunc<T>} queryFunc
+   * @param {import('./types').QueryFunc} queryFunc
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
    *
-   * @returns {AsyncIterable<import('../types').QueryResult<T>>}
+   * @returns {AsyncIterable<import('../types').QueryEvent>}
    */
   async * run (key, peers, queryFunc, options = {}) {
     if (!this._running) {
@@ -136,9 +136,9 @@ class QueryManager {
 
         yield res
 
-        if (res.err) {
-          log('error', res.err)
-          errors.push(res.err)
+        if (res.type === 3 && res.error) {
+          log('error', res.error)
+          errors.push(res.error)
         }
       }
 

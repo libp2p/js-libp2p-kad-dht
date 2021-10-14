@@ -1,23 +1,24 @@
 'use strict'
 
 const errcode = require('err-code')
-const { Record, validator } = require('libp2p-record')
+const { validator } = require('libp2p-record')
 const PeerId = require('peer-id')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
-const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
 const { Message } = require('../message')
 const utils = require('../utils')
+const {
+  queryErrorEvent,
+  finalPeerEvent,
+  valueEvent
+} = require('../query/events')
 
 const log = utils.logger('libp2p:kad-dht:peer-routing')
 
 /**
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
- * @typedef {import('../types').QueryEventHandler} QueryEventHandler
+ * @typedef {import('../types').PeerData} PeerData
  */
 
-/**
- * @param {import('../index')} dht
- */
 class PeerRouting {
   /**
    * @param {import('peer-id')} peerId
@@ -25,7 +26,7 @@ class PeerRouting {
    * @param {import('../types').PeerStore} peerStore
    * @param {import('../network').Network} network
    * @param {import('libp2p-interfaces/src/types').DhtValidators} validators
-   * @param {import('../query-manager').QueryManager} queryManager
+   * @param {import('../query/manager').QueryManager} queryManager
    */
   constructor (peerId, routingTable, peerStore, network, validators, queryManager) {
     this._peerId = peerId
@@ -72,28 +73,10 @@ class PeerRouting {
    * @param {Uint8Array} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async _getValueSingle (peer, key, options = {}) { // eslint-disable-line require-await
+  async * _getValueSingle (peer, key, options = {}) { // eslint-disable-line require-await
     const msg = new Message(Message.TYPES.GET_VALUE, key, 0)
-    return this._network.sendRequest(peer, msg, options)
-  }
-
-  /**
-   * Find close peers for a given peer
-   *
-   * @param {Uint8Array} key
-   * @param {PeerId} peer
-   * @param {object} [options]
-   * @param {AbortSignal} [options.signal]
-   * @param {QueryEventHandler} [options.onQueryEvent]
-   */
-  async closerPeersSingle (key, peer, options = {}) {
-    log('closerPeersSingle %s from %p', uint8ArrayToString(key, 'base32'), peer)
-    const peers = await this.findPeerSingle(peer, key, options)
-
-    return peers
-      .filter((peer) => !this._peerId.equals(peer))
+    yield * this._network.sendRequest(peer, msg, options)
   }
 
   /**
@@ -103,39 +86,25 @@ class PeerRouting {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    */
-  async getPublicKeyFromNode (peer, options) {
+  async * getPublicKeyFromNode (peer, options) {
     const pkKey = utils.keyForPublicKey(peer)
-    const msg = await this._getValueSingle(peer, pkKey, options)
 
-    if (!msg.record || !msg.record.value) {
-      throw errcode(new Error(`Node not responding with its public key: ${peer.toB58String()}`), 'ERR_INVALID_RECORD')
+    for await (const event of this._getValueSingle(peer, pkKey, options)) {
+      yield event
+
+      if (event.name === 'peerResponse' && event.response && event.response.record) {
+        const recPeer = await PeerId.createFromPubKey(event.response.record.value)
+
+        // compare hashes of the pub key
+        if (!recPeer.equals(peer)) {
+          throw errcode(new Error('public key does not match id'), 'ERR_PUBLIC_KEY_DOES_NOT_MATCH_ID')
+        }
+
+        yield valueEvent({ peer, value: recPeer.pubKey.bytes })
+      }
     }
 
-    const recPeer = await PeerId.createFromPubKey(msg.record.value)
-
-    // compare hashes of the pub key
-    if (!recPeer.equals(peer)) {
-      throw errcode(new Error('public key does not match id'), 'ERR_PUBLIC_KEY_DOES_NOT_MATCH_ID')
-    }
-
-    return recPeer.pubKey
-  }
-
-  /**
-   * Ask peer `peer` if they know where the peer with id `target` is
-   *
-   * @param {PeerId} peer
-   * @param {Uint8Array} target
-   * @param {object} [options]
-   * @param {AbortSignal} [options.signal]
-   * @param {QueryEventHandler} [options.onQueryEvent]
-   */
-  async findPeerSingle (peer, target, options = {}) { // eslint-disable-line require-await
-    log('findPeerSingle asking %p if it knows %b', peer, target)
-    const request = new Message(Message.TYPES.FIND_NODE, target, 0)
-    const response = await this._network.sendRequest(peer, request, options)
-
-    return response.closerPeers.map(peerData => peerData.id)
+    throw errcode(new Error(`Node not responding with its public key: ${peer.toB58String()}`), 'ERR_INVALID_RECORD')
   }
 
   /**
@@ -145,9 +114,8 @@ class PeerRouting {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async findPeer (id, options = {}) {
+  async * findPeer (id, options = {}) {
     log('findPeer %p', id)
 
     // Try to find locally
@@ -181,114 +149,94 @@ class PeerRouting {
       }
     }
 
+    const self = this
+
     /**
-     * @type {import('../types').QueryFunc<PeerId>}
+     * @type {import('../query/types').QueryFunc}
      */
-    const findPeerQuery = async ({ peer, signal }) => {
-      const peers = await this.findPeerSingle(peer, id.toBytes(), { signal, onQueryEvent: options.onQueryEvent })
-      const match = peers.find((p) => p.equals(id))
+    const findPeerQuery = async function * ({ peer, signal }) {
+      const request = new Message(Message.TYPES.FIND_NODE, id.toBytes(), 0)
 
-      // found it
-      if (match) {
-        return {
-          done: true,
-          value: match
-        }
-      }
+      for await (const event of self._network.sendRequest(peer, request, { signal })) {
+        yield event
 
-      // query closer peers
-      return {
-        closerPeers: peers
-      }
-    }
+        if (event.name === 'peerResponse' && event.closerPeers) {
+          const match = event.closerPeers.find((p) => p.id.equals(id))
 
-    for await (const result of this._queryManager.run(id.id, peers, findPeerQuery, options)) {
-      if (result.done && result.value) {
-        const peerData = this._peerStore.get(result.value)
-
-        if (peerData) {
-          return {
-            id: peerData.id,
-            multiaddrs: peerData.addresses.map(addr => addr.multiaddr)
+          // found the peer
+          if (match) {
+            yield finalPeerEvent({ peer: match })
           }
         }
       }
     }
 
-    throw errcode(new Error('No peer found'), 'ERR_NOT_FOUND')
+    let foundPeer = false
+
+    for await (const event of this._queryManager.run(id.id, peers, findPeerQuery, options)) {
+      if (event.name === 'finalPeer') {
+        foundPeer = true
+      }
+
+      yield event
+    }
+
+    if (!foundPeer) {
+      throw errcode(new Error('No peer found'), 'ERR_NOT_FOUND')
+    }
   }
 
   /**
    * Kademlia 'node lookup' operation
    *
-   * @param {Uint8Array} key
+   * @param {Uint8Array} key - the key to look up, could be a the bytes from a multihash or a peer ID
    * @param {object} [options]
-   * @param {boolean} [options.shallow=false] - shallow query
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async * getClosestPeers (key, options = { shallow: false }) {
+  async * getClosestPeers (key, options = {}) {
     log('getClosestPeers to %b', key)
-    const { shallow } = options
     const id = await utils.convertBuffer(key)
     const tablePeers = this._routingTable.closestPeers(id)
+    const maxPeers = this._routingTable._kBucketSize
+    const self = this
 
     /**
-     * @type {import('../types').QueryFunc<PeerId[]>}
+     * @type {import('../query/types').QueryFunc}
      */
-    const getCloserPeersQuery = async ({ peer, signal }) => {
-      const closer = await this.closerPeersSingle(key, peer, { signal, onQueryEvent: options.onQueryEvent })
+    const getCloserPeersQuery = async function * ({ peer, signal }) {
+      log('closerPeersSingle %s from %p', uint8ArrayToString(key, 'base32'), peer)
+      const request = new Message(Message.TYPES.FIND_NODE, key, 0)
 
-      if (shallow) {
-        return {
-          value: [peer, ...closer],
-          done: true
-        }
-      }
-
-      return {
-        closerPeers: closer,
-        value: closer
-      }
+      yield * self._network.sendRequest(peer, request, { signal })
     }
 
-    const peers = new Set()
+    /** @type {PeerData[]} */
+    const peers = []
 
-    for await (const result of this._queryManager.run(key, tablePeers, getCloserPeersQuery, options)) {
-      if (result.value) {
-        for (const peer of result.value) {
-          if (!peers.has(peer.toB58String())) {
-            peers.add(peer.toB58String())
-            log('peer %p was closer to %b', peer, key)
-            yield peer
+    for await (const event of this._queryManager.run(key, tablePeers, getCloserPeersQuery, options)) {
+      yield event
+
+      if (event.name === 'peerResponse' && event.closerPeers) {
+        event.closerPeers.forEach(peerData => {
+          if (peers.find(seenPeer => seenPeer.id.equals(peerData.id))) {
+            return
           }
+
+          log('peer %p was closer to %b', peerData.id, key)
+          peers.push(peerData)
+        })
+
+        // only keep the last maxPeers (should be the closest)
+        while (peers.length > maxPeers) {
+          peers.shift()
         }
       }
     }
 
-    log('found %d peers close to %b', peers.size, key)
-  }
+    log('found %d peers close to %b', peers.length, key)
 
-  /**
-   * Store the given key/value pair at the peer `target`.
-   *
-   * @param {Uint8Array} key
-   * @param {Uint8Array} rec - encoded record
-   * @param {PeerId} target
-   * @param {object} [options]
-   * @param {AbortSignal} [options.signal]
-   * @param {QueryEventHandler} [options.onQueryEvent]
-   */
-  async putValueToPeer (key, rec, target, options = {}) {
-    const msg = new Message(Message.TYPES.PUT_VALUE, key, 0)
-    msg.record = Record.deserialize(rec)
-
-    const resp = await this._network.sendRequest(target, msg, options)
-
-    if (resp.record && !uint8ArrayEquals(resp.record.value, Record.deserialize(rec).value)) {
-      throw errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID')
-    }
+    yield * peers.map(peerData => finalPeerEvent({ peer: peerData }))
   }
 
   /**
@@ -301,32 +249,33 @@ class PeerRouting {
    * @param {Uint8Array} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async getValueOrPeers (peer, key, options = {}) {
-    const msg = await this._getValueSingle(peer, key, options)
+  async * getValueOrPeers (peer, key, options = {}) {
+    let foundResponse
 
-    const peers = msg.closerPeers
-    const record = msg.record
+    for await (const event of this._getValueSingle(peer, key, options)) {
+      if (event.name === 'peerResponse') {
+        if (event.response && event.response.record) {
+          // We have a record
+          try {
+            await this._verifyRecordOnline(event.response.record)
+            foundResponse = true
+          } catch (/** @type {any} */ err) {
+            const errMsg = 'invalid record received, discarded'
+            log(errMsg)
 
-    if (record) {
-      // We have a record
-      try {
-        await this._verifyRecordOnline(record)
-      } catch (/** @type {any} */ err) {
-        const errMsg = 'invalid record received, discarded'
-        log(errMsg)
-        throw errcode(new Error(errMsg), 'ERR_INVALID_RECORD')
+            yield queryErrorEvent({ peer, error: errcode(new Error(errMsg), 'ERR_INVALID_RECORD') })
+            continue
+          }
+        }
       }
 
-      return { record, peers }
+      yield event
     }
 
-    if (peers.length > 0) {
-      return { peers }
+    if (!foundResponse) {
+      throw errcode(new Error('Not found'), 'ERR_NOT_FOUND')
     }
-
-    throw errcode(new Error('Not found'), 'ERR_NOT_FOUND')
   }
 
   /**

@@ -138,4 +138,5 @@ function fromPbPeer (peer) {
 }
 
 module.exports.Message = Message
+module.exports.MESSAGE_TYPE = MESSAGE_TYPE
 module.exports.MESSAGE_TYPE_LOOKUP = MESSAGE_TYPE_LOOKUP

@@ -8,13 +8,14 @@ const errCode = require('err-code')
 const { convertPeerId, convertBuffer } = require('../utils')
 const { TimeoutController } = require('timeout-abort-controller')
 const { anySignal } = require('any-signal')
+const { queryErrorEvent } = require('./events')
 
 const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
 
 /**
  * @typedef {import('peer-id')} PeerId
- * @typedef {import('../types').QueryResult<any>} QueryResult
- * @typedef {import('../types').QueryFunc<any>} QueryFunc
+ * @typedef {import('../types').QueryEvent} QueryEvent
+ * @typedef {import('./types').QueryFunc} QueryFunc
  */
 
 /**
@@ -28,14 +29,14 @@ const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
  * @param {Set<string>} context.peersSeen - list of base58btc peer IDs all paths have traversed
  * @param {AbortSignal} context.signal - when to stop querying
  * @param {QueryFunc} context.query - the query function to run with each peer
- * @param {number} context.pathIndex - which disjoint path we are following
- * @param {number} context.numPaths - the total number of disjoint paths being executed
  * @param {number} context.alpha - how many concurrent node/value lookups to run
+ * @param {number} context.pathIndex - how many concurrent node/value lookups to run
+ * @param {number} context.numPaths - how many concurrent node/value lookups to run
  * @param {import('events').EventEmitter} context.cleanUp - will emit a 'cleanup' event if the caller exits the for..await of early
  * @param {number} [context.queryFuncTimeout] - a timeout for queryFunc in ms
  * @param {ReturnType<import('../utils').logger>} context.log
  */
-module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, startingPeer, ourPeerId, peersSeen, signal, query, pathIndex, numPaths, alpha, cleanUp, queryFuncTimeout, log }) {
+module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, startingPeer, ourPeerId, peersSeen, signal, query, alpha, pathIndex, numPaths, cleanUp, queryFuncTimeout, log }) {
   // Only ALPHA node/value lookups are allowed at any given time for each process
   // https://github.com/libp2p/specs/tree/master/kad-dht#alpha-concurrency-parameter-%CE%B1
   const queue = new Queue({
@@ -73,67 +74,59 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
       const compoundSignal = anySignal(signals)
 
       try {
-        const result = await query({
+        for await (const event of query({
           key,
           peer,
           signal: compoundSignal,
           pathIndex,
           numPaths
-        })
+        })) {
+          if (compoundSignal.aborted) {
+            return
+          }
+
+          // if there are closer peers and the query has not completed, continue the query
+          if (event.name === 'peerResponse' && event.closerPeers) {
+            for (const closerPeer of event.closerPeers) {
+              const closerPeerKadId = await convertPeerId(closerPeer.id)
+              const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))
+
+              // only continue query if closer peer is actually closer
+              if (closerPeerXor > peerXor) { // eslint-disable-line max-depth
+                // log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
+                // continue
+              }
+
+              if (peersSeen.has(closerPeer.id.toB58String())) { // eslint-disable-line max-depth
+                // log('already seen %p in query', closerPeer)
+                continue
+              }
+
+              if (ourPeerId.equals(closerPeer.id)) { // eslint-disable-line max-depth
+                // log('not querying ourselves')
+                continue
+              }
+
+              log('querying closer peer %p', closerPeer)
+              queryPeer(closerPeer.id, closerPeerKadId)
+            }
+          }
+
+          // @ts-ignore simulate p-queue@7.x.x event
+          queue.emit('completed', event)
+        }
 
         timeout && timeout.clear()
-
-        if (compoundSignal.aborted) {
-          return
-        }
-
-        // if there are closer peers and the query has not completed, continue the query
-        if (result && !result.done && result.closerPeers) {
-          for (const closerPeer of result.closerPeers) {
-            const closerPeerKadId = await convertPeerId(closerPeer)
-            const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))
-
-            // only continue query if closer peer is actually closer
-            if (closerPeerXor > peerXor) {
-              // log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
-              // continue
-            }
-
-            if (peersSeen.has(closerPeer.toB58String())) {
-              // log('already seen %p in query', closerPeer)
-              continue
-            }
-
-            if (ourPeerId.equals(closerPeer)) {
-              // log('not querying ourselves')
-              continue
-            }
-
-            log('querying closer peer %p', closerPeer)
-            queryPeer(closerPeer, closerPeerKadId)
-          }
-        }
-
-        // @ts-ignore simulate p-queue@7.x.x event
-        queue.emit('completed', {
-          peer,
-          ...(result || {})
-        })
-
-        // the query is done, skip any waiting peer queries in the queue
-        if (result && result.done) {
-          queue.clear()
-        }
-      } catch (err) {
+      } catch (/** @type {any} */ err) {
         if (signal.aborted) {
           // @ts-ignore simulate p-queue@7.x.x event
           queue.emit('error', err)
         } else {
           // @ts-ignore simulate p-queue@7.x.x event
-          queue.emit('completed', {
+          queue.emit('completed', queryErrorEvent({
             peer,
-            err
-          })
+            error: err
+          }))
         }
       } finally {
         timeout && timeout.clear()
@@ -165,7 +158,7 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
 async function * toGenerator (queue, signal, cleanUp, log) {
   let deferred = defer()
   let running = true
-  /** @type {QueryResult[]} */
+  /** @type {QueryEvent[]} */
   const results = []
 
   const cleanup = () => {
@@ -225,7 +218,9 @@ async function * toGenerator (queue, signal, cleanUp, log) {
     while (results.length) {
       const result = results.shift()
 
-      yield result
+      if (result) {
+        yield result
+      }
     }
   }
 

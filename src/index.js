@@ -18,10 +18,11 @@ const { ContentFetching } = require('./content-fetching')
 const { ContentRouting } = require('./content-routing')
 const { PeerRouting } = require('./peer-routing')
 const { Providers } = require('./providers')
-const { QueryManager } = require('./query-manager')
+const { QueryManager } = require('./query/manager')
 const { RPC } = require('./rpc')
 const { TopologyListener } = require('./topology-listener')
 const { QuerySelf } = require('./query-self')
+const errCode = require('err-code')
 
 const log = utils.logger('libp2p:kad-dht')
 
@@ -34,7 +35,6 @@ const log = utils.logger('libp2p:kad-dht')
  * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
  * @typedef {import('./types').DHT} DHT
- * @typedef {import('./types').QueryEventHandler} QueryEventHandler
  *
  * @typedef {object} KadDHTOps
  * @property {Libp2p} libp2p - the libp2p instance
@@ -159,7 +159,8 @@ class KadDHT extends EventEmitter {
       this._selectors,
       this._peerRouting,
       this._queryManager,
-      this._routingTable
+      this._routingTable,
+      this._network
     )
     this._contentRouting = new ContentRouting(
       libp2p.peerId,
@@ -293,49 +294,32 @@ class KadDHT extends EventEmitter {
   }
 
   /**
-   * Store the given key/value  pair in the DHT.
+   * Store the given key/value  pair in the DHT
    *
    * @param {Uint8Array} key
    * @param {Uint8Array} value
    * @param {object} [options] - put options
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async put (key, value, options = {}) { // eslint-disable-line require-await
-    return this._contentFetching.put(key, value, options)
+  async * put (key, value, options = {}) { // eslint-disable-line require-await
+    yield * this._contentFetching.put(key, value, options)
   }
 
   /**
-   * Get the value to the given key.
-   * Times out after 1 minute by default.
+   * Get the value that corresponds to the passed key
    *
    * @param {Uint8Array} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async get (key, options = {}) { // eslint-disable-line require-await
-    return this._contentFetching.get(key, options)
+  async * get (key, options = {}) { // eslint-disable-line require-await
+    yield * this._contentFetching.get(key, options)
   }
 
   /**
-   * Get the `n` values to the given key without sorting.
-   *
-   * @param {Uint8Array} key
-   * @param {number} nvals
-   * @param {object} [options]
-   * @param {AbortSignal} [options.signal]
-   * @param {number} [options.queryFuncTimeout]
-   * @param {QueryEventHandler} [options.onQueryEvent]
-   */
-  async * getMany (key, nvals, options = {}) { // eslint-disable-line require-await
-    yield * this._contentFetching.getMany(key, nvals, options)
-  }
-
-  /**
-   * Remove the given key from the local datastore.
+   * Remove the given key from the local datastore
    *
    * @param {Uint8Array} key
    */
@@ -356,12 +340,11 @@ class KadDHT extends EventEmitter {
   // ----------- Content Routing
 
   /**
-   * Announce to the network that we can provide given key's value.
+   * Announce to the network that we can provide given key's value
    *
    * @param {CID} key
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * provide (key, options = {}) { // eslint-disable-line require-await
     yield * this._contentRouting.provide(key, this._libp2p.multiaddrs, options)
@@ -375,7 +358,6 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.maxNumProviders=5] - maximum number of providers to find
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
   async * findProviders (key, options = { maxNumProviders: 5 }) {
     yield * this._contentRouting.findProviders(key, options)
@@ -384,16 +366,15 @@ class KadDHT extends EventEmitter {
   // ----------- Peer Routing -----------
 
   /**
-   * Search for a peer with the given ID.
+   * Search for a peer with the given ID
    *
    * @param {PeerId} id
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async findPeer (id, options = {}) { // eslint-disable-line require-await
-    return this._peerRouting.findPeer(id, options)
+  async * findPeer (id, options = {}) { // eslint-disable-line require-await
+    yield * this._peerRouting.findPeer(id, options)
   }
 
   /**
@@ -401,28 +382,21 @@ class KadDHT extends EventEmitter {
    *
    * @param {Uint8Array} key
    * @param {object} [options]
-   * @param {boolean} [options.shallow = false] - shallow query
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.queryFuncTimeout]
-   * @param {QueryEventHandler} [options.onQueryEvent]
    */
-  async * getClosestPeers (key, options = { shallow: false }) {
+  async * getClosestPeers (key, options = {}) {
     yield * this._peerRouting.getClosestPeers(key, options)
   }
 
   /**
-   * Get the public key for the given peer id.
-   *
-   * @param {PeerId} peer
-   */
-  /**
-   * Get the public key for the given peer id.
+   * Get the public key for the given peer id
    *
    * @param {PeerId} peer
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    */
-  async getPublicKey (peer, options = {}) {
+  async * getPublicKey (peer, options = {}) {
     log('getPublicKey %p', peer)
 
     // local check
@@ -436,13 +410,29 @@ class KadDHT extends EventEmitter {
     // try the node directly
     let pk
 
-    try {
-      pk = await this._peerRouting.getPublicKeyFromNode(peer, options)
-    } catch (/** @type {any} */ err) {
+    for await (const event of this._peerRouting.getPublicKeyFromNode(peer, options)) {
+      yield event
+
+      if (event.name === 'value') {
+        pk = crypto.keys.unmarshalPublicKey(event.value)
+      }
+    }
+
+    if (!pk) {
       // try dht directly
       const pkKey = utils.keyForPublicKey(peer)
-      const value = await this.get(pkKey, options)
-      pk = crypto.keys.unmarshalPublicKey(value)
+
+      for await (const event of this.get(pkKey, options)) {
+        yield event
+
+        if (event.name === 'value') {
+          pk = crypto.keys.unmarshalPublicKey(event.value)
+        }
+      }
+    }
+
+    if (!pk) {
+      throw errCode(new Error('Failed to load public key'), 'ERR_FAILED_TO_LOAD_KEY')
     }
 
     const peerId = new PeerId(peer.id, undefined, pk)
