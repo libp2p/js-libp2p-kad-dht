@@ -11,6 +11,7 @@ const {
   finalPeerEvent,
   valueEvent
 } = require('../query/events')
+const PeerDistanceList = require('../peer-list/peer-distance-list')
 
 const log = utils.logger('libp2p:kad-dht:peer-routing')
 
@@ -198,8 +199,10 @@ class PeerRouting {
     log('getClosestPeers to %b', key)
     const id = await utils.convertBuffer(key)
     const tablePeers = this._routingTable.closestPeers(id)
-    const maxPeers = this._routingTable._kBucketSize
     const self = this
+
+    const peers = new PeerDistanceList(id, this._routingTable._kBucketSize)
+    tablePeers.forEach(peer => peers.add(peer))
 
     /**
      * @type {import('../query/types').QueryFunc}
@@ -211,32 +214,24 @@ class PeerRouting {
       yield * self._network.sendRequest(peer, request, { signal })
     }
 
-    /** @type {PeerData[]} */
-    const peers = []
-
     for await (const event of this._queryManager.run(key, tablePeers, getCloserPeersQuery, options)) {
       yield event
 
       if (event.name === 'peerResponse' && event.closerPeers) {
         event.closerPeers.forEach(peerData => {
-          if (peers.find(seenPeer => seenPeer.id.equals(peerData.id))) {
-            return
-          }
-
-          log('peer %p was closer to %b', peerData.id, key)
-          peers.push(peerData)
+          peers.add(peerData.id)
         })
-
-        // only keep the last maxPeers (should be the closest)
-        while (peers.length > maxPeers) {
-          peers.shift()
-        }
       }
     }
 
     log('found %d peers close to %b', peers.length, key)
 
-    yield * peers.map(peerData => finalPeerEvent({ peer: peerData }))
+    yield * peers.peers.map(peer => finalPeerEvent({
+      peer: {
+        id: peer,
+        multiaddrs: (this._peerStore.addressBook.get(peer) || []).map(addr => addr.multiaddr)
+      }
+    }))
   }
 
   /**

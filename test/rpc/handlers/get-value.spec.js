@@ -6,6 +6,7 @@ const { Message } = require('../../../src/message')
 const { GetValueHandler } = require('../../../src/rpc/handlers/get-value')
 const utils = require('../../../src/utils')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
+const drain = require('it-drain')
 
 const T = Message.TYPES.GET_VALUE
 
@@ -56,7 +57,7 @@ describe('rpc - handlers - GetValue', () => {
     const value = uint8ArrayFromString('world')
     const msg = new Message(T, key, 0)
 
-    await dht.put(key, value)
+    await drain(dht.put(key, value))
     const response = await handler.handle(peerIds[0], msg)
 
     expect(response.record).to.exist()

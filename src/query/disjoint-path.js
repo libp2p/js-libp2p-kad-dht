@@ -107,7 +107,7 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
                 continue
               }
 
-              log('querying closer peer %p', closerPeer)
+              log('querying closer peer %p', closerPeer.id)
               queryPeer(closerPeer.id, closerPeerKadId)
             }
           }

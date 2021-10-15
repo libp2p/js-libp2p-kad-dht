@@ -90,7 +90,8 @@ class ContentFetching {
     for (const { value, peer } of vals) {
       // no need to do anything
       if (uint8ArrayEquals(value, best)) {
-        return
+        log('record was ok')
+        continue
       }
 
       // correct ourself
@@ -103,7 +104,7 @@ class ContentFetching {
           log.error('Failed error correcting self', err)
         }
 
-        return
+        continue
       }
 
       // send correction

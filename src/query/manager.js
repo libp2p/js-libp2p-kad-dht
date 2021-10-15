@@ -136,7 +136,7 @@ class QueryManager {
 
         yield res
 
-        if (res.type === 3 && res.error) {
+        if (res.name === 'queryError' && res.error) {
           log('error', res.error)
           errors.push(res.error)
         }

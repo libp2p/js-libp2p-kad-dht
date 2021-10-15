@@ -4,6 +4,7 @@ import type { CID } from 'multiformats/cid'
 import type { MuxedStream } from 'libp2p/src/upgrader'
 import type Topology from 'libp2p-interfaces/src/topology'
 import type { Message } from './message'
+import type { PublicKey } from 'libp2p-crypto'
 
 export enum MessageTypes {
 
@@ -94,7 +95,7 @@ export interface DHT {
   findProviders: (key: CID, options?: QueryOptions) => AsyncIterable<QueryEvent>
   findPeer: (id: PeerId, options?: QueryOptions) => AsyncIterable<QueryEvent>
   getClosestPeers: (key: Uint8Array, options?: QueryOptions) => AsyncIterable<QueryEvent>
-  getPublicKey: (peer: PeerId, options?: QueryOptions) => AsyncIterable<QueryEvent>
+  getPublicKey: (peer: PeerId, options?: QueryOptions) => Promise<PublicKey>
 
   // publish/server methods
   provide: (key: CID, options?: QueryOptions) => AsyncIterable<QueryEvent>

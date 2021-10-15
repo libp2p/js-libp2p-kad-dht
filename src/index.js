@@ -396,7 +396,7 @@ class KadDHT extends EventEmitter {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    */
-  async * getPublicKey (peer, options = {}) {
+  async getPublicKey (peer, options = {}) {
     log('getPublicKey %p', peer)
 
     // local check
@@ -411,8 +411,6 @@ class KadDHT extends EventEmitter {
     let pk
 
     for await (const event of this._peerRouting.getPublicKeyFromNode(peer, options)) {
-      yield event
-
       if (event.name === 'value') {
         pk = crypto.keys.unmarshalPublicKey(event.value)
       }
@@ -423,8 +421,6 @@ class KadDHT extends EventEmitter {
       const pkKey = utils.keyForPublicKey(peer)
 
       for await (const event of this.get(pkKey, options)) {
-        yield event
-
         if (event.name === 'value') {
           pk = crypto.keys.unmarshalPublicKey(event.value)
         }

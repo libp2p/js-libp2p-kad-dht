@@ -7,6 +7,7 @@ const pipe = require('it-pipe')
 const lp = require('it-length-prefixed')
 const pDefer = require('p-defer')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
+const all = require('it-all')
 
 const { Message } = require('../src/message')
 
@@ -35,7 +36,11 @@ describe('Network', () => {
         return { stream: pair() } // {source, sink} streams that are internally connected
       }
 
-      const response = await dht._network.sendRequest(dht._libp2p.peerId, msg)
+      const events = await all(dht._network.sendRequest(dht._libp2p.peerId, msg))
+      const response = events
+        .filter(event => event.name === 'peerResponse')
+        .map(event => event.response)
+        .pop()
       expect(response.type).to.eql(Message.TYPES.PING)
     })
 
@@ -91,7 +96,11 @@ describe('Network', () => {
         return { stream: { source, sink } }
       }
 
-      const response = await dht._network.sendRequest(dht._libp2p.peerId, msg)
+      const events = await all(dht._network.sendRequest(dht._libp2p.peerId, msg))
+      const response = events
+        .filter(event => event.name === 'peerResponse')
+        .map(event => event.response)
+        .pop()
 
       expect(response.type).to.eql(Message.TYPES.FIND_NODE)
       finish()
