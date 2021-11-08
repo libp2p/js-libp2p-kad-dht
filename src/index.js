@@ -221,8 +221,11 @@ class KadDHT extends EventEmitter {
       })
     })
 
-    // when we find new peers, add them to the routing table
-    libp2p.on('peer:discovery', async peerId => {
+    // when we connect to new peers, add them to the routing table
+    libp2p.connectionManager.on('peer:connect', async connection => {
+      const peerId = connection.remotePeer
+
+      console.info(libp2p.peerId.toB58String(), 'got peer', peerId.toB58String())
       try {
         const has = await this._routingTable.find(peerId)
 

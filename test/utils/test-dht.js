@@ -83,7 +83,10 @@ class TestDHT {
         unhandle: (protocol) => {
           registrar.unhandle(protocol)
         },
-        on: () => {}
+        on: () => {},
+        connectionManager: {
+          on: () => {}
+        }
       },
       validators: {
         v: {
