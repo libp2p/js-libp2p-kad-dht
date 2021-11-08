@@ -87,7 +87,7 @@ class ContentFetching {
     log('sendCorrection for %b', key)
     const fixupRec = await utils.createPutRecord(key, best)
 
-    for (const { value, peer } of vals) {
+    for (const { value, from } of vals) {
       // no need to do anything
       if (uint8ArrayEquals(value, best)) {
         log('record was ok')
@@ -95,7 +95,7 @@ class ContentFetching {
       }
 
       // correct ourself
-      if (this._peerId.equals(peer)) {
+      if (this._peerId.equals(from)) {
         try {
           const dsKey = utils.bufferToKey(key)
           log(`Storing corrected record for key ${dsKey}`)
@@ -112,7 +112,7 @@ class ContentFetching {
       const request = new Message(Message.TYPES.PUT_VALUE, key, 0)
       request.record = Record.deserialize(fixupRec)
 
-      for await (const event of this._network.sendRequest(peer, request, options)) {
+      for await (const event of this._network.sendRequest(from, request, options)) {
         if (event.name === 'peerResponse' && event.response && event.response.record && uint8ArrayEquals(event.response.record.value, Record.deserialize(fixupRec).value)) {
           sentCorrection = true
         }
@@ -121,7 +121,7 @@ class ContentFetching {
       }
 
       if (!sentCorrection) {
-        yield queryErrorEvent({ peer, error: errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID') })
+        yield queryErrorEvent({ from, error: errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID') })
       }
 
       log.error('Failed error correcting entry')
@@ -173,7 +173,7 @@ class ContentFetching {
               counterSuccess += 1
               events.push(putEvent)
             } else {
-              events.push(queryErrorEvent({ peer: event.peer.id, error: errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID') }))
+              events.push(queryErrorEvent({ from: event.peer.id, error: errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID') }))
             }
           }
 
@@ -268,7 +268,7 @@ class ContentFetching {
 
       yield valueEvent({
         value: localRec.value,
-        peer: this._peerId
+        from: this._peerId
       })
     } catch (/** @type {any} */ err) {
       log('error getting local value for %b', key)
@@ -300,7 +300,7 @@ class ContentFetching {
         yield event
 
         if (event.name === 'peerResponse' && event.response && event.response.record) {
-          yield valueEvent({ peer, value: event.response.record.value })
+          yield valueEvent({ from: peer, value: event.response.record.value })
         }
       }
     }

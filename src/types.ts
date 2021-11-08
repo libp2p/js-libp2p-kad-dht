@@ -7,7 +7,14 @@ import type { Message } from './message'
 import type { PublicKey } from 'libp2p-crypto'
 
 export enum MessageTypes {
-
+  SendingQuery = 0,
+  PeerResponse,
+  FinalPeer,
+  QueryError,
+  Provider,
+  Value,
+  AddingPeer,
+  DialingPeer
 }
 
 export interface PeerData {
@@ -29,57 +36,58 @@ export interface QueryOptions extends AbortOptions {
 }
 
 export interface SendingQueryEvent {
-  peer: PeerId
-  type: 0
+  to: PeerId
+  type: MessageTypes.SendingQuery
   name: 'sendingQuery'
   message: string
   messageType: number
 }
 
 export interface PeerResponseEvent {
-  peer: PeerId
-  type: 1
+  from: PeerId
+  type: MessageTypes.PeerResponse
   name: 'peerResponse'
-  closerPeers?: PeerData[]
+  closer: PeerData[]
   response?: Message
 }
 
 export interface FinalPeerEvent {
+  from: PeerId,
   peer: PeerData
-  type: 2
+  type: MessageTypes.FinalPeer
   name: 'finalPeer'
 }
 
 export interface QueryErrorEvent {
-  peer: PeerId
-  type: 3
+  from: PeerId
+  type: MessageTypes.QueryError
   name: 'queryError'
   error: Error
 }
 
 export interface ProviderEvent {
-  peer: PeerId
-  type: 4
+  from: PeerId
+  type: MessageTypes.Provider
   name: 'provider'
-  providerPeers: PeerData[]
+  providers: PeerData[]
 }
 
 export interface ValueEvent {
-  peer: PeerId
-  type: 5
+  from: PeerId
+  type: MessageTypes.Value
   name: 'value'
   value: Uint8Array
 }
 
 export interface AddingPeerEvent {
+  type: MessageTypes.AddingPeer
+  name: 'addingPeer',
   peer: PeerId
-  type: 6
-  name: 'addingPeer'
 }
 
 export interface DialingPeerEvent {
   peer: PeerId
-  type: 7
+  type: MessageTypes.DialingPeer
   name: 'dialingPeer'
 }
 

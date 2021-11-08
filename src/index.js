@@ -35,6 +35,15 @@ const log = utils.logger('libp2p:kad-dht')
  * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
  * @typedef {import('./types').DHT} DHT
+ * @typedef {import('./types').QueryEvent} QueryEvent
+ * @typedef {import('./types').SendingQueryEvent} SendingQueryEvent
+ * @typedef {import('./types').PeerResponseEvent} PeerResponseEvent
+ * @typedef {import('./types').FinalPeerEvent} FinalPeerEvent
+ * @typedef {import('./types').QueryErrorEvent} QueryErrorEvent
+ * @typedef {import('./types').ProviderEvent} ProviderEvent
+ * @typedef {import('./types').ValueEvent} ValueEvent
+ * @typedef {import('./types').AddingPeerEvent} AddingPeerEvent
+ * @typedef {import('./types').DialingPeerEvent} DialingPeerEvent
  *
  * @typedef {object} KadDHTOps
  * @property {Libp2p} libp2p - the libp2p instance

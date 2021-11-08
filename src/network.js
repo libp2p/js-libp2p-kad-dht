@@ -85,13 +85,13 @@ class Network extends EventEmitter {
 
       const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
 
-      yield sendingQueryEvent({ peer: to, type: msg.type })
+      yield sendingQueryEvent({ to, type: msg.type })
 
       const response = await this._writeReadMessage(stream, msg.serialize(), options)
 
-      yield peerResponseEvent({ peer: to, closerPeers: response.closerPeers, response })
+      yield peerResponseEvent({ from: to, closer: response.closerPeers, response })
     } catch (/** @type {any} */ err) {
-      yield queryErrorEvent({ peer: to, error: err })
+      yield queryErrorEvent({ from: to, error: err })
     }
   }
 
@@ -110,14 +110,14 @@ class Network extends EventEmitter {
 
     const { stream } = await this._dialer.dialProtocol(to, this._protocol, options)
 
-    yield sendingQueryEvent({ peer: to, type: msg.type })
+    yield sendingQueryEvent({ to, type: msg.type })
 
     try {
       await this._writeMessage(stream, msg.serialize(), options)
 
-      yield peerResponseEvent({ peer: to })
+      yield peerResponseEvent({ from: to })
     } catch (/** @type {any} */ err) {
-      yield queryErrorEvent({ peer: to, error: err })
+      yield queryErrorEvent({ from: to, error: err })
     }
   }
 

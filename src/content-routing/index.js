@@ -94,7 +94,7 @@ class ContentRouting {
           log.error('error sending provide record to peer %p', event.peer.id, err)
           errors.push(err)
 
-          events.push(queryErrorEvent({ peer: event.peer.id, error: err }))
+          events.push(queryErrorEvent({ from: event.peer.id, error: err }))
         }
 
         return events
@@ -156,7 +156,7 @@ class ContentRouting {
         multiaddrs: (this._peerStore.addressBook.get(peerId) || []).map(address => address.multiaddr)
       }))
 
-      yield peerResponseEvent({ peer: this._peerId, response })
+      yield peerResponseEvent({ from: this._peerId, response })
     }
 
     // All done

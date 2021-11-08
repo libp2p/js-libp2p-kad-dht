@@ -54,7 +54,7 @@ describe('QueryManager', () => {
       } else {
         entry.event = peerResponseEvent({
           peer,
-          closerPeers: (config.closerPeers || []).map((id) => ({
+          closer: (config.closerPeers || []).map((id) => ({
             id: peers[id],
             multiaddrs: []
           }))
@@ -153,7 +153,7 @@ describe('QueryManager', () => {
         // query more peers
         yield peerResponseEvent({
           peer,
-          closerPeers: peers.slice(0, 5).map(id => ({ id, multiaddrs: [] }))
+          closer: peers.slice(0, 5).map(id => ({ id, multiaddrs: [] }))
         })
       } else if (peersQueried.length === 6) {
         // all peers queried, return result
@@ -195,7 +195,7 @@ describe('QueryManager', () => {
         // query more peers
         yield peerResponseEvent({
           peer,
-          closerPeers: peers.slice(0, 5).map(id => ({ id, multiaddrs: [] }))
+          closer: peers.slice(0, 5).map(id => ({ id, multiaddrs: [] }))
         })
       } else {
         // a peer that cannot help in our query
@@ -413,7 +413,7 @@ describe('QueryManager', () => {
     const queryFunc = async function * ({ peer }) { // eslint-disable-line require-await
       yield peerResponseEvent({
         peer: peer,
-        closerPeers: [{
+        closer: [{
           id: peers[2],
           multiaddrs: []
         }]
@@ -423,8 +423,8 @@ describe('QueryManager', () => {
     const results = await all(manager.run(key, [peers[3]], queryFunc))
 
     expect(results).to.have.lengthOf(2)
-    expect(results).to.have.deep.nested.property('[0].closerPeers[0].id', peers[2])
-    expect(results).to.have.deep.nested.property('[1].closerPeers[0].id', peers[2])
+    expect(results).to.have.deep.nested.property('[0].closer[0].id', peers[2])
+    expect(results).to.have.deep.nested.property('[1].closer[0].id', peers[2])
 
     manager.stop()
   })

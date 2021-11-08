@@ -11,7 +11,7 @@ const { MESSAGE_TYPE_LOOKUP } = require('../message')
 
 /**
  * @param {object} fields
- * @param {PeerId} fields.peer
+ * @param {PeerId} fields.to
  * @param {number} fields.type
  * @returns {import('../types').SendingQueryEvent}
  */
@@ -27,8 +27,8 @@ function sendingQueryEvent (fields) {
 
 /**
  * @param {object} fields
- * @param {PeerId} fields.peer
- * @param {PeerData[]} [fields.closerPeers]
+ * @param {PeerId} fields.from
+ * @param {PeerData[]} [fields.closer]
  * @param {Message} [fields.response]
  * @returns {import('../types').PeerResponseEvent}
  */
@@ -36,12 +36,14 @@ function peerResponseEvent (fields) {
   return {
     ...fields,
     name: 'peerResponse',
-    type: 1
+    type: 1,
+    closer: fields.closer ? fields.closer : []
   }
 }
 
 /**
  * @param {object} fields
+ * @param {PeerId} fields.from
  * @param {PeerData} fields.peer
  * @returns {import('../types').FinalPeerEvent}
  */
@@ -55,7 +57,7 @@ function finalPeerEvent (fields) {
 
 /**
  * @param {object} fields
- * @param {PeerId} fields.peer
+ * @param {PeerId} fields.from
  * @param {Error} fields.error
  * @returns {import('../types').QueryErrorEvent}
  */
@@ -69,8 +71,8 @@ function queryErrorEvent (fields) {
 
 /**
  * @param {object} fields
- * @param {PeerId} fields.peer
- * @param {PeerData[]} fields.providerPeers
+ * @param {PeerId} fields.from
+ * @param {PeerData[]} fields.providers
  * @returns {import('../types').ProviderEvent}
  */
 function providerEvent (fields) {
@@ -83,7 +85,7 @@ function providerEvent (fields) {
 
 /**
  * @param {object} fields
- * @param {PeerId} fields.peer
+ * @param {PeerId} fields.from
  * @param {Uint8Array} fields.value
  * @returns {import('../types').ValueEvent}
  */

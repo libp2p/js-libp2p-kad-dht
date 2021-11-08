@@ -101,7 +101,7 @@ class PeerRouting {
           throw errcode(new Error('public key does not match id'), 'ERR_PUBLIC_KEY_DOES_NOT_MATCH_ID')
         }
 
-        yield valueEvent({ peer, value: recPeer.pubKey.bytes })
+        yield valueEvent({ from: peer, value: recPeer.pubKey.bytes })
       }
     }
 
@@ -161,12 +161,12 @@ class PeerRouting {
       for await (const event of self._network.sendRequest(peer, request, { signal })) {
         yield event
 
-        if (event.name === 'peerResponse' && event.closerPeers) {
-          const match = event.closerPeers.find((p) => p.id.equals(id))
+        if (event.name === 'peerResponse' && event.closer) {
+          const match = event.closer.find((p) => p.id.equals(id))
 
           // found the peer
           if (match) {
-            yield finalPeerEvent({ peer: match })
+            yield finalPeerEvent({ from: event.from, peer: match })
           }
         }
       }
@@ -217,8 +217,8 @@ class PeerRouting {
     for await (const event of this._queryManager.run(key, tablePeers, getCloserPeersQuery, options)) {
       yield event
 
-      if (event.name === 'peerResponse' && event.closerPeers) {
-        event.closerPeers.forEach(peerData => {
+      if (event.name === 'peerResponse' && event.closer) {
+        event.closer.forEach(peerData => {
           peers.add(peerData.id)
         })
       }
@@ -227,6 +227,7 @@ class PeerRouting {
     log('found %d peers close to %b', peers.length, key)
 
     yield * peers.peers.map(peer => finalPeerEvent({
+      from: this._peerId,
       peer: {
         id: peer,
         multiaddrs: (this._peerStore.addressBook.get(peer) || []).map(addr => addr.multiaddr)
@@ -259,7 +260,7 @@ class PeerRouting {
             const errMsg = 'invalid record received, discarded'
             log(errMsg)
 
-            yield queryErrorEvent({ peer, error: errcode(new Error(errMsg), 'ERR_INVALID_RECORD') })
+            yield queryErrorEvent({ from: event.from, error: errcode(new Error(errMsg), 'ERR_INVALID_RECORD') })
             continue
           }
         }
