@@ -52,7 +52,7 @@ export interface PeerResponseEvent {
 }
 
 export interface FinalPeerEvent {
-  from: PeerId,
+  from: PeerId
   peer: PeerData
   type: MessageTypes.FinalPeer
   name: 'finalPeer'
@@ -81,7 +81,7 @@ export interface ValueEvent {
 
 export interface AddingPeerEvent {
   type: MessageTypes.AddingPeer
-  name: 'addingPeer',
+  name: 'addingPeer'
   peer: PeerId
 }
 
