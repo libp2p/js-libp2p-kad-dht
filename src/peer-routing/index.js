@@ -161,7 +161,7 @@ class PeerRouting {
       for await (const event of self._network.sendRequest(peer, request, { signal })) {
         yield event
 
-        if (event.name === 'peerResponse' && event.closer) {
+        if (event.name === 'peerResponse') {
           const match = event.closer.find((p) => p.id.equals(id))
 
           // found the peer
@@ -217,7 +217,7 @@ class PeerRouting {
     for await (const event of this._queryManager.run(key, tablePeers, getCloserPeersQuery, options)) {
       yield event
 
-      if (event.name === 'peerResponse' && event.closer) {
+      if (event.name === 'peerResponse') {
         event.closer.forEach(peerData => {
           peers.add(peerData.id)
         })
