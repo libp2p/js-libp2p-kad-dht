@@ -225,7 +225,6 @@ class KadDHT extends EventEmitter {
     libp2p.connectionManager.on('peer:connect', async connection => {
       const peerId = connection.remotePeer
 
-      console.info(libp2p.peerId.toB58String(), 'got peer', peerId.toB58String())
       try {
         const has = await this._routingTable.find(peerId)
 
