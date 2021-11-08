@@ -11,6 +11,7 @@ const {
   queryErrorEvent,
   peerResponseEvent
 } = require('../query/events')
+const { Message: { MessageType } } = require('../message/dht')
 
 const log = logger('libp2p:kad-dht:content-routing')
 
@@ -149,14 +150,12 @@ class ContentRouting {
 
     // yield values if we have some, also slice because maybe we got lucky and already have too many?
     if (provs.length) {
-      const providers = provs.slice(0, toFind)
-      const response = new Message(Message.TYPES.GET_PROVIDERS, target, 0)
-      response.providerPeers = providers.map(peerId => ({
+      const providers = provs.slice(0, toFind).map(peerId => ({
         id: peerId,
         multiaddrs: (this._peerStore.addressBook.get(peerId) || []).map(address => address.multiaddr)
       }))
 
-      yield peerResponseEvent({ from: this._peerId, response })
+      yield peerResponseEvent({ from: this._peerId, messageType: MessageType.GET_PROVIDERS, providers })
     }
 
     // All done
@@ -180,10 +179,10 @@ class ContentRouting {
     for await (const event of this._queryManager.run(target, this._routingTable.closestPeers(id), findProvidersQuery, options)) {
       yield event
 
-      if (event.name === 'peerResponse' && event.response) {
-        log(`Found ${event.response.providerPeers.length} provider entries for ${key} and ${event.response.closerPeers.length} closer peers`)
+      if (event.name === 'peerResponse') {
+        log(`Found ${event.providers.length} provider entries for ${key} and ${event.closer.length} closer peers`)
 
-        for (const peer of event.response.providerPeers) {
+        for (const peer of event.providers) {
           providers.add(peer.id.toB58String())
 
           if (providers.size === toFind) {

@@ -7,6 +7,8 @@ const { MESSAGE_TYPE_LOOKUP } = require('../message')
  * @typedef {import('../types').QueryEvent} QueryEvent
  * @typedef {import('../types').PeerData} PeerData
  * @typedef {import('../message').Message} Message
+ * @typedef {import('../message/dht').Message.MessageType} MessageType
+ * @typedef {import('libp2p-record').Record} Record
  */
 
 /**
@@ -28,8 +30,10 @@ function sendingQueryEvent (fields) {
 /**
  * @param {object} fields
  * @param {PeerId} fields.from
+ * @param {MessageType} fields.messageType
  * @param {PeerData[]} [fields.closer]
- * @param {Message} [fields.response]
+ * @param {PeerData[]} [fields.providers]
+ * @param {Record} [fields.record]
  * @returns {import('../types').PeerResponseEvent}
  */
 function peerResponseEvent (fields) {
@@ -37,7 +41,8 @@ function peerResponseEvent (fields) {
     ...fields,
     name: 'peerResponse',
     type: 1,
-    closer: fields.closer ? fields.closer : []
+    closer: fields.closer ? fields.closer : [],
+    providers: fields.providers ? fields.providers : []
   }
 }
 

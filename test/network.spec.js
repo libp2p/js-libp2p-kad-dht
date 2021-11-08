@@ -39,9 +39,8 @@ describe('Network', () => {
       const events = await all(dht._network.sendRequest(dht._libp2p.peerId, msg))
       const response = events
         .filter(event => event.name === 'peerResponse')
-        .map(event => event.response)
         .pop()
-      expect(response.type).to.eql(Message.TYPES.PING)
+      expect(response.messageType).to.eql(Message.TYPES.PING)
     })
 
     it('send and response different messages', async () => {
@@ -99,10 +98,9 @@ describe('Network', () => {
       const events = await all(dht._network.sendRequest(dht._libp2p.peerId, msg))
       const response = events
         .filter(event => event.name === 'peerResponse')
-        .map(event => event.response)
         .pop()
 
-      expect(response.type).to.eql(Message.TYPES.FIND_NODE)
+      expect(response.messageType).to.eql(Message.TYPES.FIND_NODE)
       finish()
 
       return defer.promise

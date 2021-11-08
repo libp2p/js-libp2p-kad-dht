@@ -418,7 +418,7 @@ describe('KadDHT', () => {
       sinon.stub(dht._routingTable, 'closestPeers').returns([peerIds[1]])
       // Simulate going out to the network and returning the record
       sinon.stub(dht._peerRouting, 'getValueOrPeers').callsFake(async function * (peer) {
-        yield peerResponseEvent({ peer: peer, response: { record: rec } })
+        yield peerResponseEvent({ peer: peer, record: rec })
       }) // eslint-disable-line require-await
 
       const res = await last(dht.get(key))
@@ -468,8 +468,8 @@ describe('KadDHT', () => {
 
         const events = await all(dhts[n].findProviders(v.cid))
         const provs = Object.values(events.reduce((acc, curr) => {
-          if (curr.name === 'peerResponse' && curr.response && curr.response.providerPeers) {
-            curr.response.providerPeers.forEach(peer => {
+          if (curr.name === 'peerResponse') {
+            curr.providers.forEach(peer => {
               acc[peer.id.toB58String()] = peer.id
             })
           }
@@ -503,8 +503,8 @@ describe('KadDHT', () => {
 
       // find providers find all the 3 providers
       const provs = Object.values(events.reduce((acc, curr) => {
-        if (curr.name === 'peerResponse' && curr.response && curr.response.providerPeers) {
-          curr.response.providerPeers.forEach(peer => {
+        if (curr.name === 'peerResponse') {
+          curr.providers.forEach(peer => {
             acc[peer.id.toB58String()] = peer.id
           })
         }
@@ -537,8 +537,8 @@ describe('KadDHT', () => {
 
       // find providers find all the 3 providers
       const provs = Object.values(events.reduce((acc, curr) => {
-        if (curr.name === 'peerResponse' && curr.response && curr.response.providerPeers) {
-          curr.response.providerPeers.forEach(peer => {
+        if (curr.name === 'peerResponse') {
+          curr.providers.forEach(peer => {
             acc[peer.id.toB58String()] = peer.id
           })
         }
@@ -572,8 +572,8 @@ describe('KadDHT', () => {
 
       // find providers find the client provider
       const provs = Object.values(events.reduce((acc, curr) => {
-        if (curr.name === 'peerResponse' && curr.response && curr.response.providerPeers) {
-          curr.response.providerPeers.forEach(peer => {
+        if (curr.name === 'peerResponse') {
+          curr.providers.forEach(peer => {
             acc[peer.id.toB58String()] = peer.id
           })
         }
@@ -596,8 +596,8 @@ describe('KadDHT', () => {
       // Find provider
       const events = await all(dht.findProviders(val.cid))
       const provs = Object.values(events.reduce((acc, curr) => {
-        if (curr.name === 'peerResponse' && curr.response && curr.response.providerPeers) {
-          curr.response.providerPeers.forEach(peer => {
+        if (curr.name === 'peerResponse') {
+          curr.providers.forEach(peer => {
             acc[peer.id.toB58String()] = peer.id
           })
         }

@@ -89,7 +89,13 @@ class Network extends EventEmitter {
 
       const response = await this._writeReadMessage(stream, msg.serialize(), options)
 
-      yield peerResponseEvent({ from: to, closer: response.closerPeers, response })
+      yield peerResponseEvent({
+        from: to,
+        messageType: response.type,
+        closer: response.closerPeers,
+        providers: response.providerPeers,
+        record: response.record
+      })
     } catch (/** @type {any} */ err) {
       yield queryErrorEvent({ from: to, error: err })
     }
@@ -115,7 +121,7 @@ class Network extends EventEmitter {
     try {
       await this._writeMessage(stream, msg.serialize(), options)
 
-      yield peerResponseEvent({ from: to })
+      yield peerResponseEvent({ from: to, messageType: msg.type })
     } catch (/** @type {any} */ err) {
       yield queryErrorEvent({ from: to, error: err })
     }

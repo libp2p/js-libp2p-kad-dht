@@ -3,10 +3,11 @@ import type { Multiaddr } from 'multiaddr'
 import type { CID } from 'multiformats/cid'
 import type { MuxedStream } from 'libp2p/src/upgrader'
 import type Topology from 'libp2p-interfaces/src/topology'
-import type { Message } from './message'
+import type Record from 'libp2p-record/dist/src/record/index'
 import type { PublicKey } from 'libp2p-crypto'
+import type { Message } from './message/dht'
 
-export enum MessageTypes {
+export enum EventTypes {
   SendingQuery = 0,
   PeerResponse,
   FinalPeer,
@@ -35,59 +36,86 @@ export interface QueryOptions extends AbortOptions {
   queryFuncTimeout?: number
 }
 
+/**
+ * Emitted when sending queries to remote peers
+ */
 export interface SendingQueryEvent {
   to: PeerId
-  type: MessageTypes.SendingQuery
+  type: EventTypes.SendingQuery
   name: 'sendingQuery'
   message: string
   messageType: number
 }
 
+/**
+ * Emitted when query responses are received form remote peers.  Depending on the query
+ * these events may be followed by a `FinalPeerEvent`, a `ValueEvent` or a `ProviderEvent`.
+ */
 export interface PeerResponseEvent {
   from: PeerId
-  type: MessageTypes.PeerResponse
+  type: EventTypes.PeerResponse
   name: 'peerResponse'
+  messageType: Message.MessageType
   closer: PeerData[]
-  response?: Message
+  providers: PeerData[]
+  record?: Record
 }
 
+/**
+ * Emitted at the end of a `findPeer` query
+ */
 export interface FinalPeerEvent {
   from: PeerId
   peer: PeerData
-  type: MessageTypes.FinalPeer
+  type: EventTypes.FinalPeer
   name: 'finalPeer'
 }
 
+/**
+ * Something went wrong with the query
+ */
 export interface QueryErrorEvent {
   from: PeerId
-  type: MessageTypes.QueryError
+  type: EventTypes.QueryError
   name: 'queryError'
   error: Error
 }
 
+/**
+ * Emitted when providers are found
+ */
 export interface ProviderEvent {
   from: PeerId
-  type: MessageTypes.Provider
+  type: EventTypes.Provider
   name: 'provider'
   providers: PeerData[]
 }
 
+/**
+ * Emitted when values are found
+ */
 export interface ValueEvent {
   from: PeerId
-  type: MessageTypes.Value
+  type: EventTypes.Value
   name: 'value'
   value: Uint8Array
 }
 
+/**
+ * Emitted when peers are added to a query
+ */
 export interface AddingPeerEvent {
-  type: MessageTypes.AddingPeer
+  type: EventTypes.AddingPeer
   name: 'addingPeer'
   peer: PeerId
 }
 
+/**
+ * Emitted when peers are dialled as part of a query
+ */
 export interface DialingPeerEvent {
   peer: PeerId
-  type: MessageTypes.DialingPeer
+  type: EventTypes.DialingPeer
   name: 'dialingPeer'
 }
 

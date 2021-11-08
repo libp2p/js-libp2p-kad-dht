@@ -93,8 +93,8 @@ class PeerRouting {
     for await (const event of this._getValueSingle(peer, pkKey, options)) {
       yield event
 
-      if (event.name === 'peerResponse' && event.response && event.response.record) {
-        const recPeer = await PeerId.createFromPubKey(event.response.record.value)
+      if (event.name === 'peerResponse' && event.record) {
+        const recPeer = await PeerId.createFromPubKey(event.record.value)
 
         // compare hashes of the pub key
         if (!recPeer.equals(peer)) {
@@ -251,10 +251,10 @@ class PeerRouting {
 
     for await (const event of this._getValueSingle(peer, key, options)) {
       if (event.name === 'peerResponse') {
-        if (event.response && event.response.record) {
+        if (event.record) {
           // We have a record
           try {
-            await this._verifyRecordOnline(event.response.record)
+            await this._verifyRecordOnline(event.record)
             foundResponse = true
           } catch (/** @type {any} */ err) {
             const errMsg = 'invalid record received, discarded'

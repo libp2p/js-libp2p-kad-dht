@@ -113,7 +113,7 @@ class ContentFetching {
       request.record = Record.deserialize(fixupRec)
 
       for await (const event of this._network.sendRequest(from, request, options)) {
-        if (event.name === 'peerResponse' && event.response && event.response.record && uint8ArrayEquals(event.response.record.value, Record.deserialize(fixupRec).value)) {
+        if (event.name === 'peerResponse' && event.record && uint8ArrayEquals(event.record.value, Record.deserialize(fixupRec).value)) {
           sentCorrection = true
         }
 
@@ -169,7 +169,7 @@ class ContentFetching {
           for await (const putEvent of this._network.sendRequest(event.peer.id, msg, options)) {
             events.push(putEvent)
 
-            if (putEvent.name === 'peerResponse' && putEvent.response && putEvent.response.record && uint8ArrayEquals(putEvent.response.record.value, Record.deserialize(record).value)) {
+            if (putEvent.name === 'peerResponse' && putEvent.record && uint8ArrayEquals(putEvent.record.value, Record.deserialize(record).value)) {
               counterSuccess += 1
               events.push(putEvent)
             } else {
@@ -299,8 +299,8 @@ class ContentFetching {
       for await (const event of self._peerRouting.getValueOrPeers(peer, key, { signal })) {
         yield event
 
-        if (event.name === 'peerResponse' && event.response && event.response.record) {
-          yield valueEvent({ from: peer, value: event.response.record.value })
+        if (event.name === 'peerResponse' && event.record) {
+          yield valueEvent({ from: peer, value: event.record.value })
         }
       }
     }
