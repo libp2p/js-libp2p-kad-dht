@@ -2,13 +2,23 @@
 
 const { MESSAGE_TYPE_LOOKUP } = require('../message')
 
+/** @type {import('../types').MessageName[]} */
+const MESSAGE_NAMES = [
+  'putValue',
+  'getValue',
+  'addProvider',
+  'getProviders',
+  'findNode',
+  'ping'
+]
+
 /**
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('../types').QueryEvent} QueryEvent
  * @typedef {import('../types').PeerData} PeerData
  * @typedef {import('../message').Message} Message
  * @typedef {import('../message/dht').Message.MessageType} MessageType
- * @typedef {import('libp2p-record').Record} Record
+ * @typedef {import('../types').DHTRecord} Record
  */
 
 /**
@@ -41,6 +51,7 @@ function peerResponseEvent (fields) {
     ...fields,
     name: 'peerResponse',
     type: 1,
+    messageName: MESSAGE_NAMES[fields.messageType],
     closer: fields.closer ? fields.closer : [],
     providers: fields.providers ? fields.providers : []
   }

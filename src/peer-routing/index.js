@@ -12,6 +12,7 @@ const {
   valueEvent
 } = require('../query/events')
 const PeerDistanceList = require('../peer-list/peer-distance-list')
+const { Record } = require('libp2p-record')
 
 const log = utils.logger('libp2p:kad-dht:peer-routing')
 
@@ -278,11 +279,11 @@ class PeerRouting {
    * Verify a record, fetching missing public keys from the network.
    * Calls back with an error if the record is invalid.
    *
-   * @param {import('libp2p-record').Record} record
+   * @param {import('../types').DHTRecord} record
    * @returns {Promise<void>}
    */
-  async _verifyRecordOnline (record) {
-    await validator.verifyRecord(this._validators, record)
+  async _verifyRecordOnline ({ key, value, timeReceived }) {
+    await validator.verifyRecord(this._validators, new Record(key, value, timeReceived))
   }
 
   /**

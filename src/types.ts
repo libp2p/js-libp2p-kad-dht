@@ -3,7 +3,6 @@ import type { Multiaddr } from 'multiaddr'
 import type { CID } from 'multiformats/cid'
 import type { MuxedStream } from 'libp2p/src/upgrader'
 import type Topology from 'libp2p-interfaces/src/topology'
-import type Record from 'libp2p-record/dist/src/record/index'
 import type { PublicKey } from 'libp2p-crypto'
 import type { Message } from './message/dht'
 
@@ -18,14 +17,17 @@ export enum EventTypes {
   DialingPeer
 }
 
+export type MessageName = 'putValue' | 'getValue' | 'addProvider' | 'getProviders' | 'findNode' | 'ping'
+
 export interface PeerData {
   id: PeerId
   multiaddrs: Multiaddr[]
 }
 
-export interface DHTValue {
+export interface DHTRecord {
+  key: Uint8Array
   value: Uint8Array
-  from: PeerId
+  timeReceived?: Date
 }
 
 export interface AbortOptions {
@@ -56,9 +58,10 @@ export interface PeerResponseEvent {
   type: EventTypes.PeerResponse
   name: 'peerResponse'
   messageType: Message.MessageType
+  messageName: MessageName
   closer: PeerData[]
   providers: PeerData[]
-  record?: Record
+  record?: DHTRecord
 }
 
 /**
