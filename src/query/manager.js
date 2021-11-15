@@ -28,11 +28,11 @@ class QueryManager {
    *
    * @param {object} params
    * @param {PeerId} params.peerId
-   * @param {number} params.disjointPaths
    * @param {boolean} params.lan
+   * @param {number} [params.disjointPaths]
    * @param {number} [params.alpha]
    */
-  constructor ({ peerId, disjointPaths = K, lan, alpha = ALPHA }) {
+  constructor ({ peerId, lan, disjointPaths = K, alpha = ALPHA }) {
     this._peerId = peerId
     this._disjointPaths = disjointPaths || K
     this._controllers = new Set()
@@ -132,16 +132,16 @@ class QueryManager {
       const errors = []
 
       // Execute the query along each disjoint path and yield their results as they become available
-      for await (const res of merge(...paths)) {
-        if (!res) {
+      for await (const event of merge(...paths)) {
+        if (!event) {
           continue
         }
 
-        yield res
+        yield event
 
-        if (res.name === 'QUERY_ERROR' && res.error) {
-          log('error', res.error)
-          errors.push(res.error)
+        if (event.name === 'QUERY_ERROR' && event.error) {
+          log('error', event.error)
+          errors.push(event.error)
         }
       }
 
