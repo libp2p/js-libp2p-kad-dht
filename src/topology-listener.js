@@ -10,10 +10,11 @@ class TopologyListener extends EventEmitter {
   /**
    * Create a new network
    *
-   * @param {import('./types').Registrar} registrar
-   * @param {string} protocol
+   * @param {object} params
+   * @param {import('./types').Registrar} params.registrar
+   * @param {string} params.protocol
    */
-  constructor (registrar, protocol) {
+  constructor ({ registrar, protocol }) {
     super()
 
     this._running = false

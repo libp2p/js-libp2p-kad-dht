@@ -1,6 +1,5 @@
 'use strict'
 
-const errcode = require('err-code')
 const { Message } = require('../message')
 const parallel = require('it-parallel')
 const map = require('it-map')
@@ -9,11 +8,10 @@ const { ALPHA } = require('../constants')
 const { pipe } = require('it-pipe')
 const {
   queryErrorEvent,
-  peerResponseEvent
+  peerResponseEvent,
+  providerEvent
 } = require('../query/events')
 const { Message: { MessageType } } = require('../message/dht')
-
-const log = logger('libp2p:kad-dht:content-routing')
 
 /**
  * @typedef {import('multiformats/cid').CID} CID
@@ -23,15 +21,18 @@ const log = logger('libp2p:kad-dht:content-routing')
 
 class ContentRouting {
   /**
-   * @param {import('peer-id')} peerId
-   * @param {import('../network').Network} network
-   * @param {import('../peer-routing').PeerRouting} peerRouting
-   * @param {import('../query/manager').QueryManager} queryManager
-   * @param {import('../routing-table').RoutingTable} routingTable
-   * @param {import('../providers').Providers} providers
-   * @param {import('../types').PeerStore} peerStore
+   * @param {object} params
+   * @param {import('peer-id')} params.peerId
+   * @param {import('../network').Network} params.network
+   * @param {import('../peer-routing').PeerRouting} params.peerRouting
+   * @param {import('../query/manager').QueryManager} params.queryManager
+   * @param {import('../routing-table').RoutingTable} params.routingTable
+   * @param {import('../providers').Providers} params.providers
+   * @param {import('../types').PeerStore} params.peerStore
+   * @param {boolean} params.lan
    */
-  constructor (peerId, network, peerRouting, queryManager, routingTable, providers, peerStore) {
+  constructor ({ peerId, network, peerRouting, queryManager, routingTable, providers, peerStore, lan }) {
+    this._log = logger(`libp2p:kad-dht:${lan ? 'lan' : 'wan'}:content-routing`)
     this._peerId = peerId
     this._network = network
     this._peerRouting = peerRouting
@@ -51,10 +52,7 @@ class ContentRouting {
    * @param {AbortSignal} [options.signal]
    */
   async * provide (key, multiaddrs, options = {}) {
-    log('provide %s', key)
-
-    /** @type {Error[]} */
-    const errors = []
+    this._log('provide %s', key)
 
     // Add peer as provider
     await this._providers.addProvider(key, this._peerId)
@@ -72,29 +70,27 @@ class ContentRouting {
      */
     const maybeNotifyPeer = (event) => {
       return async () => {
-        if (event.name !== 'finalPeer') {
+        if (event.name !== 'FINAL_PEER') {
           return [event]
         }
 
         const events = []
 
-        log('putProvider %s to %p', key, event.peer.id)
+        this._log('putProvider %s to %p', key, event.peer.id)
 
         try {
-          log('sending provider record for %s to %p', key, event.peer.id)
+          this._log('sending provider record for %s to %p', key, event.peer.id)
 
           for await (const sendEvent of this._network.sendMessage(event.peer.id, msg, options)) {
-            if (sendEvent.name === 'peerResponse') {
-              log('sent provider record for %s to %p', key, event.peer.id)
+            if (sendEvent.name === 'PEER_RESPONSE') {
+              this._log('sent provider record for %s to %p', key, event.peer.id)
               sent++
             }
 
             events.push(sendEvent)
           }
         } catch (/** @type {any} */ err) {
-          log.error('error sending provide record to peer %p', event.peer.id, err)
-          errors.push(err)
-
+          this._log.error('error sending provide record to peer %p', event.peer.id, err)
           events.push(queryErrorEvent({ from: event.peer.id, error: err }))
         }
 
@@ -117,16 +113,7 @@ class ContentRouting {
       }
     )
 
-    log('sent provider records to %d peers', sent)
-
-    if (sent === 0) {
-      if (errors.length) {
-        // if all sends failed, throw an error to inform the caller
-        throw errcode(new Error(`Failed to provide to ${errors.length} of ${this._routingTable._kBucketSize} peers`), 'ERR_PROVIDES_FAILED', { errors })
-      }
-
-      throw errcode(new Error('Failed to provide - no peers found'), 'ERR_PROVIDES_FAILED')
-    }
+    this._log('sent provider records to %d peers', sent)
   }
 
   /**
@@ -144,7 +131,7 @@ class ContentRouting {
     const id = await convertBuffer(target)
     const self = this
 
-    log(`findProviders ${key}`)
+    this._log(`findProviders ${key}`)
 
     const provs = await this._providers.getProviders(key)
 
@@ -156,6 +143,7 @@ class ContentRouting {
       }))
 
       yield peerResponseEvent({ from: this._peerId, messageType: MessageType.GET_PROVIDERS, providers })
+      yield providerEvent({ from: this._peerId, providers: providers })
     }
 
     // All done
@@ -179,15 +167,26 @@ class ContentRouting {
     for await (const event of this._queryManager.run(target, this._routingTable.closestPeers(id), findProvidersQuery, options)) {
       yield event
 
-      if (event.name === 'peerResponse') {
-        log(`Found ${event.providers.length} provider entries for ${key} and ${event.closer.length} closer peers`)
+      if (event.name === 'PEER_RESPONSE') {
+        this._log(`Found ${event.providers.length} provider entries for ${key} and ${event.closer.length} closer peers`)
+
+        const newProviders = []
 
         for (const peer of event.providers) {
-          providers.add(peer.id.toB58String())
-
-          if (providers.size === toFind) {
-            return
+          if (providers.has(peer.id.toB58String())) {
+            continue
           }
+
+          providers.add(peer.id.toB58String())
+          newProviders.push(peer)
+        }
+
+        if (newProviders.length) {
+          yield providerEvent({ from: event.from, providers: newProviders })
+        }
+
+        if (providers.size === toFind) {
+          return
         }
       }
     }

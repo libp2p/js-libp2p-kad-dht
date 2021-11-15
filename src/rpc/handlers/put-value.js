@@ -16,10 +16,11 @@ const log = utils.logger('libp2p:kad-dht:rpc:handlers:put-value')
  */
 class PutValueHandler {
   /**
-   * @param {import('libp2p-interfaces/src/types').DhtValidators} validators
-   * @param {import('interface-datastore').Datastore} datastore
+   * @param {object} params
+   * @param {import('libp2p-interfaces/src/types').DhtValidators} params.validators
+   * @param {import('interface-datastore').Datastore} params.datastore
    */
-  constructor (validators, datastore) {
+  constructor ({ validators, datastore }) {
     this._validators = validators
     this._datastore = datastore
   }

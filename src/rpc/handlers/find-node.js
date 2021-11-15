@@ -3,6 +3,10 @@
 const { Message } = require('../../message')
 const utils = require('../../utils')
 const log = utils.logger('libp2p:kad-dht:rpc:handlers:find-node')
+const {
+  removePrivateAddresses,
+  removePublicAddresses
+} = require('../../utils')
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -14,18 +18,21 @@ const log = utils.logger('libp2p:kad-dht:rpc:handlers:find-node')
  */
 class FindNodeHandler {
   /**
-   * @param {PeerId} peerId
-   * @param {import('../../types').Addressable} addressable
-   * @param {import('../../peer-routing').PeerRouting} peerRouting
+   * @param {object} params
+   * @param {PeerId} params.peerId
+   * @param {import('../../types').Addressable} params.addressable
+   * @param {import('../../peer-routing').PeerRouting} params.peerRouting
+   * @param {boolean} [params.lan]
    */
-  constructor (peerId, addressable, peerRouting) {
+  constructor ({ peerId, addressable, peerRouting, lan }) {
     this._peerId = peerId
     this._addressable = addressable
     this._peerRouting = peerRouting
+    this._lan = Boolean(lan)
   }
 
   /**
-   * Process `FindNode` DHT messages.
+   * Process `FindNode` DHT messages
    *
    * @param {PeerId} peerId
    * @param {Message} msg
@@ -42,6 +49,10 @@ class FindNodeHandler {
     } else {
       closer = await this._peerRouting.getCloserPeersOffline(msg.key, peerId)
     }
+
+    closer = closer
+      .map(this._lan ? removePublicAddresses : removePrivateAddresses)
+      .filter(({ multiaddrs }) => multiaddrs.length)
 
     const response = new Message(msg.type, new Uint8Array(0), msg.clusterLevel)
 

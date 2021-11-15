@@ -1,9 +1,8 @@
 'use strict'
 
-// @ts-ignore
+// @ts-expect-error no types
 const KBuck = require('k-bucket')
 const utils = require('../utils')
-const log = utils.logger('libp2p:dht:routing-table')
 const { default: Queue } = require('p-queue')
 const { PROTOCOL_DHT } = require('../constants')
 const { TimeoutController } = require('timeout-abort-controller')
@@ -21,13 +20,15 @@ const { TimeoutController } = require('timeout-abort-controller')
  */
 class RoutingTable {
   /**
-   * @param {import('peer-id')} peerId
-   * @param {import('../types').Dialer} dialer
-   * @param {object} [options]
-   * @param {number} [options.kBucketSize=20]
-   * @param {number} [options.pingTimeout=10000]
+   * @param {object} params
+   * @param {import('peer-id')} params.peerId
+   * @param {import('../types').Dialer} params.dialer
+   * @param {boolean} params.lan
+   * @param {number} [params.kBucketSize=20]
+   * @param {number} [params.pingTimeout=10000]
    */
-  constructor (peerId, dialer, { kBucketSize, pingTimeout } = {}) {
+  constructor ({ peerId, dialer, kBucketSize, pingTimeout, lan }) {
+    this._log = utils.logger(`libp2p:kad-dht:${lan ? 'lan' : 'wan'}:routing-table`)
     this._peerId = peerId
     this._dialer = dialer
     this._kBucketSize = kBucketSize || 20
@@ -82,15 +83,15 @@ class RoutingTable {
 
             try {
               timeoutController = new TimeoutController(this._pingTimeout)
-              log(`Pinging old contact ${oldContact.peer}`)
+              this._log(`Pinging old contact ${oldContact.peer}`)
               const { stream } = await this._dialer.dialProtocol(oldContact.peer, PROTOCOL_DHT, {
                 signal: timeoutController.signal
               })
               await stream.close()
               responded++
             } catch (err) {
-              log.error('Could not ping peer %p', oldContact.peer, err)
-              log(`Evicting old contact after ping failed ${oldContact.peer}`)
+              this._log.error('Could not ping peer %p', oldContact.peer, err)
+              this._log(`Evicting old contact after ping failed ${oldContact.peer}`)
               this.kb.remove(oldContact.id)
             } finally {
               if (timeoutController) {
@@ -101,11 +102,11 @@ class RoutingTable {
         )
 
         if (responded < oldContacts.length) {
-          log(`Adding new contact ${newContact.peer}`)
+          this._log(`Adding new contact ${newContact.peer}`)
           this.kb.add(newContact)
         }
       } catch (err) {
-        log.error('Could not process k-bucket ping event', err)
+        this._log.error('Could not process k-bucket ping event', err)
       }
     })
   }

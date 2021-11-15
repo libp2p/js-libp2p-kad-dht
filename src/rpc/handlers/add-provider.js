@@ -16,11 +16,12 @@ const log = utils.logger('libp2p:kad-dht:rpc:handlers:add-provider')
  */
 class AddProviderHandler {
   /**
-   * @param {PeerId} peerId
-   * @param {import('../../providers').Providers} providers
-   * @param {import('../../types').PeerStore} peerStore
+   * @param {object} params
+   * @param {PeerId} params.peerId
+   * @param {import('../../providers').Providers} params.providers
+   * @param {import('../../types').PeerStore} params.peerStore
    */
-  constructor (peerId, providers, peerStore) {
+  constructor ({ peerId, providers, peerStore }) {
     this._peerId = peerId
     this._providers = providers
     this._peerStore = peerStore

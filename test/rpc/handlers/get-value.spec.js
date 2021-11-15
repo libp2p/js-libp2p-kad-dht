@@ -29,12 +29,12 @@ describe('rpc - handlers - GetValue', () => {
     const dhts = await tdht.spawn(1)
     dht = dhts[0]
 
-    handler = new GetValueHandler(
-      dht._libp2p.peerId,
-      dht._libp2p.peerStore,
-      dht._peerRouting,
-      dht._datastore
-    )
+    handler = new GetValueHandler({
+      peerId: dht._libp2p.peerId,
+      peerStore: dht._libp2p.peerStore,
+      peerRouting: dht._lan._peerRouting,
+      datastore: dht._datastore
+    })
   })
 
   afterEach(() => tdht.teardown())
@@ -70,7 +70,7 @@ describe('rpc - handlers - GetValue', () => {
     const msg = new Message(T, key, 0)
     const other = peerIds[1]
 
-    await dht._routingTable.add(other)
+    await dht._lan._routingTable.add(other)
     const response = await handler.handle(peerIds[0], msg)
 
     expect(response.closerPeers).to.have.length(1)
@@ -97,7 +97,7 @@ describe('rpc - handlers - GetValue', () => {
       dht._libp2p.peerStore.addressBook.add(other, [])
       dht._libp2p.peerStore.keyBook.set(other, other.pubKey)
 
-      await dht._routingTable.add(other)
+      await dht._lan._routingTable.add(other)
       const response = await handler.handle(peerIds[0], msg)
       expect(response.record).to.exist()
       expect(response.record.value).to.eql(other.pubKey.bytes)

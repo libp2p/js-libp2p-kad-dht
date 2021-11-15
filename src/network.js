@@ -15,8 +15,6 @@ const {
   queryErrorEvent
 } = require('./query/events')
 
-const log = utils.logger('libp2p:kad-dht:network')
-
 /**
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('libp2p-interfaces/src/stream-muxer/types').MuxedStream} MuxedStream
@@ -31,12 +29,15 @@ class Network extends EventEmitter {
   /**
    * Create a new network
    *
-   * @param {import('./types').Dialer} dialer
-   * @param {string} protocol
+   * @param {object} params
+   * @param {import('./types').Dialer} params.dialer
+   * @param {string} params.protocol
+   * @param {boolean} params.lan
    */
-  constructor (dialer, protocol) {
+  constructor ({ dialer, protocol, lan }) {
     super()
 
+    this._log = utils.logger(`libp2p:kad-dht:${lan ? 'lan' : 'wan'}:network`)
     this._running = false
     this._dialer = dialer
     this._protocol = protocol
@@ -78,7 +79,7 @@ class Network extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async * sendRequest (to, msg, options = {}) {
-    log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
+    this._log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
 
     try {
       yield dialingPeerEvent({ peer: to })
@@ -110,7 +111,7 @@ class Network extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async * sendMessage (to, msg, options = {}) {
-    log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
+    this._log('sending %s to %p', MESSAGE_TYPE_LOOKUP[msg.type], to)
 
     yield dialingPeerEvent({ peer: to })
 

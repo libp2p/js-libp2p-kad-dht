@@ -95,14 +95,14 @@ describe('QueryManager', () => {
   })
 
   it('does not run queries before start', async () => {
-    const manager = new QueryManager(ourPeerId, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1 })
 
     // @ts-expect-error not enough params
     await expect(all(manager.run())).to.eventually.be.rejectedWith(/not started/)
   })
 
   it('does not run queries after stop', async () => {
-    const manager = new QueryManager(ourPeerId, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1 })
     manager.start()
     manager.stop()
 
@@ -111,7 +111,7 @@ describe('QueryManager', () => {
   })
 
   it('should pass query context', async () => {
-    const manager = new QueryManager(ourPeerId, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1 })
     manager.start()
 
     /** @type {import('../src/query/types').QueryFunc} */
@@ -139,7 +139,7 @@ describe('QueryManager', () => {
   })
 
   it('simple run - succeed finding value', async () => {
-    const manager = new QueryManager(ourPeerId, 1, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1, alpha: 1 })
     manager.start()
 
     const peersQueried = []
@@ -182,7 +182,7 @@ describe('QueryManager', () => {
   })
 
   it('simple run - fail to find value', async () => {
-    const manager = new QueryManager(ourPeerId, 1, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1, alpha: 1 })
     manager.start()
 
     const peersQueried = []
@@ -210,13 +210,13 @@ describe('QueryManager', () => {
     // e.g. our starting peer plus the 5x closerPeers returned n the first iteration
     expect(results).to.have.lengthOf(6)
     // should not be a result in there
-    expect(results.find(res => res.name === 'value')).to.not.be.ok()
+    expect(results.find(res => res.name === 'VALUE')).to.not.be.ok()
 
     manager.stop()
   })
 
   it('should abort a query', async () => {
-    const manager = new QueryManager(ourPeerId, 2)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 2, alpha: 1 })
     manager.start()
 
     const controller = new AbortController()
@@ -256,7 +256,7 @@ describe('QueryManager', () => {
   })
 
   it('should allow a sub-query to timeout without aborting the whole query', async () => {
-    const manager = new QueryManager(ourPeerId, 2, 2)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 2, alpha: 2 })
     manager.start()
 
     // 2 -> 1 -> 0
@@ -301,7 +301,7 @@ describe('QueryManager', () => {
   })
 
   it('does not return an error if only some queries error', async () => {
-    const manager = new QueryManager(ourPeerId, 10)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 10 })
     manager.start()
 
     /** @type {import('../src/query/types').QueryFunc} */
@@ -321,10 +321,10 @@ describe('QueryManager', () => {
     // didn't add any extra peers during the query
     expect(results).to.have.lengthOf(manager._disjointPaths)
     // should not be a result in there
-    expect(results.find(res => res.name === 'value')).to.not.be.ok()
+    expect(results.find(res => res.name === 'VALUE')).to.not.be.ok()
     // half of the results should have the error property
     expect(results.reduce((acc, curr) => {
-      if (curr.name === 'queryError') {
+      if (curr.name === 'QUERY_ERROR') {
         return acc + 1
       }
 
@@ -335,7 +335,7 @@ describe('QueryManager', () => {
   })
 
   it('returns an error if all queries error', async () => {
-    const manager = new QueryManager(ourPeerId, 10)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 10, alpha: 1 })
     manager.start()
 
     /** @type {import('../src/query/types').QueryFunc} */
@@ -352,7 +352,7 @@ describe('QueryManager', () => {
   })
 
   it('returns empty run if initial peer list is empty', async () => {
-    const manager = new QueryManager(ourPeerId, 10)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 10 })
     manager.start()
 
     /** @type {import('../src/query/types').QueryFunc} */
@@ -368,7 +368,7 @@ describe('QueryManager', () => {
   })
 
   it('should query closer peers first', async () => {
-    const manager = new QueryManager(ourPeerId, 1, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1, alpha: 1 })
     manager.start()
 
     // 9 -> 8 -> 7 -> 6 -> 5 -> 0
@@ -406,7 +406,7 @@ describe('QueryManager', () => {
   })
 
   it('only closerPeers', async () => {
-    const manager = new QueryManager(ourPeerId, 1, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1, alpha: 1 })
     manager.start()
 
     /** @type {import('../src/query/types').QueryFunc} */
@@ -430,7 +430,7 @@ describe('QueryManager', () => {
   })
 
   it('only closerPeers concurrent', async () => {
-    const manager = new QueryManager(ourPeerId, 3)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 3 })
     manager.start()
 
     //  9 -> 2
@@ -459,7 +459,7 @@ describe('QueryManager', () => {
   })
 
   it('queries stop after shutdown', async () => {
-    const manager = new QueryManager(ourPeerId, 1, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1, alpha: 1 })
     manager.start()
 
     // 3 -> 2 -> 1 -> 0
@@ -507,7 +507,7 @@ describe('QueryManager', () => {
   })
 
   it('disjoint path values', async () => {
-    const manager = new QueryManager(ourPeerId, 2)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 2 })
     manager.start()
 
     const values = ['v0', 'v1'].map((str) => uint8ArrayFromString(str))
@@ -540,7 +540,7 @@ describe('QueryManager', () => {
   })
 
   it('disjoint path continue other paths after error on one path', async () => {
-    const manager = new QueryManager(ourPeerId, 2)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 2 })
     manager.start()
 
     // 2 -> 1 (delay) -> 0 [pathComplete]
@@ -570,7 +570,7 @@ describe('QueryManager', () => {
   })
 
   it.skip('should end paths when they have no closer peers to those already queried', async () => {
-    const manager = new QueryManager(ourPeerId, 1, 1)
+    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 1, alpha: 1 })
     manager.start()
 
     // 3 -> 2 -> 1 -> 4 -> 5 -> 6 // should stop at 1
@@ -586,7 +586,7 @@ describe('QueryManager', () => {
     const results = await all(manager.run(key, [peers[3]], createQueryFunction(topology)))
 
     // should not have a value
-    expect(results.find(res => res.name === 'value')).to.not.be.ok()
+    expect(results.find(res => res.name === 'VALUE')).to.not.be.ok()
 
     // should have traversed peers 3, 2 & 1
     expect(results).to.containSubset([{

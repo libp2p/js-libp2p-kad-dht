@@ -32,10 +32,10 @@ describe('rpc - handlers - PutValue', () => {
     const dhts = await tdht.spawn(1)
     dht = dhts[0]
 
-    handler = new PutValueHandler(
-      dht._validators,
-      dht._datastore
-    )
+    handler = new PutValueHandler({
+      validators: dht._lan._validators,
+      datastore: dht._datastore
+    })
   })
 
   afterEach(() => tdht.teardown())

@@ -3,7 +3,7 @@
 const { AbortController } = require('native-abort-controller')
 const { anySignal } = require('any-signal')
 const {
-  ALPHA
+  ALPHA, K
 } = require('../constants')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const { logger } = require('../utils')
@@ -26,16 +26,19 @@ class QueryManager {
   /**
    * Creates a new QueryManager
    *
-   * @param {PeerId} peerId
-   * @param {number} disjointPaths
-   * @param {number} alpha
+   * @param {object} params
+   * @param {PeerId} params.peerId
+   * @param {number} params.disjointPaths
+   * @param {boolean} params.lan
+   * @param {number} [params.alpha]
    */
-  constructor (peerId, disjointPaths, alpha = ALPHA) {
+  constructor ({ peerId, disjointPaths = K, lan, alpha = ALPHA }) {
     this._peerId = peerId
-    this._disjointPaths = disjointPaths
+    this._disjointPaths = disjointPaths || K
     this._controllers = new Set()
     this._running = false
-    this._alpha = alpha
+    this._alpha = alpha || ALPHA
+    this._lan = lan
   }
 
   /**
@@ -88,7 +91,7 @@ class QueryManager {
       setMaxListeners && setMaxListeners(0, signal)
     } catch {} // fails on node < 15
 
-    const log = logger('libp2p:kad-dht:query:' + uint8ArrayToString(key, 'base58btc'))
+    const log = logger(`libp2p:kad-dht:${this._lan ? 'lan' : 'wan'}:query:` + uint8ArrayToString(key, 'base58btc'))
 
     // query a subset of peers up to `kBucketSize / 2` in length
     const peersToQuery = peers.slice(0, Math.min(this._disjointPaths, peers.length))
@@ -136,7 +139,7 @@ class QueryManager {
 
         yield res
 
-        if (res.name === 'queryError' && res.error) {
+        if (res.name === 'QUERY_ERROR' && res.error) {
           log('error', res.error)
           errors.push(res.error)
         }
@@ -145,7 +148,7 @@ class QueryManager {
       log(`${errors.length} of ${peersSeen.size} peers errored (${errors.length / peersSeen.size * 100}% fail rate)`)
 
       // If all queries errored out, something is seriously wrong, so throw an error
-      if (errors.length === peersSeen.size) {
+      if (errors.length && errors.length === peersSeen.size) {
         throw errors[0]
       }
     } catch (/** @type {any} */ err) {

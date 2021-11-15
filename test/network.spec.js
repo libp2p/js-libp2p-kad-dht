@@ -36,9 +36,9 @@ describe('Network', () => {
         return { stream: pair() } // {source, sink} streams that are internally connected
       }
 
-      const events = await all(dht._network.sendRequest(dht._libp2p.peerId, msg))
+      const events = await all(dht._lan._network.sendRequest(dht._libp2p.peerId, msg))
       const response = events
-        .filter(event => event.name === 'peerResponse')
+        .filter(event => event.name === 'PEER_RESPONSE')
         .pop()
       expect(response.messageType).to.eql(Message.TYPES.PING)
     })
@@ -95,9 +95,9 @@ describe('Network', () => {
         return { stream: { source, sink } }
       }
 
-      const events = await all(dht._network.sendRequest(dht._libp2p.peerId, msg))
+      const events = await all(dht._lan._network.sendRequest(dht._libp2p.peerId, msg))
       const response = events
-        .filter(event => event.name === 'peerResponse')
+        .filter(event => event.name === 'PEER_RESPONSE')
         .pop()
 
       expect(response.messageType).to.eql(Message.TYPES.FIND_NODE)

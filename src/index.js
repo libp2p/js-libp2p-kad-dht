@@ -2,27 +2,11 @@
 
 const { EventEmitter } = require('events')
 const PeerId = require('peer-id')
-const crypto = require('libp2p-crypto')
-const libp2pRecord = require('libp2p-record')
-const { MemoryDatastore } = require('datastore-core/memory')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
-const { RoutingTable } = require('./routing-table')
-const { RoutingTableRefresh } = require('./routing-table/refresh')
 const utils = require('./utils')
-const {
-  K,
-  PROTOCOL_DHT
-} = require('./constants')
-const { Network } = require('./network')
-const { ContentFetching } = require('./content-fetching')
-const { ContentRouting } = require('./content-routing')
-const { PeerRouting } = require('./peer-routing')
-const { Providers } = require('./providers')
-const { QueryManager } = require('./query/manager')
-const { RPC } = require('./rpc')
-const { TopologyListener } = require('./topology-listener')
-const { QuerySelf } = require('./query-self')
 const errCode = require('err-code')
+const KadDHT = require('./kad-dht')
+const merge = require('it-merge')
 
 const log = utils.logger('libp2p:kad-dht')
 
@@ -47,8 +31,7 @@ const log = utils.logger('libp2p:kad-dht')
  *
  * @typedef {object} KadDHTOps
  * @property {Libp2p} libp2p - the libp2p instance
- * @property {string} [protocolPrefix = '/ipfs'] - libp2p registrar handle protocol
- * @property {boolean} [forceProtocolLegacy = false] - WARNING: this is not recommended and should only be used for legacy purposes
+ * @property {string} [protocol = '/ipfs/kad/1.0.0'] - libp2p registrar handle protocol
  * @property {number} kBucketSize - k-bucket size (default 20)
  * @property {boolean} clientMode - If true, the DHT will not respond to queries. This should be true if your node will not be dialable. (default: false)
  * @property {import('libp2p-interfaces/src/types').DhtValidators} validators - validators object with namespace as keys and function(key, record, callback)
@@ -60,188 +43,46 @@ const log = utils.logger('libp2p:kad-dht')
  * A DHT implementation modelled after Kademlia with S/Kademlia modifications.
  * Original implementation in go: https://github.com/libp2p/go-libp2p-kad-dht.
  */
-class KadDHT extends EventEmitter {
+class DualKadDHT extends EventEmitter {
   /**
    * Create a new KadDHT.
    *
-   * @param {KadDHTOps} opts
+   * @param {KadDHT} wan
+   * @param {KadDHT} lan
+   * @param {Libp2p} libp2p
    */
-  constructor ({
-    libp2p,
-    protocolPrefix = '/ipfs',
-    forceProtocolLegacy = false,
-    kBucketSize = K,
-    clientMode = true,
-    validators = {},
-    selectors = {},
-    querySelfInterval = 60000
-  }) {
+  constructor (wan, lan, libp2p) {
     super()
 
-    this._running = false
-
-    /**
-     * Local reference to the libp2p instance
-     *
-     * @type {Libp2p}
-     */
+    this._wan = wan
+    this._lan = lan
     this._libp2p = libp2p
-
-    /**
-     * Registrar protocol
-     *
-     * @type {string}
-     */
-    this._protocol = protocolPrefix + (forceProtocolLegacy ? '' : PROTOCOL_DHT)
-
-    /**
-     * k-bucket size
-     *
-     * @type {number}
-     */
-    this._kBucketSize = kBucketSize
-
-    /**
-     * Whether we are in client or server mode
-     */
-    this._clientMode = clientMode
-
-    /**
-     * The routing table.
-     *
-     * @type {RoutingTable}
-     */
-    this._routingTable = new RoutingTable(libp2p.peerId, libp2p, { kBucketSize })
-
-    /**
-     * Reference to the datastore, uses an in-memory store if none given.
-     *
-     * @type {Datastore}
-     */
-    this._datastore = libp2p.datastore || new MemoryDatastore()
-
-    /**
-     * Provider management
-     *
-     * @type {Providers}
-     */
-    this._providers = new Providers(this._datastore)
-
-    this._validators = {
-      pk: libp2pRecord.validator.validators.pk,
-      ...validators
-    }
-
-    this._selectors = {
-      pk: libp2pRecord.selection.selectors.pk,
-      ...selectors
-    }
-
-    this._network = new Network(
-      libp2p,
-      this._protocol
-    )
-    /**
-     * Keeps track of running queries
-     *
-     * @type {QueryManager}
-     */
-    this._queryManager = new QueryManager(
-      libp2p.peerId,
-      // Number of disjoint query paths to use - This is set to `kBucketSize/2` per the S/Kademlia paper
-      Math.ceil(kBucketSize / 2)
-    )
-
-    // DHT components
-    this._peerRouting = new PeerRouting(
-      libp2p.peerId,
-      this._routingTable,
-      libp2p.peerStore,
-      this._network,
-      this._validators,
-      this._queryManager
-    )
-    this._contentFetching = new ContentFetching(
-      libp2p.peerId,
-      this._datastore,
-      this._validators,
-      this._selectors,
-      this._peerRouting,
-      this._queryManager,
-      this._routingTable,
-      this._network
-    )
-    this._contentRouting = new ContentRouting(
-      libp2p.peerId,
-      this._network,
-      this._peerRouting,
-      this._queryManager,
-      this._routingTable,
-      this._providers,
-      libp2p.peerStore
-    )
-    this._routingTableRefresh = new RoutingTableRefresh(
-      this._peerRouting,
-      this._routingTable
-    )
-    this._rpc = new RPC(
-      this._routingTable,
-      libp2p.peerId,
-      this._providers,
-      libp2p.peerStore,
-      libp2p,
-      this._peerRouting,
-      this._datastore,
-      this._validators
-    )
-    this._topologyListener = new TopologyListener(
-      libp2p.registrar,
-      this._protocol
-    )
-    this._querySelf = new QuerySelf(
-      libp2p.peerId,
-      this._peerRouting,
-      kBucketSize,
-      querySelfInterval
-    )
+    this._datastore = libp2p.datastore || this._wan._datastore
 
     // handle peers being discovered during processing of DHT messages
-    this._network.on('peer', (peerData) => {
-      this._routingTable.add(peerData.id).catch(err => {
-        log.error(`Could not add ${peerData.id} to routing table`, err)
-      })
-
+    this._wan.on('peer', (peerData) => {
       this.emit('peer', peerData)
     })
-
-    // handle peers being discovered via other peer discovery mechanisms
-    this._topologyListener.on('peer', async (peerId) => {
-      this._routingTable.add(peerId).catch(err => {
-        log.error(`Could not add ${peerId} to routing table`, err)
-      })
+    this._lan.on('peer', (peerData) => {
+      this.emit('peer', peerData)
     })
 
     // when we connect to new peers, add them to the routing table
     libp2p.connectionManager.on('peer:connect', async connection => {
       const peerId = connection.remotePeer
 
-      try {
-        const has = await this._routingTable.find(peerId)
-
-        if (!has) {
-          await this._routingTable.add(peerId)
-        }
-      } catch (err) {
-        log.error('Could not add %p to routing table', peerId, err)
-      }
+      await Promise.all([
+        this._lan.onPeerConnect({ id: peerId, multiaddrs: [connection.remoteAddr] }),
+        this._wan.onPeerConnect({ id: peerId, multiaddrs: [connection.remoteAddr] })
+      ])
     })
   }
 
   /**
    * Is this DHT running.
    */
-  get isStarted () {
-    return this._running
+  isStarted () {
+    return this._wan.isStarted() && this._lan.isStarted()
   }
 
   /**
@@ -249,8 +90,7 @@ class KadDHT extends EventEmitter {
    */
   enableServerMode () {
     log('enabling server mode')
-    this._clientMode = false
-    this._libp2p.handle(this._protocol, this._rpc.onIncomingStream.bind(this._rpc))
+    this._wan.enableServerMode()
   }
 
   /**
@@ -258,31 +98,16 @@ class KadDHT extends EventEmitter {
    */
   enableClientMode () {
     log('enabling client mode')
-    this._clientMode = true
-    this._libp2p.unhandle(this._protocol)
+    this._wan.enableClientMode()
   }
 
   /**
    * Start listening to incoming connections.
    */
-  start () {
-    this._running = true
-
-    // Only respond to queries when not in client mode
-    if (this._clientMode) {
-      this.enableClientMode()
-    } else {
-      this.enableServerMode()
-    }
-
-    return Promise.all([
-      this._providers.start(),
-      this._queryManager.start(),
-      this._network.start(),
-      this._routingTable.start(),
-      this._routingTableRefresh.start(),
-      this._topologyListener.start(),
-      this._querySelf.start()
+  async start () {
+    await Promise.all([
+      this._lan.start(),
+      this._wan.start()
     ])
   }
 
@@ -290,22 +115,15 @@ class KadDHT extends EventEmitter {
    * Stop accepting incoming connections and sending outgoing
    * messages.
    */
-  stop () {
-    this._running = false
-
-    return Promise.all([
-      this._providers.stop(),
-      this._queryManager.stop(),
-      this._network.stop(),
-      this._routingTable.stop(),
-      this._routingTableRefresh.stop(),
-      this._topologyListener.stop(),
-      this._querySelf.stop()
+  async stop () {
+    await Promise.all([
+      this._lan.stop(),
+      this._wan.stop()
     ])
   }
 
   /**
-   * Store the given key/value  pair in the DHT
+   * Store the given key/value pair in the DHT
    *
    * @param {Uint8Array} key
    * @param {Uint8Array} value
@@ -314,7 +132,33 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
    */
   async * put (key, value, options = {}) { // eslint-disable-line require-await
-    yield * this._contentFetching.put(key, value, options)
+    let counterAll = 0
+    let counterErrors = 0
+
+    for await (const event of merge(
+      this._lan.put(key, value, options),
+      this._wan.put(key, value, options)
+    )) {
+      yield event
+
+      if (event.name === 'SENDING_QUERY' && event.messageName === 'PUT_VALUE') {
+        counterAll++
+      }
+
+      if (event.name === 'QUERY_ERROR') {
+        counterErrors++
+      }
+    }
+
+    // verify if we were able to put to enough peers
+    const minPeers = options.minPeers || counterAll // Ensure we have a default `minPeers`
+    const counterSuccess = counterAll - counterErrors
+
+    if (counterSuccess < minPeers) {
+      const error = errCode(new Error(`Failed to put value to enough peers: ${counterSuccess}/${minPeers}`), 'ERR_NOT_ENOUGH_PUT_PEERS')
+      log.error(error)
+      throw error
+    }
   }
 
   /**
@@ -326,7 +170,32 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.queryFuncTimeout]
    */
   async * get (key, options = {}) { // eslint-disable-line require-await
-    yield * this._contentFetching.get(key, options)
+    let queriedPeers = false
+    let foundValue = false
+
+    for await (const event of merge(
+      this._lan.get(key, options),
+      this._wan.get(key, options)
+    )) {
+      yield event
+
+      if (event.name === 'VALUE') {
+        foundValue = true
+        queriedPeers = true
+      }
+
+      if (event.name === 'SENDING_QUERY') {
+        queriedPeers = true
+      }
+    }
+
+    if (!queriedPeers) {
+      throw errCode(new Error('Failed to lookup key! No peers from routing table!'), 'ERR_NO_PEERS_IN_ROUTING_TABLE')
+    }
+
+    if (!foundValue) {
+      throw errCode(new Error('not found'), 'ERR_NOT_FOUND')
+    }
   }
 
   /**
@@ -358,7 +227,38 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async * provide (key, options = {}) { // eslint-disable-line require-await
-    yield * this._contentRouting.provide(key, this._libp2p.multiaddrs, options)
+    let sent = 0
+    let success = 0
+    const errors = []
+
+    for await (const event of merge(
+      this._lan.provide(key, options),
+      this._wan.provide(key, options)
+    )) {
+      yield event
+
+      if (event.name === 'SENDING_QUERY') {
+        sent++
+      }
+
+      if (event.name === 'QUERY_ERROR') {
+        errors.push(event.error)
+      }
+
+      if (event.name === 'PEER_RESPONSE' && event.messageName === 'ADD_PROVIDER') {
+        log('sent provider record for %s to %p', key, event.from.id)
+        success++
+      }
+    }
+
+    if (success === 0) {
+      if (errors.length) {
+        // if all sends failed, throw an error to inform the caller
+        throw errCode(new Error(`Failed to provide to ${errors.length} of ${sent} peers`), 'ERR_PROVIDES_FAILED', { errors })
+      }
+
+      throw errCode(new Error('Failed to provide - no peers found'), 'ERR_PROVIDES_FAILED')
+    }
   }
 
   /**
@@ -371,7 +271,10 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.queryFuncTimeout]
    */
   async * findProviders (key, options = { maxNumProviders: 5 }) {
-    yield * this._contentRouting.findProviders(key, options)
+    yield * merge(
+      this._lan.findProviders(key, options),
+      this._wan.findProviders(key, options)
+    )
   }
 
   // ----------- Peer Routing -----------
@@ -385,7 +288,31 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.queryFuncTimeout]
    */
   async * findPeer (id, options = {}) { // eslint-disable-line require-await
-    yield * this._peerRouting.findPeer(id, options)
+    let queriedPeers = false
+    let foundPeer = false
+
+    for await (const event of merge(
+      this._lan.findPeer(id, options),
+      this._wan.findPeer(id, options)
+    )) {
+      yield event
+
+      if (event.name === 'SENDING_QUERY' || event.name === 'FINAL_PEER') {
+        queriedPeers = true
+      }
+
+      if (event.name === 'FINAL_PEER') {
+        foundPeer = true
+      }
+    }
+
+    if (!queriedPeers) {
+      throw errCode(new Error('Peer lookup failed'), 'ERR_LOOKUP_FAILED')
+    }
+
+    if (!foundPeer) {
+      throw errCode(new Error('Not found'), 'ERR_NOT_FOUND')
+    }
   }
 
   /**
@@ -397,7 +324,10 @@ class KadDHT extends EventEmitter {
    * @param {number} [options.queryFuncTimeout]
    */
   async * getClosestPeers (key, options = {}) {
-    yield * this._peerRouting.getClosestPeers(key, options)
+    yield * merge(
+      this._lan.getClosestPeers(key, options),
+      this._wan.getClosestPeers(key, options)
+    )
   }
 
   /**
@@ -419,24 +349,16 @@ class KadDHT extends EventEmitter {
     }
 
     // try the node directly
-    let pk
+    const pks = await Promise.all([
+      this._lan.getPublicKey(peer, options),
+      this._wan.getPublicKey(peer, options)
+    ])
 
-    for await (const event of this._peerRouting.getPublicKeyFromNode(peer, options)) {
-      if (event.name === 'value') {
-        pk = crypto.keys.unmarshalPublicKey(event.value)
-      }
+    if (pks[0] && pks[1] && !pks[0].equals(pks[1])) {
+      throw errCode(new Error('Inconsistent public key loaded from wan and lan DHTs'), 'ERR_FAILED_TO_LOAD_KEY')
     }
 
-    if (!pk) {
-      // try dht directly
-      const pkKey = utils.keyForPublicKey(peer)
-
-      for await (const event of this.get(pkKey, options)) {
-        if (event.name === 'value') {
-          pk = crypto.keys.unmarshalPublicKey(event.value)
-        }
-      }
-    }
+    const pk = pks[0] || pks[1]
 
     if (!pk) {
       throw errCode(new Error('Failed to load public key'), 'ERR_FAILED_TO_LOAD_KEY')
@@ -457,6 +379,19 @@ module.exports = {
    * @returns {DHT}
    */
   create: (opts) => {
-    return new KadDHT(opts)
+    return new DualKadDHT(
+      new KadDHT({
+        ...opts,
+        protocol: '/ipfs/kad/1.0.0',
+        lan: false
+      }),
+      new KadDHT({
+        ...opts,
+        protocol: '/ipfs/lan/kad/1.0.0',
+        clientMode: false,
+        lan: true
+      }),
+      opts.libp2p
+    )
   }
 }

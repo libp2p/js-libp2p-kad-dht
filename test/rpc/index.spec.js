@@ -29,16 +29,16 @@ describe('rpc', () => {
     const dhts = await tdht.spawn(1)
     dht = dhts[0]
 
-    rpc = new RPC(
-      dht._routingTable,
-      dht._libp2p.peerId,
-      dht._providers,
-      dht._libp2p.peerStore,
-      dht._libp2p,
-      dht._peerRouting,
-      dht._datastore,
-      dht._validators
-    )
+    rpc = new RPC({
+      routingTable: dht._lan._routingTable,
+      peerId: dht._libp2p.peerId,
+      providers: dht._lan._providers,
+      peerStore: dht._libp2p.peerStore,
+      addressable: dht._libp2p,
+      peerRouting: dht._lan._peerRouting,
+      datastore: dht._lan._datastore,
+      validators: dht._lan._validators
+    })
   })
 
   afterEach(() => tdht.teardown())

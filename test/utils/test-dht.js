@@ -73,7 +73,11 @@ class TestDHT {
     const dht = create({
       libp2p: {
         peerId,
-        multiaddrs: [new Multiaddr('/ip4/0.0.0.0/tcp/4002')],
+        multiaddrs: [
+          new Multiaddr('/ip4/127.0.0.1/tcp/4002'),
+          new Multiaddr('/ip4/192.168.1.1/tcp/4002'),
+          new Multiaddr('/ip4/85.3.31.0/tcp/4002')
+        ],
         peerStore,
         dialProtocol: (peer, protocol, options) => connectToPeer(dht, peer, protocol, options),
         registrar,
@@ -129,8 +133,8 @@ class TestDHT {
   }
 
   async connect (dhtA, dhtB) {
-    const onConnectA = dhtA.regRecord[dhtA._protocol].onConnect
-    const onConnectB = dhtB.regRecord[dhtB._protocol].onConnect
+    const onConnectA = dhtA.regRecord[dhtA._lan._protocol].onConnect
+    const onConnectB = dhtB.regRecord[dhtB._lan._protocol].onConnect
     const [c0, c1] = ConnectionPair()
     const routingTableChecks = []
 
@@ -139,7 +143,7 @@ class TestDHT {
       // B is a server, trigger connect events on A
       await onConnectA(dhtB._libp2p.peerId, c0)
       routingTableChecks.push(async () => {
-        const match = await dhtA._routingTable.find(dhtB._libp2p.peerId)
+        const match = await dhtA._lan._routingTable.find(dhtB._libp2p.peerId)
 
         if (!match) {
           await delay(100)
@@ -154,7 +158,7 @@ class TestDHT {
       // A is a server, trigger connect events on B
       await onConnectB(dhtA._libp2p.peerId, c1)
       routingTableChecks.push(async () => {
-        const match = await dhtB._routingTable.find(dhtA._libp2p.peerId)
+        const match = await dhtB._lan._routingTable.find(dhtA._libp2p.peerId)
 
         if (!match) {
           await delay(100)

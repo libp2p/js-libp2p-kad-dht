@@ -47,8 +47,13 @@ describe('generate peers', function () {
     this.timeout(20 * 1000)
     const id = await PeerId.create({ bits: 512 })
 
-    const table = new RoutingTable(id, 20)
-    refresh = new RoutingTableRefresh(null, table)
+    const table = new RoutingTable({
+      peerId: id,
+      kBucketSize: 20
+    })
+    refresh = new RoutingTableRefresh({
+      routingTable: table
+    })
   })
 
   const TEST_CASES = [{

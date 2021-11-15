@@ -19,19 +19,20 @@ const log = utils.logger('libp2p:kad-dht:rpc')
  */
 class RPC {
   /**
-   *
-   * @param {import('../routing-table').RoutingTable} routingTable
-   * @param {import('peer-id')} peerId
-   * @param {import('../providers').Providers} providers
-   * @param {import('../types').PeerStore} peerStore
-   * @param {import('../types').Addressable} addressable
-   * @param {import('../peer-routing').PeerRouting} peerRouting
-   * @param {import('interface-datastore').Datastore} datastore
-   * @param {import('libp2p-interfaces/src/types').DhtValidators} validators
+   * @param {object} params
+   * @param {import('../routing-table').RoutingTable} params.routingTable
+   * @param {import('peer-id')} params.peerId
+   * @param {import('../providers').Providers} params.providers
+   * @param {import('../types').PeerStore} params.peerStore
+   * @param {import('../types').Addressable} params.addressable
+   * @param {import('../peer-routing').PeerRouting} params.peerRouting
+   * @param {import('interface-datastore').Datastore} params.datastore
+   * @param {import('libp2p-interfaces/src/types').DhtValidators} params.validators
+   * @param {boolean} [params.lan]
    */
-  constructor (routingTable, peerId, providers, peerStore, addressable, peerRouting, datastore, validators) {
-    this._messageHandler = handlers(peerId, providers, peerStore, addressable, peerRouting, datastore, validators)
-    this._routingTable = routingTable
+  constructor (params) {
+    this._messageHandler = handlers(params)
+    this._routingTable = params.routingTable
   }
 
   /**

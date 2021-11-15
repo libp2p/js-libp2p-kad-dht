@@ -6,6 +6,7 @@ const { Message } = require('../../../src/message')
 const utils = require('../../../src/utils')
 const { GetProvidersHandler } = require('../../../src/rpc/handlers/get-providers')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
+const { Multiaddr } = require('multiaddr')
 
 const T = Message.TYPES.GET_PROVIDERS
 
@@ -33,25 +34,19 @@ describe('rpc - handlers - GetProviders', () => {
     const dhts = await tdht.spawn(1)
     dht = dhts[0]
 
-    handler = new GetProvidersHandler(
-      dht._libp2p.peerId,
-      dht._peerRouting,
-      dht._providers,
-      dht._datastore,
-      dht._libp2p.peerStore
-    )
+    handler = new GetProvidersHandler({
+      peerId: dht._libp2p.peerId,
+      peerRouting: dht._lan._peerRouting,
+      providers: dht._lan._providers,
+      datastore: dht._datastore,
+      peerStore: dht._libp2p.peerStore,
+      addressable: dht._libp2p
+    })
   })
 
   afterEach(() => tdht.teardown())
 
   it('errors with an invalid key ', async () => {
-    const handler = new GetProvidersHandler(
-      dht._libp2p.peerId,
-      dht._peerRouting,
-      dht._providers,
-      dht._datastore,
-      dht._libp2p.peerStore
-    )
     const msg = new Message(T, uint8ArrayFromString('hello'), 0)
 
     await expect(handler.handle(peerIds[0], msg)).to.eventually.be.rejected().with.property('code', 'ERR_INVALID_CID')
@@ -79,8 +74,19 @@ describe('rpc - handlers - GetProviders', () => {
     const prov = peerIds[1]
     const closer = peerIds[2]
 
-    await dht._routingTable.add(closer)
-    await dht._providers.addProvider(v.cid, prov)
+    await dht._lan._routingTable.add(closer)
+    await dht._lan._providers.addProvider(v.cid, prov)
+    await dht._libp2p.peerStore.addressBook.set(prov, [
+      new Multiaddr('/ip4/127.0.0.1/tcp/4002'),
+      new Multiaddr('/ip4/192.168.1.5/tcp/4002'),
+      new Multiaddr('/ip4/135.4.67.0/tcp/4002')
+    ])
+    await dht._libp2p.peerStore.addressBook.set(closer, [
+      new Multiaddr('/ip4/127.0.0.1/tcp/4002'),
+      new Multiaddr('/ip4/192.168.2.6/tcp/4002'),
+      new Multiaddr('/ip4/21.31.57.23/tcp/4002')
+    ])
+
     const response = await handler.handle(peerIds[0], msg)
 
     expect(response.key).to.be.eql(v.cid.bytes)

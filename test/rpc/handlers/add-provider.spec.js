@@ -33,11 +33,11 @@ describe('rpc - handlers - AddProvider', () => {
     const dhts = await tdht.spawn(1)
     dht = dhts[0]
 
-    handler = new AddProviderHandler(
-      dht._libp2p.peerId,
-      dht._providers,
-      dht._libp2p.peerStore
-    )
+    handler = new AddProviderHandler({
+      peerId: dht._libp2p.peerId,
+      providers: dht._lan._providers,
+      peerStore: dht._libp2p.peerStore
+    })
   })
 
   afterEach(() => tdht.teardown())
@@ -85,7 +85,7 @@ describe('rpc - handlers - AddProvider', () => {
 
     await handler.handle(peerIds[0], msg)
 
-    const provs = await dht._providers.getProviders(cid)
+    const provs = await dht._lan._providers.getProviders(cid)
     expect(provs).to.have.length(1)
     expect(provs[0].id).to.eql(peerIds[0].id)
 

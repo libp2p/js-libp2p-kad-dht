@@ -13,22 +13,24 @@ const { PutValueHandler } = require('./put-value')
  */
 
 /**
- * @param {import('peer-id')} peerId
- * @param {import('../../providers').Providers} providers
- * @param {import('../../types').PeerStore} peerStore
- * @param {import('../../types').Addressable} addressable
- * @param {import('../../peer-routing').PeerRouting} peerRouting
- * @param {import('interface-datastore').Datastore} datastore
- * @param {import('libp2p-interfaces/src/types').DhtValidators} validators
+ * @param {object} params
+ * @param {import('peer-id')} params.peerId
+ * @param {import('../../providers').Providers} params.providers
+ * @param {import('../../types').PeerStore} params.peerStore
+ * @param {import('../../types').Addressable} params.addressable
+ * @param {import('../../peer-routing').PeerRouting} params.peerRouting
+ * @param {import('interface-datastore').Datastore} params.datastore
+ * @param {import('libp2p-interfaces/src/types').DhtValidators} params.validators
+ * @param {boolean} [params.lan]
  */
-module.exports = (peerId, providers, peerStore, addressable, peerRouting, datastore, validators) => {
+module.exports = ({ peerId, providers, peerStore, addressable, peerRouting, datastore, validators, lan }) => {
   /** @type {Record<number, DHTMessageHandler>} */
   const handlers = {
-    [Message.TYPES.GET_VALUE]: new GetValueHandler(peerId, peerStore, peerRouting, datastore),
-    [Message.TYPES.PUT_VALUE]: new PutValueHandler(validators, datastore),
-    [Message.TYPES.FIND_NODE]: new FindNodeHandler(peerId, addressable, peerRouting),
-    [Message.TYPES.ADD_PROVIDER]: new AddProviderHandler(peerId, providers, peerStore),
-    [Message.TYPES.GET_PROVIDERS]: new GetProvidersHandler(peerId, peerRouting, providers, datastore, peerStore),
+    [Message.TYPES.GET_VALUE]: new GetValueHandler({ peerId, peerStore, peerRouting, datastore }),
+    [Message.TYPES.PUT_VALUE]: new PutValueHandler({ validators, datastore }),
+    [Message.TYPES.FIND_NODE]: new FindNodeHandler({ peerId, addressable, peerRouting, lan }),
+    [Message.TYPES.ADD_PROVIDER]: new AddProviderHandler({ peerId, providers, peerStore }),
+    [Message.TYPES.GET_PROVIDERS]: new GetProvidersHandler({ peerId, peerRouting, providers, datastore, peerStore, addressable, lan }),
     [Message.TYPES.PING]: new PingHandler()
   }
 

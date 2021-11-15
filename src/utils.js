@@ -3,12 +3,55 @@
 const debug = require('debug')
 const { sha256 } = require('multiformats/hashes/sha2')
 const { base58btc } = require('multiformats/bases/base58')
+const { base32 } = require('multiformats/bases/base32')
 const { Key } = require('interface-datastore/key')
 const { Record } = require('libp2p-record')
 const PeerId = require('peer-id')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const { concat: uint8ArrayConcat } = require('uint8arrays/concat')
+const isPrivateIp = require('private-ip')
+
+// const IPNS_PREFIX = uint8ArrayFromString('/ipns/')
+const PK_PREFIX = uint8ArrayFromString('/pk/')
+
+/**
+ * @param {import('./types').PeerData} peer
+ */
+function removePrivateAddresses ({ id, multiaddrs }) {
+  return {
+    id,
+    multiaddrs: multiaddrs.filter(multiaddr => {
+      const [[type, addr]] = multiaddr.stringTuples()
+
+      if (type !== 4 && type !== 6) {
+        return false
+      }
+
+      // @ts-expect-error types are wrong https://github.com/frenchbread/private-ip/issues/18
+      return !isPrivateIp(addr)
+    })
+  }
+}
+
+/**
+ * @param {import('./types').PeerData} peer
+ */
+function removePublicAddresses ({ id, multiaddrs }) {
+  return {
+    id,
+    multiaddrs: multiaddrs.filter(multiaddr => {
+      const [[type, addr]] = multiaddr.stringTuples()
+
+      if (type !== 4 && type !== 6) {
+        return false
+      }
+
+      // @ts-expect-error types are wrong https://github.com/frenchbread/private-ip/issues/18
+      return isPrivateIp(addr)
+    })
+  }
+}
 
 /**
  * Creates a DHT ID by hashing a given Uint8Array.
@@ -16,7 +59,7 @@ const { concat: uint8ArrayConcat } = require('uint8arrays/concat')
  * @param {Uint8Array} buf
  * @returns {Promise<Uint8Array>}
  */
-exports.convertBuffer = async (buf) => {
+const convertBuffer = async (buf) => {
   return (await sha256.digest(buf)).digest
 }
 
@@ -26,7 +69,7 @@ exports.convertBuffer = async (buf) => {
  * @param {PeerId} peer
  * @returns {Promise<Uint8Array>}
  */
-exports.convertPeerId = async (peer) => {
+const convertPeerId = async (peer) => {
   return (await sha256.digest(peer.id)).digest
 }
 
@@ -36,7 +79,7 @@ exports.convertPeerId = async (peer) => {
  * @param {Uint8Array} buf
  * @returns {Key}
  */
-exports.bufferToKey = (buf) => {
+const bufferToKey = (buf) => {
   return new Key('/' + uint8ArrayToString(buf, 'base32'), false)
 }
 
@@ -46,9 +89,9 @@ exports.bufferToKey = (buf) => {
  * @param {PeerId} peer
  * @returns {Uint8Array}
  */
-exports.keyForPublicKey = (peer) => {
+const keyForPublicKey = (peer) => {
   return uint8ArrayConcat([
-    uint8ArrayFromString('/pk/'),
+    PK_PREFIX,
     peer.id
   ])
 }
@@ -56,14 +99,21 @@ exports.keyForPublicKey = (peer) => {
 /**
  * @param {Uint8Array} key
  */
-exports.isPublicKeyKey = (key) => {
+const isPublicKeyKey = (key) => {
   return uint8ArrayToString(key.slice(0, 4)) === '/pk/'
 }
 
 /**
  * @param {Uint8Array} key
  */
-exports.fromPublicKeyKey = (key) => {
+const isIPNSKey = (key) => {
+  return uint8ArrayToString(key.slice(0, 4)) === '/ipns/'
+}
+
+/**
+ * @param {Uint8Array} key
+ */
+const fromPublicKeyKey = (key) => {
   return new PeerId(key.slice(4))
 }
 
@@ -74,7 +124,7 @@ exports.fromPublicKeyKey = (key) => {
  * @param {Uint8Array} value
  * @returns {Uint8Array}
  */
-exports.createPutRecord = (key, value) => {
+const createPutRecord = (key, value) => {
   const timeReceived = new Date()
   const rec = new Record(key, value, timeReceived)
 
@@ -86,10 +136,15 @@ exports.createPutRecord = (key, value) => {
  *
  * @param {string} name
  */
-exports.logger = (name) => {
+const logger = (name) => {
   // Add a formatter for converting to a base58 string
   debug.formatters.b = (v) => {
     return base58btc.baseEncode(v)
+  }
+
+  // Add a formatter for converting to a base58 string
+  debug.formatters.t = (v) => {
+    return base32.baseEncode(v)
   }
 
   // Add a formatter for stringifying peer ids
@@ -102,4 +157,18 @@ exports.logger = (name) => {
   })
 
   return logger
+}
+
+module.exports = {
+  removePrivateAddresses,
+  removePublicAddresses,
+  convertBuffer,
+  convertPeerId,
+  bufferToKey,
+  keyForPublicKey,
+  isPublicKeyKey,
+  isIPNSKey,
+  fromPublicKeyKey,
+  createPutRecord,
+  logger
 }

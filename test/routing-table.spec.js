@@ -22,9 +22,9 @@ describe('Routing Table', () => {
       dialProtocol: sinon.stub()
     }
 
-    table = new RoutingTable(lipbp2p.peerId, lipbp2p, {
-      kBucketSize: 20,
-      refreshInterval: 30000
+    table = new RoutingTable({
+      peerId: lipbp2p.peerId,
+      dialer: lipbp2p
     })
   })
 

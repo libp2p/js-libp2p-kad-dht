@@ -5,6 +5,10 @@ const errcode = require('err-code')
 const { Message } = require('../../message')
 const utils = require('../../utils')
 const log = utils.logger('libp2p:kad-dht:rpc:handlers:get-providers')
+const {
+  removePrivateAddresses,
+  removePublicAddresses
+} = require('../../utils')
 
 /**
  * @typedef {import('peer-id')} PeerId
@@ -16,18 +20,23 @@ const log = utils.logger('libp2p:kad-dht:rpc:handlers:get-providers')
  */
 class GetProvidersHandler {
   /**
-   * @param {PeerId} peerId
-   * @param {import('../../peer-routing').PeerRouting} peerRouting
-   * @param {import('../../providers').Providers} providers
-   * @param {import('interface-datastore').Datastore} datastore
-   * @param {import('../../types').PeerStore} peerStore
+   * @param {object} params
+   * @param {PeerId} params.peerId
+   * @param {import('../../peer-routing').PeerRouting} params.peerRouting
+   * @param {import('../../providers').Providers} params.providers
+   * @param {import('interface-datastore').Datastore} params.datastore
+   * @param {import('../../types').PeerStore} params.peerStore
+   * @param {import('../../types').Addressable} params.addressable
+   * @param {boolean} [params.lan]
    */
-  constructor (peerId, peerRouting, providers, datastore, peerStore) {
+  constructor ({ peerId, peerRouting, providers, datastore, peerStore, addressable, lan }) {
     this._peerId = peerId
     this._peerRouting = peerRouting
     this._providers = providers
     this._datastore = datastore
     this._peerStore = peerStore
+    this._addressable = addressable
+    this._lan = Boolean(lan)
   }
 
   /**
@@ -53,20 +62,33 @@ class GetProvidersHandler {
       this._peerRouting.getCloserPeersOffline(msg.key, peerId)
     ])
 
-    const providerPeers = peers.map((peerId) => ({
-      id: peerId,
-      multiaddrs: []
-    }))
-    const closerPeers = closer.map((c) => ({
-      id: c.id,
-      multiaddrs: []
-    }))
+    const providerPeers = peers
+      .map((provider) => ({
+        id: provider,
+        multiaddrs: (this._peerStore.addressBook.get(provider) || []).map(address => address.multiaddr)
+      }))
+      .map(this._lan ? removePublicAddresses : removePrivateAddresses)
+      .filter(({ multiaddrs }) => multiaddrs.length)
+
+    const closerPeers = closer
+      .map((closer) => ({
+        id: closer.id,
+        multiaddrs: (this._peerStore.addressBook.get(closer.id) || []).map(address => address.multiaddr)
+      }))
+      .map(this._lan ? removePublicAddresses : removePrivateAddresses)
+      .filter(({ multiaddrs }) => multiaddrs.length)
 
     if (has) {
-      providerPeers.push({
+      const mapper = this._lan ? removePublicAddresses : removePrivateAddresses
+
+      const ourRecord = mapper({
         id: this._peerId,
-        multiaddrs: []
+        multiaddrs: this._addressable.multiaddrs
       })
+
+      if (ourRecord.multiaddrs.length) {
+        providerPeers.push(ourRecord)
+      }
     }
 
     const response = new Message(msg.type, msg.key, msg.clusterLevel)

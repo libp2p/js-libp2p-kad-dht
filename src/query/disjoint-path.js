@@ -86,7 +86,7 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
           }
 
           // if there are closer peers and the query has not completed, continue the query
-          if (event.name === 'peerResponse') {
+          if (event.name === 'PEER_RESPONSE') {
             for (const closerPeer of event.closer) {
               const closerPeerKadId = await convertPeerId(closerPeer.id)
               const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))

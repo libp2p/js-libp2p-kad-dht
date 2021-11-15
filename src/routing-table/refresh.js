@@ -6,7 +6,6 @@ const { sha256 } = require('multiformats/hashes/sha2')
 const crypto = require('libp2p-crypto')
 const PeerId = require('peer-id')
 const utils = require('../utils')
-const log = utils.logger('libp2p:dht:routing-table:refresh')
 const length = require('it-length')
 const { TimeoutController } = require('timeout-abort-controller')
 
@@ -27,11 +26,14 @@ const MAX_COMMON_PREFIX_LENGTH = 15
  */
 class RoutingTableRefresh {
   /**
-   * @param {import('../peer-routing').PeerRouting} peerRouting
-   * @param {import('./').RoutingTable} routingTable
-   * @param {number} [refreshInterval]
+   * @param {object} params
+   * @param {import('../peer-routing').PeerRouting} params.peerRouting
+   * @param {import('./').RoutingTable} params.routingTable
+   * @param {boolean} params.lan
+   * @param {number} [params.refreshInterval=30000]
    */
-  constructor (peerRouting, routingTable, refreshInterval) {
+  constructor ({ peerRouting, routingTable, refreshInterval, lan }) {
+    this._log = utils.logger(`libp2p:kad-dht:${lan ? 'lan' : 'wan'}:routing-table:refresh`)
     this._peerRouting = peerRouting
     this._routingTable = routingTable
     this._refreshInterval = refreshInterval || 30000
@@ -43,7 +45,7 @@ class RoutingTableRefresh {
   }
 
   async start () {
-    log(`refreshing routing table every ${this._refreshInterval}ms`)
+    this._log(`refreshing routing table every ${this._refreshInterval}ms`)
     await this._refreshTable(true)
   }
 
@@ -62,13 +64,13 @@ class RoutingTableRefresh {
    * @param {boolean} [force=false]
    */
   async _refreshTable (force) {
-    log('refreshing routing table')
+    this._log('refreshing routing table')
 
     const prefixLength = this._maxCommonPrefix()
     const refreshCpls = this._getTrackedCommonPrefixLengthsForRefresh(prefixLength)
 
-    log(`max common prefix length ${prefixLength}`)
-    log(`tracked CPLs [ ${refreshCpls.map(date => date.toISOString()).join(', ')} ]`)
+    this._log(`max common prefix length ${prefixLength}`)
+    this._log(`tracked CPLs [ ${refreshCpls.map(date => date.toISOString()).join(', ')} ]`)
 
     /**
      * If we see a gap at a common prefix length in the Routing table, we ONLY refresh up until
@@ -97,12 +99,12 @@ class RoutingTableRefresh {
               try {
                 await this._refreshCommonPrefixLength(n, lastRefresh, force === true)
               } catch (/** @type {any} */ err) {
-                log.error(err)
+                this._log.error(err)
               }
             }
           }
         } catch (/** @type {any} */ err) {
-          log.error(err)
+          this._log.error(err)
         }
       })
     )
@@ -122,22 +124,22 @@ class RoutingTableRefresh {
    */
   async _refreshCommonPrefixLength (cpl, lastRefresh, force) {
     if (!force && lastRefresh.getTime() > (Date.now() - this._refreshInterval)) {
-      log('not running refresh for cpl %s as time since last refresh not above interval', cpl)
+      this._log('not running refresh for cpl %s as time since last refresh not above interval', cpl)
       return
     }
 
     // gen a key for the query to refresh the cpl
     const peerId = await this._generateRandomPeerId(cpl)
 
-    log('starting refreshing cpl %s with key %p (routing table size was %s)', cpl, peerId, this._routingTable.kb.count())
+    this._log('starting refreshing cpl %s with key %p (routing table size was %s)', cpl, peerId, this._routingTable.kb.count())
 
     const controller = new TimeoutController(60000)
 
     try {
       const peers = await length(this._peerRouting.getClosestPeers(peerId.toBytes(), { signal: controller.signal }))
 
-      log(`found ${peers} peers that were close to imaginary peer %p`, peerId)
-      log('finished refreshing cpl %s with key %p (routing table size is now %s)', cpl, peerId, this._routingTable.kb.count())
+      this._log(`found ${peers} peers that were close to imaginary peer %p`, peerId)
+      this._log('finished refreshing cpl %s with key %p (routing table size is now %s)', cpl, peerId, this._routingTable.kb.count())
     } finally {
       controller.clear()
     }

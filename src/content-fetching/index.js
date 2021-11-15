@@ -18,8 +18,6 @@ const {
 const { Message } = require('../message')
 const { pipe } = require('it-pipe')
 
-const log = utils.logger('libp2p:kad-dht:content-fetching')
-
 /**
  * @typedef {import('peer-id')} PeerId
  * @typedef {import('../types').ValueEvent} ValueEvent
@@ -27,16 +25,19 @@ const log = utils.logger('libp2p:kad-dht:content-fetching')
 
 class ContentFetching {
   /**
-   * @param {import('peer-id')} peerId
-   * @param {import('interface-datastore').Datastore} datastore
-   * @param {import('libp2p-interfaces/src/types').DhtValidators} validators
-   * @param {import('libp2p-interfaces/src/types').DhtSelectors} selectors
-   * @param {import('../peer-routing').PeerRouting} peerRouting
-   * @param {import('../query/manager').QueryManager} queryManager
-   * @param {import('../routing-table').RoutingTable} routingTable
-   * @param {import('../network').Network} network
+   * @param {object} params
+   * @param {import('peer-id')} params.peerId
+   * @param {import('interface-datastore').Datastore} params.datastore
+   * @param {import('libp2p-interfaces/src/types').DhtValidators} params.validators
+   * @param {import('libp2p-interfaces/src/types').DhtSelectors} params.selectors
+   * @param {import('../peer-routing').PeerRouting} params.peerRouting
+   * @param {import('../query/manager').QueryManager} params.queryManager
+   * @param {import('../routing-table').RoutingTable} params.routingTable
+   * @param {import('../network').Network} params.network
+   * @param {boolean} params.lan
    */
-  constructor (peerId, datastore, validators, selectors, peerRouting, queryManager, routingTable, network) {
+  constructor ({ peerId, datastore, validators, selectors, peerRouting, queryManager, routingTable, network, lan }) {
+    this._log = utils.logger(`libp2p:kad-dht:${lan ? 'lan' : 'wan'}:content-fetching`)
     this._peerId = peerId
     this._datastore = datastore
     this._validators = validators
@@ -62,10 +63,13 @@ class ContentFetching {
    * @param {Uint8Array} key
    */
   async getLocal (key) {
-    log(`getLocal ${uint8ArrayToString(key, 'base32')}`)
+    this._log(`getLocal ${uint8ArrayToString(key, 'base32')}`)
 
-    const raw = await this._datastore.get(utils.bufferToKey(key))
-    log(`found ${uint8ArrayToString(key, 'base32')} in local datastore`)
+    const dsKey = utils.bufferToKey(key)
+
+    this._log(`fetching record for key ${dsKey}`)
+    const raw = await this._datastore.get(dsKey)
+    this._log(`found ${dsKey} in local datastore`)
 
     const rec = Record.deserialize(raw)
 
@@ -84,13 +88,13 @@ class ContentFetching {
    * @param {AbortSignal} [options.signal]
    */
   async * sendCorrectionRecord (key, vals, best, options = {}) {
-    log('sendCorrection for %b', key)
+    this._log('sendCorrection for %b', key)
     const fixupRec = await utils.createPutRecord(key, best)
 
     for (const { value, from } of vals) {
       // no need to do anything
       if (uint8ArrayEquals(value, best)) {
-        log('record was ok')
+        this._log('record was ok')
         continue
       }
 
@@ -98,10 +102,10 @@ class ContentFetching {
       if (this._peerId.equals(from)) {
         try {
           const dsKey = utils.bufferToKey(key)
-          log(`Storing corrected record for key ${dsKey}`)
+          this._log(`Storing corrected record for key ${dsKey}`)
           await this._datastore.put(dsKey, fixupRec)
         } catch (/** @type {any} */ err) {
-          log.error('Failed error correcting self', err)
+          this._log.error('Failed error correcting self', err)
         }
 
         continue
@@ -113,7 +117,7 @@ class ContentFetching {
       request.record = Record.deserialize(fixupRec)
 
       for await (const event of this._network.sendRequest(from, request, options)) {
-        if (event.name === 'peerResponse' && event.record && uint8ArrayEquals(event.record.value, Record.deserialize(fixupRec).value)) {
+        if (event.name === 'PEER_RESPONSE' && event.record && uint8ArrayEquals(event.record.value, Record.deserialize(fixupRec).value)) {
           sentCorrection = true
         }
 
@@ -124,43 +128,38 @@ class ContentFetching {
         yield queryErrorEvent({ from, error: errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID') })
       }
 
-      log.error('Failed error correcting entry')
+      this._log.error('Failed error correcting entry')
     }
   }
 
   /**
-   * Store the given key/value  pair in the DHT.
+   * Store the given key/value pair in the DHT
    *
    * @param {Uint8Array} key
    * @param {Uint8Array} value
    * @param {object} [options] - put options
-   * @param {number} [options.minPeers] - minimum number of peers required to successfully put (default: closestPeers.length)
    * @param {AbortSignal} [options.signal]
    */
   async * put (key, value, options = {}) {
-    log('put value %b', key)
+    this._log('put key %b value %b', key, value)
 
     // create record in the dht format
     const record = await utils.createPutRecord(key, value)
 
     // store the record locally
     const dsKey = utils.bufferToKey(key)
-    log(`storing record for key ${dsKey}`)
+    this._log(`storing record for key ${dsKey}`)
     await this._datastore.put(dsKey, record)
 
     // put record to the closest peers
-    let counterAll = 0
-    let counterSuccess = 0
-
     yield * pipe(
       this._peerRouting.getClosestPeers(key, { signal: options.signal }),
       (source) => map(source, (event) => {
         return async () => {
-          if (event.name !== 'finalPeer') {
+          if (event.name !== 'FINAL_PEER') {
             return [event]
           }
 
-          counterAll += 1
           const events = []
 
           const msg = new Message(Message.TYPES.PUT_VALUE, key, 0)
@@ -169,9 +168,11 @@ class ContentFetching {
           for await (const putEvent of this._network.sendRequest(event.peer.id, msg, options)) {
             events.push(putEvent)
 
-            if (putEvent.name === 'peerResponse' && putEvent.record && uint8ArrayEquals(putEvent.record.value, Record.deserialize(record).value)) {
-              counterSuccess += 1
-              events.push(putEvent)
+            if (putEvent.name !== 'PEER_RESPONSE') {
+              continue
+            }
+
+            if (putEvent.record && uint8ArrayEquals(putEvent.record.value, Record.deserialize(record).value)) {
             } else {
               events.push(queryErrorEvent({ from: event.peer.id, error: errcode(new Error('value not put correctly'), 'ERR_PUT_VALUE_INVALID') }))
             }
@@ -190,15 +191,6 @@ class ContentFetching {
         }
       }
     )
-
-    // verify if we were able to put to enough peers
-    const minPeers = options.minPeers || counterAll // Ensure we have a default `minPeers`
-
-    if (minPeers > counterSuccess) {
-      const error = errcode(new Error(`Failed to put value to enough peers: ${counterSuccess}/${minPeers}`), 'ERR_NOT_ENOUGH_PUT_PEERS')
-      log.error(error)
-      throw error
-    }
   }
 
   /**
@@ -210,17 +202,21 @@ class ContentFetching {
    * @param {number} [options.queryFuncTimeout]
    */
   async * get (key, options = {}) {
-    log('get %b', key)
+    this._log('get %b', key)
 
     /** @type {ValueEvent[]} */
     const vals = []
 
     for await (const event of this.getMany(key, options)) {
-      if (event.name === 'value') {
+      if (event.name === 'VALUE') {
         vals.push(event)
       }
 
       yield event
+    }
+
+    if (!vals.length) {
+      return
     }
 
     const records = vals.map((v) => v.value)
@@ -236,7 +232,7 @@ class ContentFetching {
     }
 
     const best = records[i]
-    log('GetValue %b %s', key, best)
+    this._log('GetValue %b %b', key, best)
 
     if (!best) {
       throw errcode(new Error('best value was not found'), 'ERR_NOT_FOUND')
@@ -256,39 +252,23 @@ class ContentFetching {
    * @param {number} [options.queryFuncTimeout]
    */
   async * getMany (key, options = {}) {
-    log('getMany values for %b', key)
-
-    let foundValue = false
-    let localRec
+    this._log('getMany values for %t', key)
 
     try {
-      localRec = await this.getLocal(key)
-
-      foundValue = true
+      const localRec = await this.getLocal(key)
 
       yield valueEvent({
         value: localRec.value,
         from: this._peerId
       })
     } catch (/** @type {any} */ err) {
-      log('error getting local value for %b', key)
+      this._log('error getting local value for %b', key, err)
     }
 
     const id = await utils.convertBuffer(key)
     const rtp = this._routingTable.closestPeers(id)
 
-    log('found %d peers in routing table', rtp.length)
-
-    if (rtp.length === 0) {
-      const errMsg = 'Failed to lookup key! No peers from routing table!'
-      log.error(errMsg)
-
-      if (!foundValue) {
-        throw errcode(new Error(errMsg), 'ERR_NO_PEERS_IN_ROUTING_TABLE')
-      }
-
-      return
-    }
+    this._log('found %d peers in routing table', rtp.length)
 
     const self = this
 
@@ -299,31 +279,14 @@ class ContentFetching {
       for await (const event of self._peerRouting.getValueOrPeers(peer, key, { signal })) {
         yield event
 
-        if (event.name === 'peerResponse' && event.record) {
+        if (event.name === 'PEER_RESPONSE' && event.record) {
           yield valueEvent({ from: peer, value: event.record.value })
         }
       }
     }
 
     // we have peers, lets send the actual query to them
-    let err
-
-    for await (const event of this._queryManager.run(key, rtp, getValueQuery, options)) {
-      yield event
-
-      if (event.name === 'value') {
-        foundValue = true
-      }
-
-      if (event.name === 'queryError') {
-        err = event.error
-      }
-    }
-
-    // if we didn't find any values but had errors, propagate the last error
-    if (!foundValue && err) {
-      throw err
-    }
+    yield * this._queryManager.run(key, rtp, getValueQuery, options)
   }
 }
 

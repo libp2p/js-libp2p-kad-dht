@@ -3,7 +3,6 @@
 const { Record } = require('libp2p-record')
 const errcode = require('err-code')
 const { Message } = require('../../message')
-const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const {
   MAX_RECORD_AGE
 } = require('../../constants')
@@ -21,12 +20,13 @@ const log = utils.logger('libp2p:kad-dht:rpc:handlers:get-value')
  */
 class GetValueHandler {
   /**
-   * @param {PeerId} peerId
-   * @param {import('../../types').PeerStore} peerStore
-   * @param {import('../../peer-routing').PeerRouting} peerRouting
-   * @param {import('interface-datastore').Datastore} datastore
+   * @param {object} params
+   * @param {PeerId} params.peerId
+   * @param {import('../../types').PeerStore} params.peerStore
+   * @param {import('../../peer-routing').PeerRouting} params.peerRouting
+   * @param {import('interface-datastore').Datastore} params.datastore
    */
-  constructor (peerId, peerStore, peerRouting, datastore) {
+  constructor ({ peerId, peerStore, peerRouting, datastore }) {
     this._peerId = peerId
     this._peerStore = peerStore
     this._peerRouting = peerRouting
@@ -96,7 +96,7 @@ class GetValueHandler {
    * @param {Uint8Array} key
    */
   async _checkLocalDatastore (key) {
-    log(`checkLocalDatastore looking for ${uint8ArrayToString(key)} %b`, key)
+    log('checkLocalDatastore looking for %b', key)
     const dsKey = utils.bufferToKey(key)
 
     // Fetch value from ds

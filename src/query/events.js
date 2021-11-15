@@ -4,12 +4,12 @@ const { MESSAGE_TYPE_LOOKUP } = require('../message')
 
 /** @type {import('../types').MessageName[]} */
 const MESSAGE_NAMES = [
-  'putValue',
-  'getValue',
-  'addProvider',
-  'getProviders',
-  'findNode',
-  'ping'
+  'PUT_VALUE',
+  'GET_VALUE',
+  'ADD_PROVIDER',
+  'GET_PROVIDERS',
+  'FIND_NODE',
+  'PING'
 ]
 
 /**
@@ -30,9 +30,10 @@ const MESSAGE_NAMES = [
 function sendingQueryEvent (fields) {
   return {
     ...fields,
-    name: 'sendingQuery',
+    name: 'SENDING_QUERY',
     type: 0,
-    message: MESSAGE_TYPE_LOOKUP[fields.type],
+    // @ts-expect-error MESSAGE_TYPE_LOOKUP is string[]
+    messageName: MESSAGE_TYPE_LOOKUP[fields.type],
     messageType: fields.type
   }
 }
@@ -49,7 +50,7 @@ function sendingQueryEvent (fields) {
 function peerResponseEvent (fields) {
   return {
     ...fields,
-    name: 'peerResponse',
+    name: 'PEER_RESPONSE',
     type: 1,
     messageName: MESSAGE_NAMES[fields.messageType],
     closer: fields.closer ? fields.closer : [],
@@ -66,7 +67,7 @@ function peerResponseEvent (fields) {
 function finalPeerEvent (fields) {
   return {
     ...fields,
-    name: 'finalPeer',
+    name: 'FINAL_PEER',
     type: 2
   }
 }
@@ -80,7 +81,7 @@ function finalPeerEvent (fields) {
 function queryErrorEvent (fields) {
   return {
     ...fields,
-    name: 'queryError',
+    name: 'QUERY_ERROR',
     type: 3
   }
 }
@@ -94,7 +95,7 @@ function queryErrorEvent (fields) {
 function providerEvent (fields) {
   return {
     ...fields,
-    name: 'provider',
+    name: 'PROVIDER',
     type: 4
   }
 }
@@ -108,7 +109,7 @@ function providerEvent (fields) {
 function valueEvent (fields) {
   return {
     ...fields,
-    name: 'value',
+    name: 'VALUE',
     type: 5
   }
 }
@@ -121,7 +122,7 @@ function valueEvent (fields) {
 function addingPeerEvent (fields) {
   return {
     ...fields,
-    name: 'addingPeer',
+    name: 'ADDING_PEER',
     type: 6
   }
 }
@@ -134,7 +135,7 @@ function addingPeerEvent (fields) {
 function dialingPeerEvent (fields) {
   return {
     ...fields,
-    name: 'dialingPeer',
+    name: 'DIALING_PEER',
     type: 7
   }
 }
