@@ -88,26 +88,18 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
           // if there are closer peers and the query has not completed, continue the query
           if (event.name === 'PEER_RESPONSE') {
             for (const closerPeer of event.closer) {
-              const closerPeerKadId = await convertPeerId(closerPeer.id)
-              const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))
-
-              // only continue query if closer peer is actually closer
-              if (closerPeerXor > peerXor) { // eslint-disable-line max-depth
-                log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
-                continue
-              }
-
               if (peersSeen.has(closerPeer.id.toB58String())) { // eslint-disable-line max-depth
-                // log('already seen %p in query', closerPeer)
+                log('already seen %p in query', closerPeer)
                 continue
               }
 
               if (ourPeerId.equals(closerPeer.id)) { // eslint-disable-line max-depth
-                // log('not querying ourselves')
+                log('not querying ourselves')
                 continue
               }
 
               log('querying closer peer %p', closerPeer.id)
+              const closerPeerKadId = await convertPeerId(closerPeer.id)
               queryPeer(closerPeer.id, closerPeerKadId)
             }
           }

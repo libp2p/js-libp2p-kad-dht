@@ -11,6 +11,7 @@ const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const drain = require('it-drain')
 const all = require('async-iterator-all')
 const delay = require('delay')
+const filter = require('it-filter')
 const last = require('it-last')
 const kadUtils = require('../src/utils')
 const c = require('../src/constants')
@@ -23,6 +24,22 @@ const createValues = require('./utils/create-values')
 const TestDHT = require('./utils/test-dht')
 const { countDiffPeers } = require('./utils')
 const { sortClosestPeers } = require('./utils/sort-closest-peers')
+
+/**
+ * @param {AsyncIterable<>} events
+ * @param {keyof typeof import('../types').EventTypes} name
+ */
+async function findEvent (events, name) {
+  const event = await last(
+    filter(events, event => event.name === name)
+  )
+
+  if (!event) {
+    throw new Error(`No ${name} event found`)
+  }
+
+  return event
+}
 
 describe('KadDHT', () => {
   let peerIds
@@ -595,8 +612,9 @@ describe('KadDHT', () => {
       ])
 
       const ids = dhts.map((d) => d._libp2p.peerId)
-      const res = await last(dhts[0].findPeer(ids[3]))
-      expect(res.peer.id.isEqual(ids[3])).to.eql(true)
+      const finalPeer = await findEvent(dhts[0].findPeer(ids[3]), 'FINAL_PEER')
+
+      expect(finalPeer.peer.id.isEqual(ids[3])).to.eql(true)
     })
 
     it('find peer query', async function () {
