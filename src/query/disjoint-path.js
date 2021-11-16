@@ -201,8 +201,6 @@ async function * toGenerator (queue, signal, cleanUp, log) {
   })
 
   while (running) { // eslint-disable-line no-unmodified-loop-condition
-    // TODO: ensure we can break out of this loop early - this promise needs to
-    // be resolved manually and will leak memory otherwise
     await deferred.promise
     deferred = defer()
 
