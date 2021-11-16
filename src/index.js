@@ -171,7 +171,6 @@ class DualKadDHT extends EventEmitter {
    */
   async * get (key, options = {}) { // eslint-disable-line require-await
     let queriedPeers = false
-    let foundValue = false
 
     for await (const event of merge(
       this._lan.get(key, options),
@@ -180,7 +179,6 @@ class DualKadDHT extends EventEmitter {
       yield event
 
       if (event.name === 'VALUE') {
-        foundValue = true
         queriedPeers = true
       }
 
@@ -191,10 +189,6 @@ class DualKadDHT extends EventEmitter {
 
     if (!queriedPeers) {
       throw errCode(new Error('Failed to lookup key! No peers from routing table!'), 'ERR_NO_PEERS_IN_ROUTING_TABLE')
-    }
-
-    if (!foundValue) {
-      throw errCode(new Error('not found'), 'ERR_NOT_FOUND')
     }
   }
 
@@ -289,7 +283,6 @@ class DualKadDHT extends EventEmitter {
    */
   async * findPeer (id, options = {}) { // eslint-disable-line require-await
     let queriedPeers = false
-    let foundPeer = false
 
     for await (const event of merge(
       this._lan.findPeer(id, options),
@@ -300,18 +293,10 @@ class DualKadDHT extends EventEmitter {
       if (event.name === 'SENDING_QUERY' || event.name === 'FINAL_PEER') {
         queriedPeers = true
       }
-
-      if (event.name === 'FINAL_PEER') {
-        foundPeer = true
-      }
     }
 
     if (!queriedPeers) {
       throw errCode(new Error('Peer lookup failed'), 'ERR_LOOKUP_FAILED')
-    }
-
-    if (!foundPeer) {
-      throw errCode(new Error('Not found'), 'ERR_NOT_FOUND')
     }
   }
 

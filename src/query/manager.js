@@ -146,11 +146,6 @@ class QueryManager {
       }
 
       log(`${errors.length} of ${peersSeen.size} peers errored (${errors.length / peersSeen.size * 100}% fail rate)`)
-
-      // If all queries errored out, something is seriously wrong, so throw an error
-      if (errors.length && errors.length === peersSeen.size) {
-        throw errors[0]
-      }
     } catch (/** @type {any} */ err) {
       if (!this._running && err.code === 'ERR_QUERY_ABORTED') {
         // ignore query aborted errors that were thrown during query manager shutdown

@@ -334,23 +334,6 @@ describe('QueryManager', () => {
     manager.stop()
   })
 
-  it('returns an error if all queries error', async () => {
-    const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 10, alpha: 1 })
-    manager.start()
-
-    /** @type {import('../src/query/types').QueryFunc} */
-    const queryFunc = async function * ({ peer }) { // eslint-disable-line require-await
-      yield queryErrorEvent({
-        peer,
-        error: new Error('Urk!')
-      })
-    }
-
-    await expect(all(manager.run(key, peers, queryFunc))).to.eventually.be.rejectedWith(/Urk!/)
-
-    manager.stop()
-  })
-
   it('returns empty run if initial peer list is empty', async () => {
     const manager = new QueryManager({ peerId: ourPeerId, disjointPaths: 10 })
     manager.start()

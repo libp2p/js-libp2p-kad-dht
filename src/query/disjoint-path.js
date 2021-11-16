@@ -93,8 +93,8 @@ module.exports.disjointPathQuery = async function * disjointPathQuery ({ key, st
 
               // only continue query if closer peer is actually closer
               if (closerPeerXor > peerXor) { // eslint-disable-line max-depth
-                // log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
-                // continue
+                log('skipping %p as they are not closer to %b than %p', closerPeer, key, peer)
+                continue
               }
 
               if (peersSeen.has(closerPeer.id.toB58String())) { // eslint-disable-line max-depth
