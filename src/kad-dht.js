@@ -24,8 +24,6 @@ const {
   removePublicAddresses
 } = require('./utils')
 
-const log = utils.logger('libp2p:kad-dht')
-
 /**
  * @typedef {import('libp2p')} Libp2p
  * @typedef {import('libp2p/src/peer-store')} PeerStore
@@ -81,6 +79,7 @@ class KadDHT extends EventEmitter {
     super()
 
     this._running = false
+    this._log = utils.logger(`libp2p:kad-dht:${lan ? 'lan' : 'wan'}`)
 
     /**
      * Local reference to the libp2p instance
@@ -227,7 +226,7 @@ class KadDHT extends EventEmitter {
     // handle peers being discovered during processing of DHT messages
     this._network.on('peer', (peerData) => {
       this._routingTable.add(peerData.id).catch(err => {
-        log.error(`Could not add ${peerData.id} to routing table`, err)
+        this._log.error(`Could not add ${peerData.id} to routing table`, err)
       })
 
       this.emit('peer', peerData)
@@ -236,7 +235,7 @@ class KadDHT extends EventEmitter {
     // handle peers being discovered via other peer discovery mechanisms
     this._topologyListener.on('peer', async (peerId) => {
       this._routingTable.add(peerId).catch(err => {
-        log.error(`Could not add ${peerId} to routing table`, err)
+        this._log.error(`Could not add ${peerId} to routing table`, err)
       })
     })
   }
@@ -262,7 +261,7 @@ class KadDHT extends EventEmitter {
         await this._routingTable.add(peerData.id)
       }
     } catch (err) {
-      log.error('Could not add %p to routing table', peerData.id, err)
+      this._log.error('Could not add %p to routing table', peerData.id, err)
     }
   }
 
@@ -277,7 +276,7 @@ class KadDHT extends EventEmitter {
    * Whether we are in client or server mode
    */
   enableServerMode () {
-    log('enabling server mode')
+    this._log('enabling server mode')
     this._clientMode = false
     this._libp2p.handle(this._protocol, this._rpc.onIncomingStream.bind(this._rpc))
   }
@@ -286,7 +285,7 @@ class KadDHT extends EventEmitter {
    * Whether we are in client or server mode
    */
   enableClientMode () {
-    log('enabling client mode')
+    this._log('enabling client mode')
     this._clientMode = true
     this._libp2p.unhandle(this._protocol)
   }
@@ -418,7 +417,7 @@ class KadDHT extends EventEmitter {
    * @param {AbortSignal} [options.signal]
    */
   async getPublicKey (peer, options = {}) {
-    log('getPublicKey %p', peer)
+    this._log('getPublicKey %p', peer)
 
     // try the node directly
     let pk

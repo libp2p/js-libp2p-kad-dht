@@ -89,7 +89,6 @@ class DualKadDHT extends EventEmitter {
    * Whether we are in client or server mode
    */
   enableServerMode () {
-    log('enabling server mode')
     this._wan.enableServerMode()
   }
 
@@ -97,7 +96,6 @@ class DualKadDHT extends EventEmitter {
    * Whether we are in client or server mode
    */
   enableClientMode () {
-    log('enabling client mode')
     this._wan.enableClientMode()
   }
 
