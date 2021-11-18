@@ -8,7 +8,8 @@ const { RoutingTable } = require('./routing-table')
 const { RoutingTableRefresh } = require('./routing-table/refresh')
 const utils = require('./utils')
 const {
-  K
+  K,
+  QUERY_SELF_INTERVAL
 } = require('./constants')
 const { Network } = require('./network')
 const { ContentFetching } = require('./content-fetching')
@@ -54,6 +55,7 @@ const {
  * @property {object} selectors - selectors object with namespace as keys and function(key, records)
  * @property {number} querySelfInterval - how often to search the network for peers close to ourselves
  * @property {boolean} lan
+ * @property {PeerData[]} bootstrapPeers
  */
 
 /**
@@ -72,9 +74,10 @@ class KadDHT extends EventEmitter {
     clientMode = true,
     validators = {},
     selectors = {},
-    querySelfInterval = 60000,
+    querySelfInterval = QUERY_SELF_INTERVAL,
     lan = true,
-    protocol = '/ipfs/lan/kad/1.0.0'
+    protocol = '/ipfs/lan/kad/1.0.0',
+    bootstrapPeers = []
   }) {
     super()
 
@@ -106,6 +109,11 @@ class KadDHT extends EventEmitter {
      * Whether we are in client or server mode
      */
     this._clientMode = clientMode
+
+    /**
+     * Will be added to the routing table on startup
+     */
+    this._bootstrapPeers = bootstrapPeers
 
     /**
      * The routing table.
@@ -312,6 +320,12 @@ class KadDHT extends EventEmitter {
       this._topologyListener.start(),
       this._querySelf.start()
     ])
+
+    await Promise.all(
+      this._bootstrapPeers.map(peerData => this._routingTable.add(peerData.id))
+    )
+
+    await this.refreshRoutingTable()
   }
 
   /**
@@ -441,6 +455,12 @@ class KadDHT extends EventEmitter {
 
     return pk
   }
+
+  async refreshRoutingTable () {
+    await this._routingTableRefresh.refreshTable(true)
+  }
 }
 
-module.exports = KadDHT
+module.exports = {
+  KadDHT
+}

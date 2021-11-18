@@ -34,4 +34,5 @@ exports.K = 20
 // Alpha is the concurrency for asynchronous requests
 exports.ALPHA = 3
 
-exports.QUERY_SELF_INTERVAL = Number(minute)
+// How often we look for our closest DHT neighbours
+exports.QUERY_SELF_INTERVAL = Number(5 * minute)

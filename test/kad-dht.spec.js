@@ -602,19 +602,19 @@ describe('KadDHT', () => {
     it('findPeer', async function () {
       this.timeout(40 * 1000)
 
-      const dhts = await tdht.spawn(4)
+      const dhts = await tdht.spawn(10)
 
-      // Connect all
-      await Promise.all([
-        tdht.connect(dhts[0], dhts[1]),
-        tdht.connect(dhts[1], dhts[2]),
-        tdht.connect(dhts[2], dhts[3])
-      ])
+      // connect all in a line
+      for (let i = 0; i < dhts.length - 1; i++) {
+        await tdht.connect(dhts[i], dhts[i + 1])
+      }
 
       const ids = dhts.map((d) => d._libp2p.peerId)
-      const finalPeer = await findEvent(dhts[0].findPeer(ids[3]), 'FINAL_PEER')
 
-      expect(finalPeer.peer.id.isEqual(ids[3])).to.eql(true)
+      // ask the peer at the start of the line for the id of the peer at the end of the line
+      const finalPeer = await findEvent(dhts[0].findPeer(ids[ids.length - 1]), 'FINAL_PEER')
+
+      expect(finalPeer.peer.id.isEqual(ids[ids.length - 1])).to.eql(true)
     })
 
     it('find peer query', async function () {
@@ -691,6 +691,21 @@ describe('KadDHT', () => {
       // to the key
       expect(countDiffPeers(out, exp)).to.equal(0)
     })
+
+    it('getClosestPeers', async function () {
+      this.timeout(40 * 1000)
+
+      const nDHTs = 30
+      const dhts = await tdht.spawn(nDHTs)
+
+      for (let i = 0; i < dhts.length - 1; i++) {
+        await tdht.connect(dhts[i], dhts[(i + 1) % dhts.length])
+      }
+
+      const res = await all(filter(dhts[1].getClosestPeers(uint8ArrayFromString('foo')), event => event.name === 'FINAL_PEER'))
+
+      expect(res).to.have.length(c.K)
+    })
   })
 
   describe('getPublicKey', () => {
@@ -737,6 +752,25 @@ describe('KadDHT', () => {
       await expect(all(dhts[0].get(uint8ArrayFromString('/v/hello')))).to.eventually.be.rejected().property('code', 'ERR_NO_PEERS_IN_ROUTING_TABLE')
 
       // TODO: after error switch
+    })
+
+    it('get should handle correctly an unexpected error', async function () {
+      this.timeout(20 * 1000)
+
+      const errCode = 'ERR_INVALID_RECORD_FAKE'
+      const error = errcode(new Error('fake error'), errCode)
+
+      const [dhtA, dhtB] = await tdht.spawn(2)
+      const stub = sinon.stub(dhtA._lan._network._dialer, 'dialProtocol').rejects(error)
+
+      await tdht.connect(dhtA, dhtB)
+
+      const errors = await all(filter(dhtA.get(uint8ArrayFromString('/v/hello')), event => event.name === 'QUERY_ERROR'))
+
+      expect(errors).to.have.lengthOf(1)
+      expect(errors).to.have.nested.property('[0].error.code', errCode)
+
+      stub.restore()
     })
 
     it('findPeer should fail if no closest peers available', async function () {

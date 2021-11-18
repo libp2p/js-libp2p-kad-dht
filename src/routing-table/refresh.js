@@ -41,12 +41,12 @@ class RoutingTableRefresh {
     /** @type {Date[]} */
     this.commonPrefixLengthRefreshedAt = []
 
-    this._refreshTable = this._refreshTable.bind(this)
+    this.refreshTable = this.refreshTable.bind(this)
   }
 
   async start () {
     this._log(`refreshing routing table every ${this._refreshInterval}ms`)
-    await this._refreshTable(true)
+    await this.refreshTable(true)
   }
 
   async stop () {
@@ -63,7 +63,7 @@ class RoutingTableRefresh {
    *
    * @param {boolean} [force=false]
    */
-  async _refreshTable (force) {
+  async refreshTable (force) {
     this._log('refreshing routing table')
 
     const prefixLength = this._maxCommonPrefix()
@@ -109,7 +109,8 @@ class RoutingTableRefresh {
       })
     )
 
-    this._refreshTimeoutId = setTimeout(this._refreshTable, this._refreshInterval)
+    this._refreshTimeoutId = setTimeout(this.refreshTable, this._refreshInterval)
+
     // @ts-ignore
     if (this._refreshTimeoutId.unref) {
       // @ts-ignore

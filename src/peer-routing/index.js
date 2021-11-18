@@ -253,15 +253,12 @@ class PeerRouting {
    * @param {AbortSignal} [options.signal]
    */
   async * getValueOrPeers (peer, key, options = {}) {
-    let foundResponse
-
     for await (const event of this._getValueSingle(peer, key, options)) {
       if (event.name === 'PEER_RESPONSE') {
         if (event.record) {
           // We have a record
           try {
             await this._verifyRecordOnline(event.record)
-            foundResponse = true
           } catch (/** @type {any} */ err) {
             const errMsg = 'invalid record received, discarded'
             this._log(errMsg)
@@ -273,10 +270,6 @@ class PeerRouting {
       }
 
       yield event
-    }
-
-    if (!foundResponse) {
-      yield queryErrorEvent({ from: this._peerId, error: errcode(new Error('Not found'), 'ERR_NOT_FOUND') })
     }
   }
 

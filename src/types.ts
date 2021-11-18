@@ -146,6 +146,7 @@ export interface DHT {
 
   // housekeeping
   removeLocal: (key: Uint8Array) => Promise<void>
+  refreshRoutingTable: () => Promise<void>
 
   // events
   on: (event: 'peer', handler: (peerData: PeerData) => void) => this
