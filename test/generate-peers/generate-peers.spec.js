@@ -44,7 +44,7 @@ describe('generate peers', function () {
   })
 
   beforeEach(async function () {
-    this.timeout(20 * 1000)
+    this.timeout(540 * 1000)
     const id = await PeerId.create({ bits: 512 })
 
     const table = new RoutingTable({
