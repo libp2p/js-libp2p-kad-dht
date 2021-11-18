@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>libp2p-kad-dht - v0.23.1</title>
-	<meta name="description" content="Documentation for libp2p-kad-dht - v0.23.1">
+	<title>libp2p-kad-dht - v0.26.0</title>
+	<meta name="description" content="Documentation for libp2p-kad-dht - v0.26.0">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
 	<script async src="assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">libp2p-kad-dht - v0.23.1</a>
+					<a href="index.html" class="title">libp2p-kad-dht - v0.26.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -50,7 +50,7 @@
 	</div>
 	<div class="tsd-page-title">
 		<div class="container">
-			<h1>libp2p-kad-dht - v0.23.1</h1>
+			<h1>libp2p-kad-dht - v0.26.0</h1>
 		</div>
 	</div>
 </header>
@@ -62,29 +62,22 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Classes</h3>
+							<h3>Namespaces</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-class"><a href="classes/kaddht.html" class="tsd-kind-icon">KadDHT</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section ">
-							<h3>Interfaces</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-interface tsd-has-type-parameter"><a href="interfaces/peerdata.html" class="tsd-kind-icon">Peer<wbr>Data</a></li>
-								<li class="tsd-kind-interface tsd-has-type-parameter"><a href="interfaces/randomwalkoptions.html" class="tsd-kind-icon">Random<wbr>Walk<wbr>Options</a></li>
+								<li class="tsd-kind-namespace"><a href="modules/default.html" class="tsd-kind-icon">default</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Type aliases</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#cid" class="tsd-kind-icon">CID</a></li>
-								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#datastore" class="tsd-kind-icon">Datastore</a></li>
-								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#dialer" class="tsd-kind-icon">Dialer</a></li>
-								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#libp2p" class="tsd-kind-icon">Libp2p</a></li>
-								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#multiaddr" class="tsd-kind-icon">Multiaddr</a></li>
-								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#peerid" class="tsd-kind-icon">Peer<wbr>Id</a></li>
-								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#peerstore" class="tsd-kind-icon">Peer<wbr>Store</a></li>
-								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#registrar" class="tsd-kind-icon">Registrar</a></li>
+								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#DHT" class="tsd-kind-icon">DHT</a></li>
+								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#KadDHTOps" class="tsd-kind-icon">KadDHTOps</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property"><a href="modules.html#export_" class="tsd-kind-icon">export&#61;</a></li>
 							</ul>
 						</section>
 					</div>
@@ -93,84 +86,63 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Type aliases</h2>
 				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
-					<a name="cid" class="tsd-anchor"></a>
-					<h3>CID</h3>
-					<div class="tsd-signature tsd-kind-icon">CID<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">CID</span></div>
+					<a name="DHT" class="tsd-anchor"></a>
+					<h3>DHT</h3>
+					<div class="tsd-signature tsd-kind-icon">DHT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">DHT</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L32">src/index.js:32</a></li>
+							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L7">index.js:7</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
-					<a name="datastore" class="tsd-anchor"></a>
-					<h3>Datastore</h3>
-					<div class="tsd-signature tsd-kind-icon">Datastore<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Datastore</span></div>
+					<a name="KadDHTOps" class="tsd-anchor"></a>
+					<h3>KadDHTOps</h3>
+					<div class="tsd-signature tsd-kind-icon">KadDHTOps<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">KadDHTOps</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L29">src/index.js:29</a></li>
+							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L8">index.js:8</a></li>
 						</ul>
 					</aside>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
-					<a name="dialer" class="tsd-anchor"></a>
-					<h3>Dialer</h3>
-					<div class="tsd-signature tsd-kind-icon">Dialer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">*</span></div>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property">
+					<a name="export_" class="tsd-anchor"></a>
+					<h3>export&#61;</h3>
+					<div class="tsd-signature tsd-kind-icon">export&#61;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>create<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">KadDHTOps</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">DHT</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L30">src/index.js:30</a></li>
+							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L11">index.js:11</a></li>
 						</ul>
 					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
-					<a name="libp2p" class="tsd-anchor"></a>
-					<h3>Libp2p</h3>
-					<div class="tsd-signature tsd-kind-icon">Libp2p<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">*</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L26">src/index.js:26</a></li>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>create<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">KadDHTOps</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">DHT</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter-signature">
+										<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-literal">
+											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">KadDHTOps</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">DHT</span></li>
+										</ul>
+										<ul class="tsd-descriptions">
+											<li class="tsd-description">
+												<h4 class="tsd-parameters-title">Parameters</h4>
+												<ul class="tsd-parameters">
+													<li>
+														<h5>opts: <span class="tsd-signature-type">KadDHTOps</span></h5>
+													</li>
+												</ul>
+												<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">DHT</span></h4>
+											</li>
+										</ul>
+									</li>
+								</ul>
+							</li>
 						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
-					<a name="multiaddr" class="tsd-anchor"></a>
-					<h3>Multiaddr</h3>
-					<div class="tsd-signature tsd-kind-icon">Multiaddr<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Multiaddr</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L33">src/index.js:33</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
-					<a name="peerid" class="tsd-anchor"></a>
-					<h3>Peer<wbr>Id</h3>
-					<div class="tsd-signature tsd-kind-icon">Peer<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">__module</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L28">src/index.js:28</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
-					<a name="peerstore" class="tsd-anchor"></a>
-					<h3>Peer<wbr>Store</h3>
-					<div class="tsd-signature tsd-kind-icon">Peer<wbr>Store<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">*</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L27">src/index.js:27</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
-					<a name="registrar" class="tsd-anchor"></a>
-					<h3>Registrar</h3>
-					<div class="tsd-signature tsd-kind-icon">Registrar<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">*</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/libp2p/js-libp2p-kad-dht/blob/master/src/index.js#L31">src/index.js:31</a></li>
-						</ul>
-					</aside>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -180,42 +152,21 @@
 					<li class="current ">
 						<a href="modules.html">Exports</a>
 					</li>
+					<li class=" tsd-kind-namespace">
+						<a href="modules/default.html">default</a>
+					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class">
-						<a href="classes/kaddht.html" class="tsd-kind-icon">KadDHT</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-has-type-parameter">
-						<a href="interfaces/peerdata.html" class="tsd-kind-icon">Peer<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-has-type-parameter">
-						<a href="interfaces/randomwalkoptions.html" class="tsd-kind-icon">Random<wbr>Walk<wbr>Options</a>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#DHT" class="tsd-kind-icon">DHT</a>
 					</li>
 					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#cid" class="tsd-kind-icon">CID</a>
+						<a href="modules.html#KadDHTOps" class="tsd-kind-icon">KadDHTOps</a>
 					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#datastore" class="tsd-kind-icon">Datastore</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#dialer" class="tsd-kind-icon">Dialer</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#libp2p" class="tsd-kind-icon">Libp2p</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#multiaddr" class="tsd-kind-icon">Multiaddr</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#peerid" class="tsd-kind-icon">Peer<wbr>Id</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#peerstore" class="tsd-kind-icon">Peer<wbr>Store</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#registrar" class="tsd-kind-icon">Registrar</a>
+					<li class=" tsd-kind-property">
+						<a href="modules.html#export_" class="tsd-kind-icon">export&#61;</a>
 					</li>
 				</ul>
 			</nav>
@@ -226,17 +177,6 @@
 	<div class="container">
 		<h2>Legend</h2>
 		<div class="tsd-legend-group">
-			<ul class="tsd-legend">
-				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
-			</ul>
 		</div>
 	</div>
 </footer>
