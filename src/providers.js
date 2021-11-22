@@ -36,36 +36,18 @@ const log = utils.logger('libp2p:kad-dht:providers')
  */
 class Providers {
   /**
-   * @param {Datastore} datastore
-   * @param {number} [cacheSize=256]
+   * @param {object} options
+   * @param {Datastore} options.providers
+   * @param {number} [options.cacheSize=256]
+   * @param {number} [options.cleanupInterval] - How often invalid records are cleaned. (in seconds)
+   * @param {number} [options.provideValidity] - How long is a provider valid for. (in seconds)
    */
-  constructor (datastore, cacheSize) {
-    this.datastore = datastore
-
-    /**
-     * How often invalid records are cleaned. (in seconds)
-     *
-     * @type {number}
-     */
-    this.cleanupInterval = PROVIDERS_CLEANUP_INTERVAL
-
-    /**
-     * How long is a provider valid for. (in seconds)
-     *
-     * @type {number}
-     */
-    this.provideValidity = PROVIDERS_VALIDITY
-
-    /**
-     * LRU cache size
-     *
-     * @type {number}
-     */
-    this.lruCacheSize = cacheSize || PROVIDERS_LRU_CACHE_SIZE
-
-    // @ts-ignore hashlru types are wrong
-    this.providers = cache(this.lruCacheSize)
-
+  constructor ({ providers, cacheSize, cleanupInterval, provideValidity }) {
+    this.datastore = providers
+    this.cleanupInterval = cleanupInterval || PROVIDERS_CLEANUP_INTERVAL
+    this.provideValidity = provideValidity || PROVIDERS_VALIDITY
+    // @ts-expect-error hashlru types are wrong
+    this.cache = cache(cacheSize || PROVIDERS_LRU_CACHE_SIZE)
     this.syncQueue = new Queue({ concurrency: 1 })
   }
 
@@ -150,7 +132,7 @@ class Providers {
       // Clear expired entries from the cache
       for (const [cid, peers] of deleted) {
         const key = makeProviderKey(cid)
-        const provs = this.providers.get(key)
+        const provs = this.cache.get(key)
 
         if (provs) {
           for (const peerId of peers) {
@@ -158,9 +140,9 @@ class Providers {
           }
 
           if (provs.size === 0) {
-            this.providers.remove(key)
+            this.cache.remove(key)
           } else {
-            this.providers.set(key, provs)
+            this.cache.set(key, provs)
           }
         }
       }
@@ -179,11 +161,11 @@ class Providers {
    */
   async _getProvidersMap (cid) {
     const cacheKey = makeProviderKey(cid)
-    let provs = this.providers.get(cacheKey)
+    let provs = this.cache.get(cacheKey)
 
     if (!provs) {
       provs = await loadProviders(this.datastore, cid)
-      this.providers.set(cacheKey, provs)
+      this.cache.set(cacheKey, provs)
     }
 
     return provs
@@ -206,7 +188,7 @@ class Providers {
       provs.set(provider.toString(), now)
 
       const dsKey = makeProviderKey(cid)
-      this.providers.set(dsKey, provs)
+      this.cache.set(dsKey, provs)
 
       return writeProviderEntry(this.datastore, cid, provider, now)
     })

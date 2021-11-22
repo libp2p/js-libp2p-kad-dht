@@ -24,6 +24,8 @@ const {
   removePrivateAddresses,
   removePublicAddresses
 } = require('./utils')
+const { KeyTransformDatastore } = require('datastore-core')
+const { Key } = require('interface-datastore/key')
 
 /**
  * @typedef {import('libp2p')} Libp2p
@@ -57,6 +59,36 @@ const {
  * @property {boolean} lan
  * @property {PeerData[]} bootstrapPeers
  */
+
+class PrefixTransform {
+  /**
+   *
+   * @param {string} prefix - : ;
+   */
+  constructor (prefix) {
+    this._prefix = prefix
+  }
+
+  /**
+   * @param {Key} key
+   */
+  convert (key) {
+    return new Key(`/${this._prefix}${key}`)
+  }
+
+  /**
+   * @param {Key} key
+   */
+  invert (key) {
+    const namespaces = key.namespaces()
+
+    if (namespaces[0] === this._prefix) {
+      namespaces.shift()
+    }
+
+    return Key.withNamespaces(namespaces)
+  }
+}
 
 /**
  * A DHT implementation modelled after Kademlia with S/Kademlia modifications.
@@ -127,19 +159,17 @@ class KadDHT extends EventEmitter {
       lan
     })
 
-    /**
-     * Reference to the datastore, uses an in-memory store if none given.
-     *
-     * @type {Datastore}
-     */
-    this._datastore = libp2p.datastore || new MemoryDatastore()
+    const datastore = libp2p.datastore || new MemoryDatastore()
+    const records = new KeyTransformDatastore(datastore, new PrefixTransform('record'))
 
     /**
      * Provider management
      *
      * @type {Providers}
      */
-    this._providers = new Providers(this._datastore)
+    this._providers = new Providers({
+      providers: datastore
+    })
 
     /**
      * @type {boolean}
@@ -185,7 +215,7 @@ class KadDHT extends EventEmitter {
     })
     this._contentFetching = new ContentFetching({
       peerId: libp2p.peerId,
-      datastore: this._datastore,
+      records,
       validators: this._validators,
       selectors: this._selectors,
       peerRouting: this._peerRouting,
@@ -216,7 +246,7 @@ class KadDHT extends EventEmitter {
       peerStore: libp2p.peerStore,
       addressable: libp2p,
       peerRouting: this._peerRouting,
-      datastore: this._datastore,
+      records,
       validators: this._validators,
       lan
     })
