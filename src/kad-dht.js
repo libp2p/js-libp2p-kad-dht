@@ -9,7 +9,8 @@ const { RoutingTableRefresh } = require('./routing-table/refresh')
 const utils = require('./utils')
 const {
   K,
-  QUERY_SELF_INTERVAL
+  QUERY_SELF_INTERVAL,
+  RECORD_KEY_PREFIX
 } = require('./constants')
 const { Network } = require('./network')
 const { ContentFetching } = require('./content-fetching')
@@ -67,6 +68,10 @@ class PrefixTransform {
    */
   constructor (prefix) {
     this._prefix = prefix
+
+    if (this._prefix.startsWith('/')) {
+      this._prefix = this._prefix.substring(1)
+    }
   }
 
   /**
@@ -160,7 +165,7 @@ class KadDHT extends EventEmitter {
     })
 
     const datastore = libp2p.datastore || new MemoryDatastore()
-    const records = new KeyTransformDatastore(datastore, new PrefixTransform('record'))
+    const records = new KeyTransformDatastore(datastore, new PrefixTransform(RECORD_KEY_PREFIX))
 
     /**
      * Provider management

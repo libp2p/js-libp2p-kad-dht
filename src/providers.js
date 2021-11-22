@@ -10,7 +10,7 @@ const {
   PROVIDERS_CLEANUP_INTERVAL,
   PROVIDERS_VALIDITY,
   PROVIDERS_LRU_CACHE_SIZE,
-  PROVIDERS_KEY_PREFIX
+  PROVIDER_KEY_PREFIX
 } = require('./constants')
 const utils = require('./utils')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
@@ -95,7 +95,7 @@ class Providers {
       const batch = this.datastore.batch()
 
       // Get all provider entries from the datastore
-      const query = this.datastore.query({ prefix: PROVIDERS_KEY_PREFIX })
+      const query = this.datastore.query({ prefix: PROVIDER_KEY_PREFIX })
 
       for await (const entry of query) {
         try {
@@ -223,7 +223,7 @@ class Providers {
 function makeProviderKey (cid) {
   cid = typeof cid === 'string' ? cid : uint8ArrayToString(cid.multihash.bytes, 'base32')
 
-  return PROVIDERS_KEY_PREFIX + cid
+  return PROVIDER_KEY_PREFIX + cid
 }
 
 /**
@@ -255,13 +255,13 @@ async function writeProviderEntry (store, cid, peer, time) { // eslint-disable-l
 function parseProviderKey (key) {
   const parts = key.toString().split('/')
 
-  if (parts.length !== 4) {
+  if (parts.length !== 5) {
     throw new Error('incorrectly formatted provider entry key in datastore: ' + key)
   }
 
   return {
-    cid: parts[2],
-    peerId: parts[3]
+    cid: parts[3],
+    peerId: parts[4]
   }
 }
 
