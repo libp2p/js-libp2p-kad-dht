@@ -38,13 +38,13 @@ describe('generate peers', function () {
 
   let refresh
 
-  before(async function () {
+  before(async () => {
     await execa(go, ['build', 'generate-peer.go'], {
       cwd: __dirname
     })
   })
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     const id = await PeerId.create({ bits: 512 })
 
     const table = new RoutingTable({
@@ -73,7 +73,7 @@ describe('generate peers', function () {
     randPrefix: 49898
   }]
 
-  TEST_CASES.forEach(({ targetCpl, randPrefix }, index) => {
+  TEST_CASES.forEach(({ targetCpl, randPrefix }) => {
     it(`should generate peers targetCpl ${targetCpl} randPrefix ${randPrefix}`, async () => {
       const peerId = await PeerId.create({ bits: 512 })
       const localKadId = await convertPeerId(peerId)
