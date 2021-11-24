@@ -27,6 +27,7 @@ async function fromGo (targetCpl, randPrefix, localKadId) {
 }
 
 describe('generate peers', function () {
+  this.timeout(540 * 1000)
   const go = which.sync('go', { nothrow: true })
 
   if (!go) {
@@ -37,14 +38,13 @@ describe('generate peers', function () {
 
   let refresh
 
-  before(async () => {
+  before(async function () {
     await execa(go, ['build', 'generate-peer.go'], {
       cwd: __dirname
     })
   })
 
   beforeEach(async function () {
-    this.timeout(540 * 1000)
     const id = await PeerId.create({ bits: 512 })
 
     const table = new RoutingTable({
