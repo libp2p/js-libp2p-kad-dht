@@ -1,7 +1,6 @@
 'use strict'
 
 const { EventEmitter } = require('events')
-const PeerId = require('peer-id')
 const utils = require('./utils')
 const errCode = require('err-code')
 const merge = require('it-merge')
@@ -17,6 +16,7 @@ const log = utils.logger('libp2p:kad-dht')
  * @typedef {import('libp2p/src/registrar')} Registrar
  * @typedef {import('multiformats/cid').CID} CID
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
+ * @typedef {import('peer-id')} PeerId
  * @typedef {import('./kad-dht').KadDHT} KadDHT
  * @typedef {import('./types').DHT} DHT
  * @typedef {import('./types').QueryEvent} QueryEvent
@@ -297,48 +297,6 @@ class DualKadDHT extends EventEmitter {
       this._lan.getClosestPeers(key, options),
       this._wan.getClosestPeers(key, options)
     )
-  }
-
-  /**
-   * Get the public key for the given peer id
-   *
-   * @param {PeerId} peer
-   * @param {object} [options]
-   * @param {AbortSignal} [options.signal]
-   */
-  async getPublicKey (peer, options = {}) {
-    log('getPublicKey %p', peer)
-
-    // local check
-    const peerData = this._libp2p.peerStore.get(peer)
-
-    if (peerData && peerData.id.pubKey) {
-      log('getPublicKey: found local copy')
-      return peerData.id.pubKey
-    }
-
-    // try the node directly
-    const pks = await Promise.all([
-      this._lan.getPublicKey(peer, options),
-      this._wan.getPublicKey(peer, options)
-    ])
-
-    if (pks[0] && pks[1] && !pks[0].equals(pks[1])) {
-      throw errCode(new Error('Inconsistent public key loaded from wan and lan DHTs'), 'ERR_FAILED_TO_LOAD_KEY')
-    }
-
-    const pk = pks[0] || pks[1]
-
-    if (!pk) {
-      throw errCode(new Error('Failed to load public key'), 'ERR_FAILED_TO_LOAD_KEY')
-    }
-
-    const peerId = new PeerId(peer.id, undefined, pk)
-    const addrs = ((peerData && peerData.addresses) || []).map((address) => address.multiaddr)
-    this._libp2p.peerStore.addressBook.add(peerId, addrs)
-    this._libp2p.peerStore.keyBook.set(peerId, pk)
-
-    return pk
   }
 
   async refreshRoutingTable () {

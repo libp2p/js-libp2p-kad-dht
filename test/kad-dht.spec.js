@@ -3,7 +3,6 @@
 
 const { expect } = require('aegir/utils/chai')
 const sinon = require('sinon')
-const { Multiaddr } = require('multiaddr')
 const { Record } = require('libp2p-record')
 const errcode = require('err-code')
 const { equals: uint8ArrayEquals } = require('uint8arrays/equals')
@@ -82,7 +81,6 @@ describe('KadDHT', () => {
       expect(dht).to.have.property('findProviders')
       expect(dht).to.have.property('findPeer')
       expect(dht).to.have.property('getClosestPeers')
-      expect(dht).to.have.property('getPublicKey')
       expect(dht).to.have.property('enableServerMode')
       expect(dht).to.have.property('enableClientMode')
     })
@@ -686,37 +684,6 @@ describe('KadDHT', () => {
       const res = await all(filter(dhts[1].getClosestPeers(uint8ArrayFromString('foo')), event => event.name === 'FINAL_PEER'))
 
       expect(res).to.have.length(c.K)
-    })
-  })
-
-  describe('getPublicKey', () => {
-    it('already known', async function () {
-      this.timeout(20 * 1000)
-
-      const dhts = await tdht.spawn(2)
-
-      const ids = dhts.map((d) => d._libp2p.peerId)
-      dhts[0]._libp2p.peerStore.addressBook.add(dhts[1]._libp2p.peerId, [new Multiaddr('/ip4/160.1.1.1/tcp/80')])
-
-      const key = await dhts[0].getPublicKey(ids[1])
-      expect(key).to.eql(dhts[1]._libp2p.peerId.pubKey)
-
-      await delay(100)
-    })
-
-    it('connected node', async function () {
-      this.timeout(30 * 1000)
-
-      const dhts = await tdht.spawn(2)
-
-      const ids = dhts.map((d) => d._libp2p.peerId)
-
-      await tdht.connect(dhts[0], dhts[1])
-
-      dhts[0]._libp2p.peerStore.addressBook.add(dhts[1]._libp2p.peerId, [new Multiaddr('/ip4/160.1.1.1/tcp/80')])
-
-      const key = await dhts[0].getPublicKey(ids[1])
-      expect(uint8ArrayEquals(key, dhts[1]._libp2p.peerId.pubKey)).to.eql(true)
     })
   })
 

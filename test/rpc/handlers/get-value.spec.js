@@ -4,9 +4,9 @@
 const { expect } = require('aegir/utils/chai')
 const { Message } = require('../../../src/message')
 const { GetValueHandler } = require('../../../src/rpc/handlers/get-value')
-const utils = require('../../../src/utils')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const drain = require('it-drain')
+const keyForPublicKey = require('../../utils/key-for-public-key')
 
 const T = Message.TYPES.GET_VALUE
 
@@ -78,7 +78,7 @@ describe('rpc - handlers - GetValue', () => {
 
   describe('public key', () => {
     it('self', async () => {
-      const key = utils.keyForPublicKey(dht._libp2p.peerId)
+      const key = keyForPublicKey(dht._libp2p.peerId)
 
       const msg = new Message(T, key, 0)
       const response = await handler.handle(peerIds[0], msg)
@@ -89,7 +89,7 @@ describe('rpc - handlers - GetValue', () => {
 
     it('other in peerstore', async () => {
       const other = peerIds[1]
-      const key = utils.keyForPublicKey(other)
+      const key = keyForPublicKey(other)
 
       const msg = new Message(T, key, 0)
 
@@ -104,7 +104,7 @@ describe('rpc - handlers - GetValue', () => {
 
     it('other unkown', async () => {
       const other = peerIds[1]
-      const key = utils.keyForPublicKey(other)
+      const key = keyForPublicKey(other)
 
       const msg = new Message(T, key, 0)
       const response = await handler.handle(peerIds[0], msg)

@@ -1,7 +1,6 @@
 'use strict'
 
 const { EventEmitter } = require('events')
-const crypto = require('libp2p-crypto')
 const libp2pRecord = require('libp2p-record')
 const { MemoryDatastore } = require('datastore-core/memory')
 const { RoutingTable } = require('./routing-table')
@@ -461,39 +460,6 @@ class KadDHT extends EventEmitter {
    */
   async * getClosestPeers (key, options = {}) {
     yield * this._peerRouting.getClosestPeers(key, options)
-  }
-
-  /**
-   * Get the public key for the given peer id
-   *
-   * @param {PeerId} peer
-   * @param {object} [options]
-   * @param {AbortSignal} [options.signal]
-   */
-  async getPublicKey (peer, options = {}) {
-    this._log('getPublicKey %p', peer)
-
-    // try the node directly
-    let pk
-
-    for await (const event of this._peerRouting.getPublicKeyFromNode(peer, options)) {
-      if (event.name === 'VALUE') {
-        pk = crypto.keys.unmarshalPublicKey(event.value)
-      }
-    }
-
-    if (!pk) {
-      // try dht directly
-      const pkKey = utils.keyForPublicKey(peer)
-
-      for await (const event of this.get(pkKey, options)) {
-        if (event.name === 'VALUE') {
-          pk = crypto.keys.unmarshalPublicKey(event.value)
-        }
-      }
-    }
-
-    return pk
   }
 
   async refreshRoutingTable () {

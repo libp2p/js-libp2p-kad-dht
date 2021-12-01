@@ -2,9 +2,9 @@
 'use strict'
 
 const { expect } = require('aegir/utils/chai')
-const { concat: uint8ArrayConcat } = require('uint8arrays/concat')
 const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
+const keyForPublicKey = require('./utils/key-for-public-key')
 
 const utils = require('../src/utils')
 const createPeerId = require('./utils/create-peer-id')
@@ -31,22 +31,14 @@ describe('kad utils', () => {
     })
   })
 
-  describe('keyForPublicKey', () => {
-    it('works', async () => {
-      const peers = await createPeerId(1)
-      expect(utils.keyForPublicKey(peers[0]))
-        .to.eql(uint8ArrayConcat([uint8ArrayFromString('/pk/'), peers[0].id]))
-    })
-  })
-
   describe('fromPublicKeyKey', () => {
     it('round trips', async function () {
       this.timeout(40 * 1000)
 
       const peers = await createPeerId(50)
       peers.forEach((id, i) => {
-        expect(utils.isPublicKeyKey(utils.keyForPublicKey(id))).to.eql(true)
-        expect(utils.fromPublicKeyKey(utils.keyForPublicKey(id)).id)
+        expect(utils.isPublicKeyKey(keyForPublicKey(id))).to.eql(true)
+        expect(utils.fromPublicKeyKey(keyForPublicKey(id)).id)
           .to.eql(id.id)
       })
     })

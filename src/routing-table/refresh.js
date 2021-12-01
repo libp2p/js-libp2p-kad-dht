@@ -3,7 +3,7 @@
 const { xor: uint8ArrayXor } = require('uint8arrays/xor')
 const GENERATED_PREFIXES = require('./generated-prefix-list.json')
 const { sha256 } = require('multiformats/hashes/sha2')
-const crypto = require('libp2p-crypto')
+const randomBytes = require('iso-random-stream/src/random')
 const PeerId = require('peer-id')
 const utils = require('../utils')
 const length = require('it-length')
@@ -170,8 +170,8 @@ class RoutingTableRefresh {
    * @param {number} targetCommonPrefixLength
    */
   async _generateRandomPeerId (targetCommonPrefixLength) {
-    const randomBytes = crypto.randomBytes(2)
-    const randomUint16 = (randomBytes[1] << 8) + randomBytes[0]
+    const bytes = randomBytes(2)
+    const randomUint16 = (bytes[1] << 8) + bytes[0]
 
     const key = await this._makePeerId(this._routingTable.kb.localNodeId, randomUint16, targetCommonPrefixLength)
 

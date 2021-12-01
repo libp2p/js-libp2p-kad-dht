@@ -2,14 +2,12 @@
 
 const errcode = require('err-code')
 const { validator } = require('libp2p-record')
-const PeerId = require('peer-id')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
 const { Message } = require('../message')
 const utils = require('../utils')
 const {
   queryErrorEvent,
-  finalPeerEvent,
-  valueEvent
+  finalPeerEvent
 } = require('../query/events')
 const PeerDistanceList = require('../peer-list/peer-distance-list')
 const { Record } = require('libp2p-record')
@@ -17,12 +15,13 @@ const { Record } = require('libp2p-record')
 /**
  * @typedef {import('multiaddr').Multiaddr} Multiaddr
  * @typedef {import('../types').PeerData} PeerData
+ * @typedef {import('peer-id')} PeerId
  */
 
 class PeerRouting {
   /**
    * @param {object} params
-   * @param {import('peer-id')} params.peerId
+   * @param {PeerId} params.peerId
    * @param {import('../routing-table').RoutingTable} params.routingTable
    * @param {import('../types').PeerStore} params.peerStore
    * @param {import('../network').Network} params.network
@@ -80,34 +79,6 @@ class PeerRouting {
   async * _getValueSingle (peer, key, options = {}) { // eslint-disable-line require-await
     const msg = new Message(Message.TYPES.GET_VALUE, key, 0)
     yield * this._network.sendRequest(peer, msg, options)
-  }
-
-  /**
-   * Get the public key directly from a node.
-   *
-   * @param {PeerId} peer
-   * @param {object} [options]
-   * @param {AbortSignal} [options.signal]
-   */
-  async * getPublicKeyFromNode (peer, options) {
-    const pkKey = utils.keyForPublicKey(peer)
-
-    for await (const event of this._getValueSingle(peer, pkKey, options)) {
-      yield event
-
-      if (event.name === 'PEER_RESPONSE' && event.record) {
-        const recPeer = await PeerId.createFromPubKey(event.record.value)
-
-        // compare hashes of the pub key
-        if (!recPeer.equals(peer)) {
-          throw errcode(new Error('public key does not match id'), 'ERR_PUBLIC_KEY_DOES_NOT_MATCH_ID')
-        }
-
-        yield valueEvent({ from: peer, value: recPeer.pubKey.bytes })
-      }
-    }
-
-    throw errcode(new Error(`Node not responding with its public key: ${peer.toB58String()}`), 'ERR_INVALID_RECORD')
   }
 
   /**

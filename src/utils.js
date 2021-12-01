@@ -7,13 +7,8 @@ const { base32 } = require('multiformats/bases/base32')
 const { Key } = require('interface-datastore/key')
 const { Record } = require('libp2p-record')
 const PeerId = require('peer-id')
-const { fromString: uint8ArrayFromString } = require('uint8arrays/from-string')
 const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
-const { concat: uint8ArrayConcat } = require('uint8arrays/concat')
 const isPrivateIp = require('private-ip')
-
-// const IPNS_PREFIX = uint8ArrayFromString('/ipns/')
-const PK_PREFIX = uint8ArrayFromString('/pk/')
 
 /**
  * @param {import('./types').PeerData} peer
@@ -81,19 +76,6 @@ const convertPeerId = async (peer) => {
  */
 const bufferToKey = (buf) => {
   return new Key('/' + uint8ArrayToString(buf, 'base32'), false)
-}
-
-/**
- * Generate the key for a public key.
- *
- * @param {PeerId} peer
- * @returns {Uint8Array}
- */
-const keyForPublicKey = (peer) => {
-  return uint8ArrayConcat([
-    PK_PREFIX,
-    peer.id
-  ])
 }
 
 /**
@@ -165,7 +147,6 @@ module.exports = {
   convertBuffer,
   convertPeerId,
   bufferToKey,
-  keyForPublicKey,
   isPublicKeyKey,
   isIPNSKey,
   fromPublicKeyKey,
