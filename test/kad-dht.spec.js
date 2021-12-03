@@ -471,7 +471,6 @@ describe('KadDHT', () => {
         tdht.connect(dhts[2], dhts[3])
       ])
 
-
       const wanSpy = sinon.spy(dhts[0]._wan, 'provide')
       const lanSpy = sinon.spy(dhts[0]._lan, 'provide')
 
@@ -490,7 +489,6 @@ describe('KadDHT', () => {
         tdht.connect(dhts[1], dhts[2]),
         tdht.connect(dhts[2], dhts[3])
       ])
-
 
       const wanSpy = sinon.spy(dhts[0]._wan, 'provide')
       const lanSpy = sinon.spy(dhts[0]._lan, 'provide')

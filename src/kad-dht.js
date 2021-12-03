@@ -323,7 +323,7 @@ class KadDHT extends EventEmitter {
   /**
    * Is this DHT in server mode
    */
-   isServer () {
+  isServer () {
     return !this._clientMode
   }
 
