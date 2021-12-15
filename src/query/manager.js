@@ -21,7 +21,7 @@ const {
  * @typedef {import('../types').Metrics} Metrics
  */
 
- const METRIC_RUNNING_QUERIES = 'running-queries'
+const METRIC_RUNNING_QUERIES = 'running-queries'
 
 /**
  * Keeps track of all running queries
