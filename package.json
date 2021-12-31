@@ -70,7 +70,6 @@
     "libp2p-record": "^0.10.4",
     "multiaddr": "^10.0.0",
     "multiformats": "^9.4.5",
-    "native-abort-controller": "^1.0.4",
     "p-defer": "^3.0.0",
     "p-map": "^4.0.0",
     "p-queue": "^6.6.2",
