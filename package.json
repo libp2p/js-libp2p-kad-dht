@@ -132,14 +132,9 @@
     "build:proto": "pbjs -t static-module -w commonjs -r libp2p-dht-message --force-number --no-verify --no-delimited --no-create --no-beautify --no-defaults --lint eslint-disable -o src/message/dht.js ./src/message/dht.proto",
     "build:proto-types": "pbts -o src/message/dht.d.ts src/message/dht.js",
     "test": "aegir test -t node",
-    "test:node": "aegir test -t node",
+    "test:node": "aegir test -t node --cov",
     "docs": "aegir docs",
-    "release": "aegir release --docs -t node",
-    "release-minor": "aegir release --type minor --docs -t node",
-    "release-major": "aegir release --type major --docs -t node",
-    "coverage": "aegir coverage",
-    "coverage-publish": "aegir-coverage publish",
-    "sim": "node test/simulation/index.js",
+    "release": "semantic-release",
     "dep-check": "aegir dep-check"
   },
   "dependencies": {
