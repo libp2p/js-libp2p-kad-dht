@@ -180,7 +180,7 @@
     "@types/debug": "^4.1.7",
     "aegir": "^36.0.1",
     "async-iterator-all": "^1.0.0",
-    "datastore-level": "^7.0.1",
+    "datastore-level": "^8.0.0",
     "delay": "^5.0.0",
     "execa": "^5.1.1",
     "it-filter": "^1.0.3",
