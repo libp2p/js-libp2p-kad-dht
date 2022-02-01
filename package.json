@@ -167,7 +167,7 @@
     "multiformats": "^9.4.5",
     "p-defer": "^3.0.0",
     "p-map": "^4.0.0",
-    "p-queue": "^6.6.2",
+    "p-queue": "^7.2.0",
     "peer-id": "^0.16.0",
     "private-ip": "^2.3.3",
     "protobufjs": "^6.10.2",
