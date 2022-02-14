@@ -182,7 +182,7 @@
     "async-iterator-all": "^1.0.0",
     "datastore-level": "^7.0.1",
     "delay": "^5.0.0",
-    "execa": "^5.1.1",
+    "execa": "^6.1.0",
     "it-filter": "^1.0.3",
     "it-last": "^1.0.6",
     "it-pair": "^1.0.0",
