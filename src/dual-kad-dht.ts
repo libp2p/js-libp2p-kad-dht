@@ -89,32 +89,11 @@ export class DualKadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT
    * Store the given key/value pair in the DHT
    */
   async * put (key: Uint8Array, value: Uint8Array, options: QueryOptions = {}) {
-    let counterAll = 0
-    let counterSuccess = 0
-
     for await (const event of merge(
       this.lan.put(key, value, options),
       this.wan.put(key, value, options)
     )) {
       yield event
-
-      if (event.name === 'SENDING_QUERY' && event.messageName === 'PUT_VALUE') {
-        counterAll++
-      }
-
-      if (event.name === 'PEER_RESPONSE' && event.messageName === 'PUT_VALUE') {
-        counterSuccess++
-      }
-    }
-
-    // Ensure we have a default `minPeers`
-    const minPeers = options.minPeers == null ? counterAll ?? 1 : options.minPeers
-
-    // verify if we were able to put to enough peers
-    if (counterSuccess < minPeers) {
-      const error = errCode(new Error(`Failed to put value to enough peers: ${counterSuccess}/${minPeers}`), 'ERR_NOT_ENOUGH_PUT_PEERS')
-      log.error(error)
-      throw error
     }
   }
 

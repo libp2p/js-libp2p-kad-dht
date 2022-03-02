@@ -1,4 +1,4 @@
-import { Topology } from '@libp2p/topology'
+import { createTopology } from '@libp2p/topology'
 import { CustomEvent, EventEmitter } from '@libp2p/interfaces'
 import { logger } from '@libp2p/logger'
 import type { Registrar } from '@libp2p/interfaces/registrar'
@@ -52,7 +52,7 @@ export class TopologyListener extends EventEmitter<TopologyListenerEvents> imple
     this.running = true
 
     // register protocol with topology
-    const topology = new Topology({
+    const topology = createTopology({
       onConnect: (peerId) => {
         this.log('observed peer %p with protocol %s', this.protocol, peerId)
         this.dispatchEvent(new CustomEvent('peer', {

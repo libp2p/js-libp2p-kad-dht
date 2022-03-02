@@ -322,8 +322,8 @@ describe('KadDHT', () => {
       const dhtASpy = sinon.spy(dhtA.lan.network, 'sendRequest')
 
       // Put before peers connected
-      await drain(dhtA.put(key, valueA, { minPeers: 0 }))
-      await drain(dhtB.put(key, valueB, { minPeers: 0 }))
+      await drain(dhtA.put(key, valueA))
+      await drain(dhtB.put(key, valueB))
 
       // Connect peers
       await tdht.connect(dhtA, dhtB)

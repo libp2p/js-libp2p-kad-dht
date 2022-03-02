@@ -24,7 +24,9 @@ describe('Routing Table', () => {
       peerId: lipbp2p.peerId,
       dialer: {
         dialProtocol: sinon.stub(),
-        dial: sinon.stub()
+        dial: sinon.stub(),
+        getTokens: sinon.stub(),
+        releaseToken: sinon.stub()
       },
       lan: false
     })

@@ -12,6 +12,7 @@ import type { IncomingStreamData, Registrar } from '@libp2p/interfaces/registrar
 import { KadDHT, KadDHTOptions } from '../../src/kad-dht.js'
 import { DualKadDHT } from '../../src/dual-kad-dht.js'
 import { logger } from '@libp2p/logger'
+import sinon from 'sinon'
 
 const log = logger('libp2p:kad-dht:test-dht')
 
@@ -91,7 +92,9 @@ export class TestDHT {
       dial: () => {
         throw new Error('Not implemented')
       },
-      dialProtocol: async (peer, protocol) => await connectToPeer(dht, peer, protocol)
+      dialProtocol: async (peer, protocol) => await connectToPeer(dht, peer, protocol),
+      getTokens: sinon.stub(),
+      releaseToken: sinon.stub()
     }
 
     const opts = {
