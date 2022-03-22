@@ -177,7 +177,7 @@
     "@libp2p/peer-store": "^1.0.6",
     "@types/lodash.random": "^3.2.6",
     "@types/lodash.range": "^3.2.6",
-    "@types/node": "^16.11.26",
+    "@types/node": "^17.0.22",
     "@types/varint": "^6.0.0",
     "@types/which": "^2.0.1",
     "aegir": "^36.1.3",
