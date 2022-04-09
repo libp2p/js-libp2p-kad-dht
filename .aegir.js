@@ -1,4 +1,3 @@
-'use strict'
 
 /** @type {import('aegir').Options["build"]["config"]} */
 const esbuild = {
@@ -15,7 +14,7 @@ const esbuild = {
 }
 
 /** @type {import('aegir').PartialOptions} */
-module.exports = {
+export default {
   test: {
     browser: {
       config: {
@@ -24,7 +23,7 @@ module.exports = {
     }
   },
   build: {
-    bundlesizeMax: '499KB',
+    bundlesizeMax: '300KB',
     config: esbuild
   }
 }
