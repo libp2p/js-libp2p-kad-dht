@@ -122,6 +122,7 @@
     ]
   },
   "scripts": {
+    "clean": "aegir clean",
     "lint": "aegir lint",
     "build": "aegir build",
     "generate": "protons ./src/message/dht.proto",
