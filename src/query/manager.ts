@@ -90,7 +90,7 @@ export class QueryManager implements Startable, Initializable {
       timeoutController = new TimeoutController(DEFAULT_QUERY_TIMEOUT)
       options.signal = timeoutController.signal
 
-      // this signal will get listened to for network request, etc
+      // this signal will get listened to for network requests, etc
       // so make sure we don't make a lot of noise in the logs
       try {
         if (setMaxListeners != null) {
