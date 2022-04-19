@@ -4,7 +4,7 @@ import {
   removePrivateAddresses,
   removePublicAddresses
 } from '../../utils.js'
-import { equals as uint8ArrayEquals} from 'uint8arrays'
+import { equals as uint8ArrayEquals } from 'uint8arrays'
 import { Components } from '@libp2p/interfaces/components'
 import { protocols } from '@multiformats/multiaddr'
 import type { Initializable } from '@libp2p/interfaces/components'
