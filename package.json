@@ -29,6 +29,12 @@
   "exports": {
     ".": {
       "import": "./dist/src/index.js"
+    },
+    "./content-routing": {
+      "import": "./dist/src/content-routing/index.js"
+    },
+    "./message": {
+      "import": "./dist/src/message/index.js"
     }
   },
   "eslintConfig": {
