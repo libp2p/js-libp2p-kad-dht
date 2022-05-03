@@ -35,6 +35,9 @@
     },
     "./message": {
       "import": "./dist/src/message/index.js"
+    },
+    "./kad-dht": {
+      "import": "./dist/src/kad-dht.js"
     }
   },
   "eslintConfig": {
