@@ -139,6 +139,7 @@
     "@libp2p/record": "^1.0.4",
     "@libp2p/topology": "^1.1.7",
     "@multiformats/multiaddr": "^10.1.5",
+    "abortable-iterator": "^4.0.2",
     "any-signal": "^3.0.0",
     "datastore-core": "^7.0.0",
     "err-code": "^3.0.1",
