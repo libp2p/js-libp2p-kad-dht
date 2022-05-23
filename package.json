@@ -168,7 +168,7 @@
     "varint": "^6.0.0"
   },
   "devDependencies": {
-    "@libp2p/interface-compliance-tests": "^1.1.32",
+    "@libp2p/interface-compliance-tests": "^2.0.1",
     "@libp2p/peer-id-factory": "^1.0.9",
     "@libp2p/peer-store": "^1.0.11",
     "@types/lodash.random": "^3.2.6",
