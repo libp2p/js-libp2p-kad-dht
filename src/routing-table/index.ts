@@ -150,12 +150,14 @@ export class RoutingTable implements Startable, Initializable {
             try {
               timeoutController = new TimeoutController(this.pingTimeout)
 
-              this.log('pinging old contact %p', oldContact.peer)
-              const connection = await this.components.getConnectionManager().openConnection(oldContact.peer, {
+              const options = {
                 signal: timeoutController.signal
-              })
-              const { stream } = await connection.newStream(PROTOCOL_DHT)
-              await stream.close()
+              }
+
+              this.log('pinging old contact %p', oldContact.peer)
+              const connection = await this.components.getConnectionManager().openConnection(oldContact.peer, options)
+              const { stream } = await connection.newStream(PROTOCOL_DHT, options)
+              stream.close()
               responded++
             } catch (err: any) {
               if (this.running && this.kb != null) {
