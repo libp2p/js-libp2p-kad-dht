@@ -176,7 +176,7 @@
     "p-defer": "^4.0.0",
     "p-queue": "^7.2.0",
     "private-ip": "^2.3.3",
-    "protons-runtime": "^1.0.4",
+    "protons-runtime": "^2.0.2",
     "timeout-abort-controller": "^3.0.0",
     "uint8arrays": "^3.0.0",
     "varint": "^6.0.0"
