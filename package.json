@@ -140,7 +140,7 @@
     "@libp2p/components": "^2.0.0",
     "@libp2p/crypto": "^1.0.0",
     "@libp2p/interface-address-manager": "^1.0.1",
-    "@libp2p/interface-connection": "^2.0.0",
+    "@libp2p/interface-connection": "^3.0.0",
     "@libp2p/interface-connection-manager": "^1.0.0",
     "@libp2p/interface-dht": "^1.0.0",
     "@libp2p/interface-peer-discovery": "^1.0.0",
