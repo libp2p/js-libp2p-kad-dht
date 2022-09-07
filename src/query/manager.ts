@@ -139,6 +139,9 @@ export class QueryManager implements Startable, Initializable {
         return
       }
 
+      // make sure we don't get trapped in a loop
+      const peersSeen = new Set()
+
       // Create query paths from the starting peers
       const paths = peersToQuery.map((peer, index) => {
         return queryPath({
@@ -152,7 +155,8 @@ export class QueryManager implements Startable, Initializable {
           alpha: this.alpha,
           cleanUp,
           queryFuncTimeout: options.queryFuncTimeout,
-          log
+          log,
+          peersSeen
         })
       })
 

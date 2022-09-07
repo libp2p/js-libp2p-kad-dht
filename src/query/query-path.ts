@@ -71,6 +71,11 @@ export interface QueryPathOptions {
    * Query log
    */
   log: Logger
+
+  /**
+   * Set of peers seen by this and other paths
+   */
+  peersSeen: Set<PeerId>
 }
 
 /**
@@ -78,7 +83,7 @@ export interface QueryPathOptions {
  * every peer encountered that we have not seen before
  */
 export async function * queryPath (options: QueryPathOptions) {
-  const { key, startingPeer, ourPeerId, signal, query, alpha, pathIndex, numPaths, cleanUp, queryFuncTimeout, log } = options
+  const { key, startingPeer, ourPeerId, signal, query, alpha, pathIndex, numPaths, cleanUp, queryFuncTimeout, log, peersSeen } = options
   // Only ALPHA node/value lookups are allowed at any given time for each process
   // https://github.com/libp2p/specs/tree/master/kad-dht#alpha-concurrency-parameter-%CE%B1
   const queue = new Queue({
@@ -87,9 +92,6 @@ export async function * queryPath (options: QueryPathOptions) {
 
   // perform lookups on kadId, not the actual value
   const kadId = await convertBuffer(key)
-
-  // make sure we don't get trapped in a loop
-  const peersSeen = new Set()
 
   /**
    * Adds the passed peer to the query queue if it's not us and no
