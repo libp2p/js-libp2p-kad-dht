@@ -140,7 +140,7 @@ export class QueryManager implements Startable, Initializable {
       }
 
       // make sure we don't get trapped in a loop
-      const peersSeen = new Set()
+      const peersSeen = new Set<string>()
 
       // Create query paths from the starting peers
       const paths = peersToQuery.map((peer, index) => {

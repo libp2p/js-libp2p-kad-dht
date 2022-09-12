@@ -75,7 +75,7 @@ export interface QueryPathOptions {
   /**
    * Set of peers seen by this and other paths
    */
-  peersSeen: Set<PeerId>
+  peersSeen: Set<string>
 }
 
 /**
