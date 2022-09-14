@@ -235,8 +235,8 @@ export class PeerRouting implements Initializable {
     }
 
     for await (const event of this.queryManager.run(key, tablePeers, getCloserPeersQuery, options)) {
-      yield event;
-      
+      yield event
+
       if (event.name === 'PEER_RESPONSE') {
         await Promise.all(event.closer.map(async peerData => await peers.add(peerData.id)))
       }
