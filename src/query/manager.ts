@@ -14,6 +14,7 @@ import type { Startable } from '@libp2p/interfaces/startable'
 import type { QueryFunc } from './types.js'
 import type { QueryOptions } from '@libp2p/interface-dht'
 import { Components, Initializable } from '@libp2p/components'
+import { PeerSet } from '@libp2p/peer-collections'
 
 const METRIC_RUNNING_QUERIES = 'running-queries'
 
@@ -140,7 +141,7 @@ export class QueryManager implements Startable, Initializable {
       }
 
       // make sure we don't get trapped in a loop
-      const peersSeen = new Set<string>()
+      const peersSeen = new PeerSet
 
       // Create query paths from the starting peers
       const paths = peersToQuery.map((peer, index) => {

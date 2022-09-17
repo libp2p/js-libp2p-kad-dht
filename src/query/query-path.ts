@@ -13,6 +13,7 @@ import type { CleanUpEvents } from './manager.js'
 import type { Logger } from '@libp2p/logger'
 import type { QueryFunc } from '../query/types.js'
 import type { QueryEvent } from '@libp2p/interface-dht'
+import type { PeerSet } from '@libp2p/peer-collections'
 
 const MAX_XOR = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
 
@@ -75,7 +76,7 @@ export interface QueryPathOptions {
   /**
    * Set of peers seen by this and other paths
    */
-  peersSeen: Set<string>
+  peersSeen: PeerSet
 }
 
 /**
@@ -102,7 +103,7 @@ export async function * queryPath (options: QueryPathOptions) {
       return
     }
 
-    peersSeen.add(peer.toString())
+    peersSeen.add(peer)
 
     const peerXor = BigInt('0x' + toString(xor(peerKadId, kadId), 'base16'))
 
@@ -132,7 +133,7 @@ export async function * queryPath (options: QueryPathOptions) {
           // if there are closer peers and the query has not completed, continue the query
           if (event.name === 'PEER_RESPONSE') {
             for (const closerPeer of event.closer) {
-              if (peersSeen.has(closerPeer.id.toString())) { // eslint-disable-line max-depth
+              if (peersSeen.has(closerPeer.id)) { // eslint-disable-line max-depth
                 log('already seen %p in query', closerPeer.id)
                 continue
               }
