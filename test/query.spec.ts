@@ -454,8 +454,6 @@ describe('QueryManager', () => {
         return event.from
       })
 
-      console.log(traversedPeers.map(e=> e.toString()))
-
     expect(traversedPeers).lengthOf(7)
 
     await manager.stop()
