@@ -187,12 +187,13 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT, In
       const peerId = evt.detail
 
       Promise.resolve().then(async () => {
-        const multiaddrs = await this.components.getPeerStore().addressBook.get(peerId)
+        const multiaddrs = await this.components.getPeerStore().addressBook.get(peerId) ?? []
+        const protocols = await this.components.getPeerStore().protoBook.get(peerId) ?? []
 
         const peerData = {
           id: peerId,
           multiaddrs: multiaddrs.map(addr => addr.multiaddr),
-          protocols: []
+          protocols: protocols
         }
 
         await this.onPeerConnect(peerData)

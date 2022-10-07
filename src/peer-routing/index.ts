@@ -90,7 +90,7 @@ export class PeerRouting implements Initializable {
       return {
         id: peerData.id,
         multiaddrs: peerData.addresses.map((address) => address.multiaddr),
-        protocols: []
+        protocols: peerData.protocols
       }
     }
 
@@ -168,7 +168,7 @@ export class PeerRouting implements Initializable {
           peer: {
             id: peer.id,
             multiaddrs: peer.addresses.map((address) => address.multiaddr),
-            protocols: []
+            protocols: peer.protocols
           }
         })
 
@@ -250,7 +250,7 @@ export class PeerRouting implements Initializable {
         peer: {
           id: peer,
           multiaddrs: (await (this.components.getPeerStore().addressBook.get(peer)) ?? []).map(addr => addr.multiaddr),
-          protocols: []
+          protocols: await (this.components.getPeerStore().protoBook.get(peer)) ?? []
         }
       })
     }
