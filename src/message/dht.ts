@@ -184,16 +184,16 @@ export namespace Message {
 
           if (obj.protocols != null) {
             for (const value of obj.protocols) {
-                writer.uint32(24);
-                writer.bytes(value);
+              writer.uint32(24)
+              writer.bytes(value)
             }
           } else {
-              throw new Error('Protocol error: required field "protocols" was not found in object');
+            throw new Error('Protocol error: required field "protocols" was not found in object')
           }
-          
+
           if (obj.connection != null) {
-            writer.uint32(32);
-            Message.ConnectionType.codec().encode(obj.connection, writer);
+            writer.uint32(32)
+            Message.ConnectionType.codec().encode(obj.connection, writer)
           }
 
           if (opts.lengthDelimited !== false) {
