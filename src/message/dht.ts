@@ -154,6 +154,7 @@ export namespace Message {
   export interface Peer {
     id?: Uint8Array
     addrs: Uint8Array[]
+    protocols: Uint8Array[]
     connection?: Message.ConnectionType
   }
 
@@ -181,9 +182,18 @@ export namespace Message {
             throw new Error('Protocol error: required field "addrs" was not found in object')
           }
 
+          if (obj.protocols != null) {
+            for (const value of obj.protocols) {
+                writer.uint32(24);
+                writer.bytes(value);
+            }
+          } else {
+              throw new Error('Protocol error: required field "protocols" was not found in object');
+          }
+          
           if (obj.connection != null) {
-            writer.uint32(24)
-            Message.ConnectionType.codec().encode(obj.connection, writer)
+            writer.uint32(32);
+            Message.ConnectionType.codec().encode(obj.connection, writer);
           }
 
           if (opts.lengthDelimited !== false) {
@@ -191,7 +201,8 @@ export namespace Message {
           }
         }, (reader, length) => {
           const obj: any = {
-            addrs: []
+            addrs: [],
+            protocols: []
           }
 
           const end = length == null ? reader.len : reader.pos + length
@@ -207,6 +218,9 @@ export namespace Message {
                 obj.addrs.push(reader.bytes())
                 break
               case 3:
+                obj.protocols.push(reader.bytes())
+                break
+              case 4:
                 obj.connection = Message.ConnectionType.codec().decode(reader)
                 break
               default:

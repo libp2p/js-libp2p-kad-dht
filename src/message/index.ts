@@ -1,6 +1,8 @@
 import { peerIdFromBytes } from '@libp2p/peer-id'
 import { multiaddr } from '@multiformats/multiaddr'
 import { Libp2pRecord } from '@libp2p/record'
+import { toString } from 'uint8arrays/to-string'
+import { fromString } from 'uint8arrays/from-string'
 import { Message as PBMessage } from './dht.js'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
 import type { Uint8ArrayList } from 'uint8arraylist'
@@ -12,6 +14,7 @@ export const MESSAGE_TYPE_LOOKUP = Object.keys(MESSAGE_TYPE)
 interface PBPeer {
   id: Uint8Array
   addrs: Uint8Array[]
+  protocols: Uint8Array[]
   connection: PBMessage.ConnectionType
 }
 
@@ -91,6 +94,7 @@ function toPbPeer (peer: PeerInfo) {
   const output: PBPeer = {
     id: peer.id.toBytes(),
     addrs: (peer.multiaddrs ?? []).map((m) => m.bytes),
+    protocols: (peer.protocols ?? []).map((p) => fromString(p)),
     connection: CONNECTION_TYPE.CONNECTED
   }
 
@@ -105,6 +109,6 @@ function fromPbPeer (peer: PBMessage.Peer) {
   return {
     id: peerIdFromBytes(peer.id),
     multiaddrs: (peer.addrs ?? []).map((a) => multiaddr(a)),
-    protocols: []
+    protocols: (peer.protocols ?? []).map((p) => toString(p))
   }
 }
