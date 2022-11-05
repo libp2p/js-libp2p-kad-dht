@@ -43,7 +43,7 @@ export class QueryManager implements Startable {
   private running: boolean
   private queries: number
   private metrics?: {
-    runningQueries: Metric,
+    runningQueries: Metric
     queryTime: Metric
   }
 
@@ -95,7 +95,7 @@ export class QueryManager implements Startable {
       throw new Error('QueryManager not started')
     }
 
-    let stopQueryTimer = this.metrics?.queryTime.timer()
+    const stopQueryTimer = this.metrics?.queryTime.timer()
     let timeoutController
 
     if (options.signal == null) {

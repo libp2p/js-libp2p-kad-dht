@@ -90,8 +90,8 @@ export class RoutingTable implements Startable {
   private readonly tagName: string
   private readonly tagValue: number
   private metrics?: {
-    routingTableSize: Metric,
-    pingQueueSize: Metric,
+    routingTableSize: Metric
+    pingQueueSize: Metric
     pingRunning: Metric
   }
 
