@@ -65,7 +65,7 @@ export interface KadDHTInit {
   maxOutboundStreams?: number
 
   /**
-   * Initalization options for the Providers component
+   * Initialization options for the Providers component
    */
   providers?: ProvidersInit
 }
