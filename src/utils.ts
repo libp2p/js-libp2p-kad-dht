@@ -19,6 +19,11 @@ export function removePrivateAddresses (peer: PeerInfo): PeerInfo {
     multiaddrs: peer.multiaddrs.filter(multiaddr => {
       const [[type, addr]] = multiaddr.stringTuples()
 
+      // treat /dns, /dns4, and /dns6 addrs as public
+      if (type === 53 || type === 54 || type === 55) {
+        return true
+      }
+
       if (type !== 4 && type !== 6) {
         return false
       }
