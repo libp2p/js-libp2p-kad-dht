@@ -69,7 +69,8 @@ describe('kad utils', () => {
       const multiaddrs = [
         multiaddr('/dns4/example.com/tcp/4001'),
         multiaddr('/ip4/192.168.0.1/tcp/4001'),
-        multiaddr('/ip4/1.1.1.1/tcp/4001')
+        multiaddr('/ip4/1.1.1.1/tcp/4001'),
+        multiaddr('/dns4/localhost/tcp/4001')
       ]
 
       const peerInfo = utils.removePrivateAddresses({ id, multiaddrs, protocols: [] })
@@ -85,12 +86,13 @@ describe('kad utils', () => {
       const multiaddrs = [
         multiaddr('/dns4/example.com/tcp/4001'),
         multiaddr('/ip4/192.168.0.1/tcp/4001'),
-        multiaddr('/ip4/1.1.1.1/tcp/4001')
+        multiaddr('/ip4/1.1.1.1/tcp/4001'),
+        multiaddr('/dns4/localhost/tcp/4001')
       ]
 
       const peerInfo = utils.removePublicAddresses({ id, multiaddrs, protocols: [] })
       expect(peerInfo.multiaddrs.map((ma) => ma.toString()))
-        .to.eql(['/ip4/192.168.0.1/tcp/4001'])
+        .to.eql(['/ip4/192.168.0.1/tcp/4001', '/dns4/localhost/tcp/4001'])
     })
   })
 })
