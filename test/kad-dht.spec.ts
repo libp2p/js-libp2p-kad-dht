@@ -100,7 +100,6 @@ describe('KadDHT', () => {
           provideValidity: 60 * 10
         }
       })
-      
       expect(dht.lan.providers).to.have.property('cleanupInterval', 60)
       expect(dht.lan.providers).to.have.property('provideValidity', 60 * 10)
       expect(dht.wan.providers).to.have.property('cleanupInterval', 60)
