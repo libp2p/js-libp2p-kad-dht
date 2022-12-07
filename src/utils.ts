@@ -32,7 +32,14 @@ export function removePrivateAddresses (peer: PeerInfo): PeerInfo {
         return false
       }
 
-      return !isPrivateIp(addr)
+      const isPrivate = isPrivateIp(addr)
+
+      if (isPrivate == null) {
+        // not an ip address
+        return true
+      }
+
+      return !isPrivate
     })
   }
 }
