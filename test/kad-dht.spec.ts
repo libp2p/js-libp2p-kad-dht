@@ -97,7 +97,7 @@ describe('KadDHT', () => {
         kBucketSize: 5,
         providers: {
           cleanupInterval: 60,
-          provideValidity: 60 * 10,
+          provideValidity: 60 * 10
         }
       })
       

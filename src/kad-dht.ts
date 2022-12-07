@@ -83,7 +83,7 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
       pingConcurrency,
       maxInboundStreams,
       maxOutboundStreams,
-      providers: providersInit,
+      providers: providersInit
     } = init
 
     this.running = false
