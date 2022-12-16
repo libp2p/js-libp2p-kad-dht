@@ -1,233 +1,158 @@
-<!doctype html>
-<html class="default no-js">
-<head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>libp2p-kad-dht - v0.28.3</title>
-	<meta name="description" content="Documentation for libp2p-kad-dht - v0.28.3">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="assets/css/main.css">
-	<script async src="assets/js/search.js" id="search-script"></script>
-</head>
-<body>
-<header>
-	<div class="tsd-page-toolbar">
-		<div class="container">
-			<div class="table-wrap">
-				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
-					<div class="field">
-						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
-						<input id="tsd-search-field" type="text" />
-					</div>
-					<ul class="results">
-						<li class="state loading">Preparing search index...</li>
-						<li class="state failure">The search index is not available</li>
-					</ul>
-					<a href="index.html" class="title">libp2p-kad-dht - v0.28.3</a>
-				</div>
-				<div class="table-cell" id="tsd-widgets">
-					<div id="tsd-filter">
-						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
-						<div class="tsd-filter-group">
-							<div class="tsd-select" id="tsd-filter-visibility">
-								<span class="tsd-select-label">All</span>
-								<ul class="tsd-select-list">
-									<li data-value="public">Public</li>
-									<li data-value="protected">Public/Protected</li>
-									<li data-value="private" class="selected">All</li>
-								</ul>
-							</div>
-							<input type="checkbox" id="tsd-filter-inherited" checked />
-							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
-							<input type="checkbox" id="tsd-filter-externals" checked />
-							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
-						</div>
-					</div>
-					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="tsd-page-title">
-		<div class="container">
-			<h1>libp2p-kad-dht - v0.28.3</h1>
-		</div>
-	</div>
-</header>
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@libp2p/kad-dht - v6.1.1</title><meta name="description" content="Documentation for @libp2p/kad-dht - v6.1.1"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script async src="assets/search.js" id="search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container">
+<div class="table-cell" id="tsd-search" data-base=".">
+<div class="field"><label for="tsd-search-field" class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.7824 13.833L12.6666 10.7177C12.5259 10.5771 12.3353 10.499 12.1353 10.499H11.6259C12.4884 9.39596 13.001 8.00859 13.001 6.49937C13.001 2.90909 10.0914 0 6.50048 0C2.90959 0 0 2.90909 0 6.49937C0 10.0896 2.90959 12.9987 6.50048 12.9987C8.00996 12.9987 9.39756 12.4863 10.5008 11.6239V12.1332C10.5008 12.3332 10.5789 12.5238 10.7195 12.6644L13.8354 15.7797C14.1292 16.0734 14.6042 16.0734 14.8948 15.7797L15.7793 14.8954C16.0731 14.6017 16.0731 14.1267 15.7824 13.833ZM6.50048 10.499C4.29094 10.499 2.50018 8.71165 2.50018 6.49937C2.50018 4.29021 4.28781 2.49976 6.50048 2.49976C8.71001 2.49976 10.5008 4.28708 10.5008 6.49937C10.5008 8.70852 8.71314 10.499 6.50048 10.499Z" fill="var(--color-text)"></path></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div>
+<div class="field">
+<div id="tsd-toolbar-links"></div></div>
+<ul class="results">
+<li class="state loading">Preparing search index...</li>
+<li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">@libp2p/kad-dht - v6.1.1</a></div>
+<div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget tsd-toolbar-icon menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="7" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="11" width="14" height="2" fill="var(--color-text)"></rect></svg></a></div></div></header>
 <div class="container container-main">
-	<div class="row">
-		<div class="col-8 col-content">
-			<div class="tsd-panel tsd-typography">
-				<a href="#js-libp2p-kad-dht-" id="js-libp2p-kad-dht-" style="color: inherit; text-decoration: none;">
-					<h1>js-libp2p-kad-dht <!-- omit in toc --></h1>
-				</a>
-				<p><a href="http://ipn.io"><img src="https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square" alt=""></a>
-					<a href="http://ipfs.io/"><img src="https://img.shields.io/badge/project-IPFS-blue.svg?style=flat-square" alt=""></a>
-					<a href="http://webchat.freenode.net/?channels=%23ipfs"><img src="https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square" alt=""></a>
-					<a href="https://discuss.libp2p.io"><img src="https://img.shields.io/discourse/https/discuss.libp2p.io/posts.svg" alt="Discourse posts"></a>
-					<a href="https://github.com/libp2p/js-libp2p-kad-dht/actions/workflows/test.yml"><img src="https://github.com/libp2p/js-libp2p-kad-dht/actions/workflows/test.yml/badge.svg?branch=master" alt="Build status"></a>
-					<a href="https://coveralls.io/github/libp2p/js-libp2p-kad-dht?branch=master"><img src="https://coveralls.io/repos/github/libp2p/js-libp2p-kad-dht/badge.svg?branch=master" alt="Coverage Status"></a>
-					<a href="https://david-dm.org/libp2p/js-libp2p-kad-dht"><img src="https://david-dm.org/libp2p/js-libp2p-kad-dht.svg?style=flat-square" alt="Dependency Status"></a>
-					<a href="https://bundlephobia.com/result?p=libp2p-kad-dht"><img src="https://flat.badgen.net/bundlephobia/minzip/libp2p-kad-dht" alt="Bundle Size"></a>
-					<a href="https://github.com/feross/standard"><img src="https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square" alt="js-standard-style"></a>
-					<a href="https://github.com/RichardLitt/standard-readme"><img src="https://img.shields.io/badge/standard--readme-OK-green.svg?style=flat-square" alt="standard-readme compliant"></a>
-					<img src="https://img.shields.io/badge/npm-%3E%3D3.0.0-orange.svg?style=flat-square" alt="">
-				<img src="https://img.shields.io/badge/Node.js-%3E%3D6.0.0-orange.svg?style=flat-square" alt=""></p>
-				<blockquote>
-					<p>JavaScript implementation of the Kademlia DHT for libp2p, based on <a href="https://github.com/libp2p/go-libp2p-kad-dht">go-libp2p-kad-dht</a>.</p>
-				</blockquote>
-				<a href="#lead-maintainer--" id="lead-maintainer--" style="color: inherit; text-decoration: none;">
-					<h2>Lead Maintainer  <!-- omit in toc --></h2>
-				</a>
-				<p><a href="https://github.com/vasco-santos">Vasco Santos</a>.</p>
-				<a href="#table-of-contents--" id="table-of-contents--" style="color: inherit; text-decoration: none;">
-					<h2>Table of Contents  <!-- omit in toc --></h2>
-				</a>
-				<ul>
-					<li><a href="#install">Install</a><ul>
-							<li><a href="#npm">npm</a></li>
-							<li><a href="#use-in-nodejs">Use in Node.js</a></li>
-						</ul>
-					</li>
-					<li><a href="#api">API</a><ul>
-							<li><a href="#custom-secondary-dht-in-libp2p">Custom secondary DHT in libp2p</a></li>
-							<li><a href="#peer-routing">Peer Routing</a></li>
-							<li><a href="#content-routing">Content Routing</a></li>
-							<li><a href="#peer-discovery">Peer Discovery</a></li>
-						</ul>
-					</li>
-					<li><a href="#spec">Spec</a></li>
-					<li><a href="#contribute">Contribute</a></li>
-					<li><a href="#license">License</a>
-						<a href="#install" id="install" style="color: inherit; text-decoration: none;">
-							<h2>Install</h2>
-						</a>
-					</li>
-				</ul>
-				<a href="#npm" id="npm" style="color: inherit; text-decoration: none;">
-					<h3>npm</h3>
-				</a>
-				<pre><code class="language-sh"><span style="color: #000000">&gt; npm i libp2p-kad-dht</span>
-</code></pre>
-				<a href="#use-in-nodejs" id="use-in-nodejs" style="color: inherit; text-decoration: none;">
-					<h3>Use in Node.js</h3>
-				</a>
-				<pre><code class="language-js"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">create</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;libp2p-kad-dht&#039;</span>
-</code></pre>
-				<a href="#api" id="api" style="color: inherit; text-decoration: none;">
-					<h2>API</h2>
-				</a>
-				<p>See <a href="https://libp2p.github.io/js-libp2p-kad-dht">https://libp2p.github.io/js-libp2p-kad-dht</a> for the auto generated docs.</p>
-				<p>The libp2p-kad-dht module offers 3 APIs: Peer Routing, Content Routing and Peer Discovery.</p>
-				<a href="#custom-secondary-dht-in-libp2p" id="custom-secondary-dht-in-libp2p" style="color: inherit; text-decoration: none;">
-					<h3>Custom secondary DHT in libp2p</h3>
-				</a>
-				<pre><code class="language-js"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">create</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;libp2p-kad-dht&#039;</span>
+<div class="col-8 col-content">
+<div class="tsd-page-title">
+<h2>@libp2p/kad-dht - v6.1.1</h2></div>
+<div class="tsd-panel tsd-typography">
+<a href="#libp2pkad-dht-" id="libp2pkad-dht-" style="color: inherit; text-decoration: none;">
+  <h1>@libp2p/kad-dht <!-- omit in toc --></h1>
+</a>
+<p><a href="http://libp2p.io/"><img src="https://img.shields.io/badge/project-libp2p-yellow.svg?style=flat-square" alt="libp2p.io"></a>
+<a href="https://discuss.libp2p.io"><img src="https://img.shields.io/discourse/https/discuss.libp2p.io/posts.svg?style=flat-square" alt="Discuss"></a>
+<a href="https://codecov.io/gh/libp2p/js-libp2p-kad-dht"><img src="https://img.shields.io/codecov/c/github/libp2p/js-libp2p-kad-dht.svg?style=flat-square" alt="codecov"></a>
+<a href="https://github.com/libp2p/js-libp2p-kad-dht/actions/workflows/js-test-and-release.yml?query=branch%3Amaster"><img src="https://img.shields.io/github/actions/workflow/status/libp2p/js-libp2p-kad-dht/js-test-and-release.yml?branch=master&style=flat-square" alt="CI"></a></p>
+<blockquote>
+<p>JavaScript implementation of the Kad-DHT for libp2p</p>
+</blockquote>
 
-<span style="color: #008000">/**</span>
-<span style="color: #008000"> * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{Libp2p}</span><span style="color: #008000"> </span><span style="color: #001080">libp2p</span>
-<span style="color: #008000"> */</span>
-<span style="color: #0000FF">async</span><span style="color: #000000"> </span><span style="color: #0000FF">function</span><span style="color: #000000"> </span><span style="color: #795E26">addDHT</span><span style="color: #000000">(</span><span style="color: #001080">libp2p</span><span style="color: #000000">) {</span>
-<span style="color: #000000">    </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">customDHT</span><span style="color: #000000"> = </span><span style="color: #795E26">create</span><span style="color: #000000">({</span>
-<span style="color: #000000">        </span><span style="color: #001080">libp2p</span><span style="color: #000000">,</span>
-<span style="color: #000000">        </span><span style="color: #001080">protocolPrefix:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;/custom&#039;</span>
-<span style="color: #000000">    })</span>
-<span style="color: #000000">    </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">customDHT</span><span style="color: #000000">.</span><span style="color: #795E26">start</span><span style="color: #000000">()</span>
+<a href="#table-of-contents-" id="table-of-contents-" style="color: inherit; text-decoration: none;">
+  <h2>Table of contents <!-- omit in toc --></h2>
+</a>
+<ul>
+<li><a href="#install">Install</a><ul>
+<li><a href="#browser-script-tag">Browser <code>&lt;script&gt;</code> tag</a></li>
+<li><a href="#use-in-nodejs">Use in Node.js</a></li>
+</ul>
+</li>
+<li><a href="#api">API</a><ul>
+<li><a href="#custom-secondary-dht-in-libp2p">Custom secondary DHT in libp2p</a></li>
+<li><a href="#peer-routing">Peer Routing</a></li>
+<li><a href="#content-routing">Content Routing</a></li>
+<li><a href="#peer-discovery">Peer Discovery</a></li>
+</ul>
+</li>
+<li><a href="#spec">Spec</a></li>
+<li><a href="#contribute">Contribute</a></li>
+<li><a href="#api-docs">API Docs</a></li>
+<li><a href="#license">License</a></li>
+<li><a href="#contribute-1">Contribute</a></li>
+</ul>
 
-<span style="color: #000000">    </span><span style="color: #AF00DB">return</span><span style="color: #000000"> </span><span style="color: #001080">customDHT</span>
-<span style="color: #000000">}</span>
+<a href="#install" id="install" style="color: inherit; text-decoration: none;">
+  <h2>Install</h2>
+</a>
+<pre><code class="language-console">$ npm i @libp2p/kad-dht
 </code></pre>
-				<p>Note that you may want to supply your own peer discovery function and datastore</p>
-				<a href="#peer-routing" id="peer-routing" style="color: inherit; text-decoration: none;">
-					<h3>Peer Routing</h3>
-				</a>
-				<p><a href="https://github.com/libp2p/js-libp2p-interfaces/tree/master/packages/interfaces/src/peer-routing"><img src="https://raw.githubusercontent.com/libp2p/js-libp2p-interfaces/master/src/peer-routing/img/badge.png" alt=""></a></p>
-				<a href="#content-routing" id="content-routing" style="color: inherit; text-decoration: none;">
-					<h3>Content Routing</h3>
-				</a>
-				<p><a href="https://github.com/libp2p/js-libp2p-interfaces/tree/master/packages/interfaces/src/content-routing"><img src="https://raw.githubusercontent.com/libp2p/js-libp2p-interfaces/master/src/content-routing/img/badge.png" alt=""></a></p>
-				<a href="#peer-discovery" id="peer-discovery" style="color: inherit; text-decoration: none;">
-					<h3>Peer Discovery</h3>
-				</a>
-				<p><a href="https://github.com/libp2p/js-libp2p-interfaces/tree/master/packages/interfaces/src/peer-discovery"><img src="https://raw.githubusercontent.com/libp2p/js-libp2p-interfaces/master/src/peer-discovery/img/badge.png" alt=""></a></p>
-				<a href="#spec" id="spec" style="color: inherit; text-decoration: none;">
-					<h2>Spec</h2>
-				</a>
-				<p>js-libp2p-kad-dht follows the <a href="https://github.com/libp2p/specs/tree/master/kad-dht">libp2p/kad-dht spec</a> and implements the algorithms described in the <a href="https://docs.ipfs.io/concepts/dht/">IPFS DHT documentation</a>.</p>
-				<a href="#contribute" id="contribute" style="color: inherit; text-decoration: none;">
-					<h2>Contribute</h2>
-				</a>
-				<p>Feel free to join in. All welcome. Open an <a href="https://github.com/libp2p/js-libp2p-ipfs/issues">issue</a>!</p>
-				<p>This repository falls under the IPFS <a href="https://github.com/ipfs/community/blob/master/code-of-conduct.md">Code of Conduct</a>.</p>
-				<p><a href="https://github.com/ipfs/community/blob/master/contributing.md"><img src="https://cdn.rawgit.com/jbenet/contribute-ipfs-gif/master/img/contribute.gif" alt=""></a></p>
-				<a href="#license" id="license" style="color: inherit; text-decoration: none;">
-					<h2>License</h2>
-				</a>
-				<p>MIT - Protocol Labs 2017</p>
-			</div>
-		</div>
-		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
-			<nav class="tsd-navigation primary">
-				<ul>
-					<li class=" ">
-						<a href="modules.html">Exports</a>
-					</li>
-					<li class=" tsd-kind-namespace">
-						<a href="modules/default.html">default</a>
-					</li>
-				</ul>
-			</nav>
-			<nav class="tsd-navigation secondary menu-sticky">
-				<ul class="before-current">
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#AddingPeerEvent" class="tsd-kind-icon">Adding<wbr>Peer<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#DHT" class="tsd-kind-icon">DHT</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#DialingPeerEvent" class="tsd-kind-icon">Dialing<wbr>Peer<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#FinalPeerEvent" class="tsd-kind-icon">Final<wbr>Peer<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#KadDHTOps" class="tsd-kind-icon">KadDHTOps</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#PeerResponseEvent" class="tsd-kind-icon">Peer<wbr>Response<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#ProviderEvent" class="tsd-kind-icon">Provider<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#QueryErrorEvent" class="tsd-kind-icon">Query<wbr>Error<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#QueryEvent" class="tsd-kind-icon">Query<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#SendingQueryEvent" class="tsd-kind-icon">Sending<wbr>Query<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#ValueEvent" class="tsd-kind-icon">Value<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-property">
-						<a href="modules.html#export_" class="tsd-kind-icon">export&#61;</a>
-					</li>
-				</ul>
-			</nav>
-		</div>
-	</div>
-</div>
-<footer>
-	<div class="container">
-		<h2>Legend</h2>
-		<div class="tsd-legend-group">
-		</div>
-	</div>
-</footer>
-<div class="overlay"></div>
-<script src="assets/js/main.js"></script>
-</body>
-</html>
+
+<a href="#browser-ltscriptgt-tag" id="browser-ltscriptgt-tag" style="color: inherit; text-decoration: none;">
+  <h3>Browser <code>&lt;script&gt;</code> tag</h3>
+</a>
+<p>Loading this module through a script tag will make it&#39;s exports available as <code>Libp2pKadDht</code> in the global namespace.</p>
+<pre><code class="language-html"><span class="hl-0">&lt;</span><span class="hl-1">script</span><span class="hl-2"> </span><span class="hl-3">src</span><span class="hl-2">=</span><span class="hl-4">&quot;https://unpkg.com/@libp2p/kad-dht/dist/index.min.js&quot;</span><span class="hl-0">&gt;&lt;/</span><span class="hl-1">script</span><span class="hl-0">&gt;</span>
+</code></pre>
+<pre><code class="language-sh"><span class="hl-5">&gt; npm i @libp2p/kad-dht</span>
+</code></pre>
+
+<a href="#use-in-nodejs" id="use-in-nodejs" style="color: inherit; text-decoration: none;">
+  <h3>Use in Node.js</h3>
+</a>
+<pre><code class="language-js"><span class="hl-6">import</span><span class="hl-5"> { </span><span class="hl-7">create</span><span class="hl-5"> } </span><span class="hl-6">from</span><span class="hl-5"> </span><span class="hl-8">&#39;@libp2p/kad-dht&#39;</span>
+</code></pre>
+
+<a href="#api" id="api" style="color: inherit; text-decoration: none;">
+  <h2>API</h2>
+</a>
+<p>See <a href="https://libp2p.github.io/js-libp2p-kad-dht">https://libp2p.github.io/js-libp2p-kad-dht</a> for the auto generated docs.</p>
+<p>The libp2p-kad-dht module offers 3 APIs: Peer Routing, Content Routing and Peer Discovery.</p>
+
+<a href="#custom-secondary-dht-in-libp2p" id="custom-secondary-dht-in-libp2p" style="color: inherit; text-decoration: none;">
+  <h3>Custom secondary DHT in libp2p</h3>
+</a>
+<pre><code class="language-js"><span class="hl-6">import</span><span class="hl-5"> { </span><span class="hl-7">createLibp2pNode</span><span class="hl-5"> } </span><span class="hl-6">from</span><span class="hl-5"> </span><span class="hl-8">&#39;libp2p&#39;</span><br/><span class="hl-6">import</span><span class="hl-5"> { </span><span class="hl-7">kadDHT</span><span class="hl-5"> } </span><span class="hl-6">from</span><span class="hl-5"> </span><span class="hl-8">&#39;@libp2p/kad-dht&#39;</span><br/><br/><span class="hl-9">const</span><span class="hl-5"> </span><span class="hl-10">node</span><span class="hl-5"> = </span><span class="hl-6">await</span><span class="hl-5"> </span><span class="hl-11">createLibp2pNode</span><span class="hl-5">({</span><br/><span class="hl-5">  </span><span class="hl-7">dht:</span><span class="hl-5"> </span><span class="hl-11">kadDHT</span><span class="hl-5">()</span><br/><span class="hl-5">  </span><span class="hl-12">//... other config</span><br/><span class="hl-5">})</span><br/><span class="hl-6">await</span><span class="hl-5"> </span><span class="hl-7">node</span><span class="hl-5">.</span><span class="hl-11">start</span><span class="hl-5">()</span><br/><br/><span class="hl-6">for</span><span class="hl-5"> </span><span class="hl-6">await</span><span class="hl-5"> (</span><span class="hl-9">const</span><span class="hl-5"> </span><span class="hl-10">event</span><span class="hl-5"> </span><span class="hl-9">of</span><span class="hl-5"> </span><span class="hl-7">node</span><span class="hl-5">.</span><span class="hl-7">dht</span><span class="hl-5">.</span><span class="hl-11">findPeer</span><span class="hl-5">(</span><span class="hl-7">node</span><span class="hl-5">.</span><span class="hl-7">peerId</span><span class="hl-5">)) {</span><br/><span class="hl-5">  </span><span class="hl-7">console</span><span class="hl-5">.</span><span class="hl-11">info</span><span class="hl-5">(</span><span class="hl-7">event</span><span class="hl-5">)</span><br/><span class="hl-5">}</span>
+</code></pre>
+<p>Note that you may want to supply your own peer discovery function and datastore</p>
+
+<a href="#peer-routing" id="peer-routing" style="color: inherit; text-decoration: none;">
+  <h3>Peer Routing</h3>
+</a>
+<p><a href="https://github.com/libp2p/js-libp2p-interfaces/tree/master/packages/libp2p-interfaces/src/peer-routing"><img src="https://raw.githubusercontent.com/libp2p/interface-peer-routing/master/img/badge.png" alt=""></a></p>
+
+<a href="#content-routing" id="content-routing" style="color: inherit; text-decoration: none;">
+  <h3>Content Routing</h3>
+</a>
+<p><a href="https://github.com/libp2p/js-libp2p-interfaces/tree/master/packages/libp2p-interfaces/src/content-routing"><img src="https://raw.githubusercontent.com/libp2p/interface-content-routing/master/img/badge.png" alt=""></a></p>
+
+<a href="#peer-discovery" id="peer-discovery" style="color: inherit; text-decoration: none;">
+  <h3>Peer Discovery</h3>
+</a>
+<p><a href="https://github.com/libp2p/js-libp2p-interfaces/tree/master/packages/libp2p-interfaces/src/peer-discovery"><img src="https://github.com/libp2p/interface-peer-discovery/blob/master/img/badge.png?raw=true" alt=""></a></p>
+
+<a href="#spec" id="spec" style="color: inherit; text-decoration: none;">
+  <h2>Spec</h2>
+</a>
+<p>js-libp2p-kad-dht follows the <a href="https://github.com/libp2p/specs/tree/master/kad-dht">libp2p/kad-dht spec</a> and implements the algorithms described in the <a href="https://docs.ipfs.io/concepts/dht/">IPFS DHT documentation</a>.</p>
+
+<a href="#contribute" id="contribute" style="color: inherit; text-decoration: none;">
+  <h2>Contribute</h2>
+</a>
+<p>Feel free to join in. All welcome. Open an <a href="https://github.com/libp2p/js-libp2p-kad-dht/issues">issue</a>!</p>
+<p>This repository falls under the IPFS <a href="https://github.com/ipfs/community/blob/master/code-of-conduct.md">Code of Conduct</a>.</p>
+<p><a href="https://github.com/ipfs/community/blob/master/CONTRIBUTING.md"><img src="https://cdn.rawgit.com/jbenet/contribute-ipfs-gif/master/img/contribute.gif" alt=""></a></p>
+
+<a href="#api-docs" id="api-docs" style="color: inherit; text-decoration: none;">
+  <h2>API Docs</h2>
+</a>
+<ul>
+<li><a href="https://libp2p.github.io/js-libp2p-kad-dht">https://libp2p.github.io/js-libp2p-kad-dht</a></li>
+</ul>
+
+<a href="#license" id="license" style="color: inherit; text-decoration: none;">
+  <h2>License</h2>
+</a>
+<p>Licensed under either of</p>
+<ul>
+<li>Apache 2.0, (<a href="LICENSE-APACHE">LICENSE-APACHE</a> / <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a>)</li>
+<li>MIT (<a href="LICENSE-MIT">LICENSE-MIT</a> / <a href="http://opensource.org/licenses/MIT">http://opensource.org/licenses/MIT</a>)</li>
+</ul>
+
+<a href="#contribute-1" id="contribute-1" style="color: inherit; text-decoration: none;">
+  <h2>Contribute</h2>
+</a>
+<p>Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.</p>
+</div></div>
+<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+<div class="tsd-navigation settings">
+<details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
+<h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.93896 8.531L12 15.591L19.061 8.531L16.939 6.409L12 11.349L7.06098 6.409L4.93896 8.531Z" fill="var(--color-text)"></path></svg> Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility">
+<h4 class="uppercase">Member Visibility</h4><form>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-private" name="private"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Private</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></form></div>
+<div class="tsd-theme-toggle">
+<h4 class="uppercase">Theme</h4><select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<nav class="tsd-navigation primary">
+<details class="tsd-index-accordion" open><summary class="tsd-accordion-summary">
+<h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.93896 8.531L12 15.591L19.061 8.531L16.939 6.409L12 11.349L7.06098 6.409L4.93896 8.531Z" fill="var(--color-text)"></path></svg> Modules</h3></summary>
+<div class="tsd-accordion-details">
+<ul>
+<li class="current selected"><a href="modules.html">@libp2p/kad-<wbr/>dht -<wbr/> v6.1.1</a>
+<ul></ul></li></ul></div></details></nav>
+<nav class="tsd-navigation secondary menu-sticky">
+<ul>
+<li class="tsd-kind-interface"><a href="interfaces/KadDHTComponents.html" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-interface)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6" id="icon-256-path"></rect><path d="M9.51 16V15.016H11.298V8.224H9.51V7.24H14.19V8.224H12.402V15.016H14.19V16H9.51Z" fill="var(--color-text)" id="icon-256-text"></path></svg>KadDHTComponents</a></li>
+<li class="tsd-kind-interface"><a href="interfaces/KadDHTInit.html" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-256-path"></use><use href="#icon-256-text"></use></svg>KadDHTInit</a></li>
+<li class="tsd-kind-function"><a href="functions/kadDHT.html" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-function)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6" id="icon-64-path"></rect><path d="M9.39 16V7.24H14.55V8.224H10.446V11.128H14.238V12.112H10.47V16H9.39Z" fill="var(--color-text)" id="icon-64-text"></path></svg>kadDHT</a></li></ul></nav></div></div>
+<div class="overlay"></div><script src="assets/main.js"></script></body></html>
