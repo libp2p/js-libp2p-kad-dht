@@ -179,7 +179,7 @@
     "it-stream-types": "^1.0.4",
     "it-take": "^2.0.0",
     "k-bucket": "^5.1.0",
-    "multiformats": "^10.0.0",
+    "multiformats": "^11.0.0",
     "p-defer": "^4.0.0",
     "p-queue": "^7.2.0",
     "private-ip": "^3.0.0",
