@@ -13,7 +13,7 @@ import { Libp2pRecord } from '@libp2p/record'
 import { logger } from '@libp2p/logger'
 import { keys } from '@libp2p/crypto'
 import { peerIdFromKeys } from '@libp2p/peer-id'
-import type { DHTRecord, DialingPeerEvent, FinalPeerEvent, PeerResponseEvent, QueryErrorEvent, QueryEvent, QueryOptions, SendingQueryEvent, Validators, ValueEvent } from '@libp2p/interface-dht'
+import type { DHTRecord, DialingPeerEvent, FinalPeerEvent, QueryEvent, QueryOptions, Validators } from '@libp2p/interface-dht'
 import type { RoutingTable } from '../routing-table/index.js'
 import type { QueryManager } from '../query/manager.js'
 import type { Network } from '../network.js'
@@ -97,7 +97,7 @@ export class PeerRouting {
   /**
    * Get a value via rpc call for the given parameters
    */
-  async * _getValueSingle (peer: PeerId, key: Uint8Array, options: AbortOptions = {}): AsyncGenerator<DialingPeerEvent | SendingQueryEvent | PeerResponseEvent | QueryErrorEvent> {
+  async * _getValueSingle (peer: PeerId, key: Uint8Array, options: AbortOptions = {}): AsyncGenerator<QueryEvent> {
     const msg = new Message(MESSAGE_TYPE.GET_VALUE, key, 0)
     yield * this.network.sendRequest(peer, msg, options)
   }
@@ -105,7 +105,7 @@ export class PeerRouting {
   /**
    * Get the public key directly from a node
    */
-  async * getPublicKeyFromNode (peer: PeerId, options: AbortOptions = {}): AsyncGenerator<DialingPeerEvent | SendingQueryEvent | PeerResponseEvent | QueryErrorEvent | ValueEvent> {
+  async * getPublicKeyFromNode (peer: PeerId, options: AbortOptions = {}): AsyncGenerator<QueryEvent> {
     const pkKey = utils.keyForPublicKey(peer)
 
     for await (const event of this._getValueSingle(peer, pkKey, options)) {

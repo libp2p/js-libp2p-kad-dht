@@ -16,7 +16,7 @@ import {
 } from '../constants.js'
 import { createPutRecord, convertBuffer, bufferToRecordKey } from '../utils.js'
 import { logger } from '@libp2p/logger'
-import type { Validators, Selectors, ValueEvent, QueryOptions, DialingPeerEvent, PeerResponseEvent, QueryErrorEvent, SendingQueryEvent, QueryEvent } from '@libp2p/interface-dht'
+import type { Validators, Selectors, ValueEvent, QueryOptions, QueryEvent } from '@libp2p/interface-dht'
 import type { PeerRouting } from '../peer-routing/index.js'
 import type { QueryManager } from '../query/manager.js'
 import type { RoutingTable } from '../routing-table/index.js'
@@ -88,7 +88,7 @@ export class ContentFetching {
   /**
    * Send the best record found to any peers that have an out of date record
    */
-  async * sendCorrectionRecord (key: Uint8Array, vals: ValueEvent[], best: Uint8Array, options: AbortOptions = {}): AsyncGenerator<DialingPeerEvent | SendingQueryEvent | PeerResponseEvent | QueryErrorEvent> {
+  async * sendCorrectionRecord (key: Uint8Array, vals: ValueEvent[], best: Uint8Array, options: AbortOptions = {}): AsyncGenerator<QueryEvent> {
     this.log('sendCorrection for %b', key)
     const fixupRec = createPutRecord(key, best)
 

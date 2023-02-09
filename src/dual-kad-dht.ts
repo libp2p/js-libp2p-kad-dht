@@ -96,7 +96,7 @@ export class DualKadDHT extends EventEmitter<PeerDiscoveryEvents> implements Dua
   /**
    * Store the given key/value pair in the DHT
    */
-  async * put (key: Uint8Array, value: Uint8Array, options: QueryOptions = {}): AsyncGenerator<any> {
+  async * put (key: Uint8Array, value: Uint8Array, options: QueryOptions = {}): AsyncGenerator<QueryEvent> {
     for await (const event of merge(
       this.lan.put(key, value, options),
       this.wan.put(key, value, options)
@@ -108,7 +108,7 @@ export class DualKadDHT extends EventEmitter<PeerDiscoveryEvents> implements Dua
   /**
    * Get the value that corresponds to the passed key
    */
-  async * get (key: Uint8Array, options: QueryOptions = {}): AsyncGenerator<QueryEvent> { // eslint-disable-line require-await
+  async * get (key: Uint8Array, options: QueryOptions = {}): AsyncGenerator<QueryEvent> {
     let queriedPeers = false
     let foundValue = false
 

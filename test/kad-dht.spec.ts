@@ -28,7 +28,7 @@ import type { DualKadDHT } from '../src/dual-kad-dht.js'
 import { pipe } from 'it-pipe'
 import map from 'it-map'
 
-async function findEvent (events: AsyncIterable<QueryEvent>, name: 'FINAL_PEER'): Promise<FinalPeerEvent | QueryEvent>
+async function findEvent (events: AsyncIterable<QueryEvent>, name: 'FINAL_PEER'): Promise<FinalPeerEvent>
 async function findEvent (events: AsyncIterable<QueryEvent>, name: 'VALUE'): Promise<ValueEvent>
 async function findEvent (events: AsyncIterable<QueryEvent>, name: string): Promise<QueryEvent> {
   const eventTypes = new Set<string>()
