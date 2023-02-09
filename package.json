@@ -196,7 +196,7 @@
     "@types/lodash.range": "^3.2.6",
     "@types/varint": "^6.0.0",
     "@types/which": "^2.0.1",
-    "aegir": "^37.7.7",
+    "aegir": "^38.1.2",
     "datastore-level": "^9.0.0",
     "delay": "^5.0.0",
     "execa": "^6.0.0",
