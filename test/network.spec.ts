@@ -28,7 +28,7 @@ describe('Network', () => {
     })
   })
 
-  after(async () => await tdht.teardown())
+  after(async () => { await tdht.teardown() })
 
   describe('sendRequest', () => {
     it('send and response echo', async () => {
@@ -44,7 +44,7 @@ describe('Network', () => {
     it('send and response different messages', async () => {
       const defer = pDefer()
       let i = 0
-      const finish = () => {
+      const finish = (): void => {
         if (i++ === 1) {
           defer.resolve()
         }
@@ -53,6 +53,7 @@ describe('Network', () => {
       const msg = new Message(MESSAGE_TYPE.PING, uint8ArrayFromString('hello'), 0)
 
       // mock it
+      // @ts-expect-error incomplete implementation
       dht.components.connectionManager.openConnection = async (peer: PeerId) => {
         // @ts-expect-error incomplete implementation
         const connection: Connection = {
