@@ -199,7 +199,7 @@
     "aegir": "^37.7.7",
     "datastore-level": "^9.0.0",
     "delay": "^5.0.0",
-    "execa": "^6.0.0",
+    "execa": "^7.0.0",
     "it-filter": "^2.0.0",
     "it-last": "^2.0.0",
     "it-pair": "^2.0.2",
