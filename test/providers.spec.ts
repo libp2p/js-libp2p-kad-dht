@@ -68,13 +68,13 @@ describe('Providers', () => {
       cacheSize: 10
     })
 
-    const hashes = await Promise.all([...new Array(100)].map((i: number) => {
-      return sha256.digest(uint8ArrayFromString(`hello ${i}`))
+    const hashes = await Promise.all([...new Array(100)].map(async (i: number) => {
+      return await sha256.digest(uint8ArrayFromString(`hello ${i}`))
     }))
 
     const cids = hashes.map((h) => CID.createV0(h))
 
-    await Promise.all(cids.map(async cid => await providers.addProvider(cid, peers[0])))
+    await Promise.all(cids.map(async cid => { await providers.addProvider(cid, peers[0]) }))
     const provs = await Promise.all(cids.map(async cid => await providers.getProviders(cid)))
 
     expect(provs).to.have.length(100)
