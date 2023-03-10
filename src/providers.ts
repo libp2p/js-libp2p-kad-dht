@@ -209,11 +209,9 @@ export class Providers implements Startable {
    * Get a list of providers for the given CID
    */
   async getProviders (cid: CID): Promise<PeerId[]> {
-    let provs: Map<string, Date> = new Map()
-
-    await this.syncQueue.add(async () => {
+    return await this.syncQueue.add(async () => {
       log('get providers for %s', cid)
-      provs = await this._getProvidersMap(cid)
+      const provs = await this._getProvidersMap(cid)
 
       return [...provs.keys()].map(peerIdStr => {
         return peerIdFromString(peerIdStr)
@@ -223,10 +221,6 @@ export class Providers implements Startable {
       // throw, but this is required to get the right return
       // type since p-queue@7.3.4
       throwOnTimeout: true
-    })
-
-    return [...provs.keys()].map(peerIdStr => {
-      return peerIdFromString(peerIdStr)
     })
   }
 }

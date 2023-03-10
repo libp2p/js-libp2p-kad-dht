@@ -6,6 +6,7 @@ import { CodeError } from '@libp2p/interfaces/errors'
 import { convertPeerId, convertBuffer } from '../utils.js'
 import { TimeoutController } from 'timeout-abort-controller'
 import { anySignal } from 'any-signal'
+import { queryErrorEvent } from './events.js'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { EventEmitter } from '@libp2p/interfaces/events'
 import type { CleanUpEvents } from './manager.js'
@@ -117,46 +118,64 @@ export async function * queryPath (options: QueryPathOptions): AsyncGenerator<Qu
 
       const compoundSignal = anySignal(signals)
 
-      for await (const event of query({
-        key,
-        peer,
-        signal: compoundSignal,
-        pathIndex,
-        numPaths
-      })) {
-        if (compoundSignal.aborted) {
-          return
-        }
-
-        // if there are closer peers and the query has not completed, continue the query
-        if (event.name === 'PEER_RESPONSE') {
-          for (const closerPeer of event.closer) {
-            if (peersSeen.has(closerPeer.id)) { // eslint-disable-line max-depth
-              log('already seen %p in query', closerPeer.id)
-              continue
-            }
-
-            if (ourPeerId.equals(closerPeer.id)) { // eslint-disable-line max-depth
-              log('not querying ourselves')
-              continue
-            }
-
-            const closerPeerKadId = await convertPeerId(closerPeer.id)
-            const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))
-
-            // only continue query if closer peer is actually closer
-            if (closerPeerXor > peerXor) { // eslint-disable-line max-depth
-              log('skipping %p as they are not closer to %b than %p', closerPeer.id, key, peer)
-              continue
-            }
-
-            log('querying closer peer %p', closerPeer.id)
-            queryPeer(closerPeer.id, closerPeerKadId)
+      try {
+        for await (const event of query({
+          key,
+          peer,
+          signal: compoundSignal,
+          pathIndex,
+          numPaths
+        })) {
+          if (compoundSignal.aborted) {
+            return
           }
-        }
-      }
 
-      timeout?.clear()
+          // if there are closer peers and the query has not completed, continue the query
+          if (event.name === 'PEER_RESPONSE') {
+            for (const closerPeer of event.closer) {
+              if (peersSeen.has(closerPeer.id)) { // eslint-disable-line max-depth
+                log('already seen %p in query', closerPeer.id)
+                continue
+              }
+
+              if (ourPeerId.equals(closerPeer.id)) { // eslint-disable-line max-depth
+                log('not querying ourselves')
+                continue
+              }
+
+              const closerPeerKadId = await convertPeerId(closerPeer.id)
+              const closerPeerXor = BigInt('0x' + toString(xor(closerPeerKadId, kadId), 'base16'))
+
+              // only continue query if closer peer is actually closer
+              if (closerPeerXor > peerXor) { // eslint-disable-line max-depth
+                log('skipping %p as they are not closer to %b than %p', closerPeer.id, key, peer)
+                continue
+              }
+
+              log('querying closer peer %p', closerPeer.id)
+              queryPeer(closerPeer.id, closerPeerKadId)
+            }
+          }
+
+          // TODO: we have upgraded to p-queue@7, this should no longer be necessary
+          queue.emit('completed', event)
+        }
+
+        timeout?.clear()
+      } catch (err: any) {
+        if (signal.aborted) {
+          // TODO: we have upgraded to p-queue@7, this should no longer be necessary
+          queue.emit('error', err)
+        } else {
+          // TODO: we have upgraded to p-queue@7, this should no longer be necessary
+          queue.emit('completed', queryErrorEvent({
+            from: peer,
+            error: err
+          }))
+        }
+      } finally {
+        timeout?.clear()
+      }
     }, {
       // use xor value as the queue priority - closer peers should execute first
       // subtract it from MAX_XOR because higher priority values execute sooner
