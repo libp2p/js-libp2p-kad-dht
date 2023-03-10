@@ -49,22 +49,22 @@
 <a href="#install" id="install" style="color: inherit; text-decoration: none;">
   <h2>Install</h2>
 </a>
-<pre><code class="language-console">$ npm i @libp2p/kad-dht
+<pre><code class="language-console"><span class="hl-0">$ </span><span class="hl-1">npm</span><span class="hl-0"> </span><span class="hl-1">i</span><span class="hl-0"> </span><span class="hl-1">@libp2p/kad-dht</span>
 </code></pre>
 
 <a href="#browser-ltscriptgt-tag" id="browser-ltscriptgt-tag" style="color: inherit; text-decoration: none;">
   <h3>Browser <code>&lt;script&gt;</code> tag</h3>
 </a>
 <p>Loading this module through a script tag will make it&#39;s exports available as <code>Libp2pKadDht</code> in the global namespace.</p>
-<pre><code class="language-html"><span class="hl-0">&lt;</span><span class="hl-1">script</span><span class="hl-2"> </span><span class="hl-3">src</span><span class="hl-2">=</span><span class="hl-4">&quot;https://unpkg.com/@libp2p/kad-dht/dist/index.min.js&quot;</span><span class="hl-0">&gt;&lt;/</span><span class="hl-1">script</span><span class="hl-0">&gt;</span>
+<pre><code class="language-html"><span class="hl-2">&lt;</span><span class="hl-3">script</span><span class="hl-4"> </span><span class="hl-5">src</span><span class="hl-4">=</span><span class="hl-6">&quot;https://unpkg.com/@libp2p/kad-dht/dist/index.min.js&quot;</span><span class="hl-2">&gt;&lt;/</span><span class="hl-3">script</span><span class="hl-2">&gt;</span>
 </code></pre>
-<pre><code class="language-sh"><span class="hl-5">&gt; npm i @libp2p/kad-dht</span>
+<pre><code class="language-sh"><span class="hl-0">&gt; npm i @libp2p/kad-dht</span>
 </code></pre>
 
 <a href="#use-in-nodejs" id="use-in-nodejs" style="color: inherit; text-decoration: none;">
   <h3>Use in Node.js</h3>
 </a>
-<pre><code class="language-js"><span class="hl-6">import</span><span class="hl-5"> { </span><span class="hl-7">create</span><span class="hl-5"> } </span><span class="hl-6">from</span><span class="hl-5"> </span><span class="hl-8">&#39;@libp2p/kad-dht&#39;</span>
+<pre><code class="language-js"><span class="hl-7">import</span><span class="hl-0"> { </span><span class="hl-8">create</span><span class="hl-0"> } </span><span class="hl-7">from</span><span class="hl-0"> </span><span class="hl-1">&#39;@libp2p/kad-dht&#39;</span>
 </code></pre>
 
 <a href="#api" id="api" style="color: inherit; text-decoration: none;">
@@ -76,7 +76,7 @@
 <a href="#custom-secondary-dht-in-libp2p" id="custom-secondary-dht-in-libp2p" style="color: inherit; text-decoration: none;">
   <h3>Custom secondary DHT in libp2p</h3>
 </a>
-<pre><code class="language-js"><span class="hl-6">import</span><span class="hl-5"> { </span><span class="hl-7">createLibp2pNode</span><span class="hl-5"> } </span><span class="hl-6">from</span><span class="hl-5"> </span><span class="hl-8">&#39;libp2p&#39;</span><br/><span class="hl-6">import</span><span class="hl-5"> { </span><span class="hl-7">kadDHT</span><span class="hl-5"> } </span><span class="hl-6">from</span><span class="hl-5"> </span><span class="hl-8">&#39;@libp2p/kad-dht&#39;</span><br/><br/><span class="hl-9">const</span><span class="hl-5"> </span><span class="hl-10">node</span><span class="hl-5"> = </span><span class="hl-6">await</span><span class="hl-5"> </span><span class="hl-11">createLibp2pNode</span><span class="hl-5">({</span><br/><span class="hl-5">  </span><span class="hl-7">dht:</span><span class="hl-5"> </span><span class="hl-11">kadDHT</span><span class="hl-5">()</span><br/><span class="hl-5">  </span><span class="hl-12">//... other config</span><br/><span class="hl-5">})</span><br/><span class="hl-6">await</span><span class="hl-5"> </span><span class="hl-7">node</span><span class="hl-5">.</span><span class="hl-11">start</span><span class="hl-5">()</span><br/><br/><span class="hl-6">for</span><span class="hl-5"> </span><span class="hl-6">await</span><span class="hl-5"> (</span><span class="hl-9">const</span><span class="hl-5"> </span><span class="hl-10">event</span><span class="hl-5"> </span><span class="hl-9">of</span><span class="hl-5"> </span><span class="hl-7">node</span><span class="hl-5">.</span><span class="hl-7">dht</span><span class="hl-5">.</span><span class="hl-11">findPeer</span><span class="hl-5">(</span><span class="hl-7">node</span><span class="hl-5">.</span><span class="hl-7">peerId</span><span class="hl-5">)) {</span><br/><span class="hl-5">  </span><span class="hl-7">console</span><span class="hl-5">.</span><span class="hl-11">info</span><span class="hl-5">(</span><span class="hl-7">event</span><span class="hl-5">)</span><br/><span class="hl-5">}</span>
+<pre><code class="language-js"><span class="hl-7">import</span><span class="hl-0"> { </span><span class="hl-8">createLibp2pNode</span><span class="hl-0"> } </span><span class="hl-7">from</span><span class="hl-0"> </span><span class="hl-1">&#39;libp2p&#39;</span><br/><span class="hl-7">import</span><span class="hl-0"> { </span><span class="hl-8">kadDHT</span><span class="hl-0"> } </span><span class="hl-7">from</span><span class="hl-0"> </span><span class="hl-1">&#39;@libp2p/kad-dht&#39;</span><br/><br/><span class="hl-9">const</span><span class="hl-0"> </span><span class="hl-10">node</span><span class="hl-0"> = </span><span class="hl-7">await</span><span class="hl-0"> </span><span class="hl-11">createLibp2pNode</span><span class="hl-0">({</span><br/><span class="hl-0">  </span><span class="hl-8">dht:</span><span class="hl-0"> </span><span class="hl-11">kadDHT</span><span class="hl-0">()</span><br/><span class="hl-0">  </span><span class="hl-12">//... other config</span><br/><span class="hl-0">})</span><br/><span class="hl-7">await</span><span class="hl-0"> </span><span class="hl-8">node</span><span class="hl-0">.</span><span class="hl-11">start</span><span class="hl-0">()</span><br/><br/><span class="hl-7">for</span><span class="hl-0"> </span><span class="hl-7">await</span><span class="hl-0"> (</span><span class="hl-9">const</span><span class="hl-0"> </span><span class="hl-10">event</span><span class="hl-0"> </span><span class="hl-9">of</span><span class="hl-0"> </span><span class="hl-8">node</span><span class="hl-0">.</span><span class="hl-8">dht</span><span class="hl-0">.</span><span class="hl-11">findPeer</span><span class="hl-0">(</span><span class="hl-8">node</span><span class="hl-0">.</span><span class="hl-8">peerId</span><span class="hl-0">)) {</span><br/><span class="hl-0">  </span><span class="hl-8">console</span><span class="hl-0">.</span><span class="hl-11">info</span><span class="hl-0">(</span><span class="hl-8">event</span><span class="hl-0">)</span><br/><span class="hl-0">}</span>
 </code></pre>
 <p>Note that you may want to supply your own peer discovery function and datastore</p>
 
