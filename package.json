@@ -196,7 +196,7 @@
     "@types/varint": "^6.0.0",
     "@types/which": "^2.0.1",
     "aegir": "^38.1.2",
-    "datastore-level": "^9.0.0",
+    "datastore-level": "^10.0.0",
     "delay": "^5.0.0",
     "execa": "^7.0.0",
     "it-filter": "^2.0.0",
