@@ -166,7 +166,7 @@
     "hashlru": "^2.3.0",
     "interface-datastore": "^8.0.0",
     "it-all": "^2.0.0",
-    "it-drain": "^2.0.0",
+    "it-drain": "^3.0.1",
     "it-first": "^2.0.0",
     "it-length": "^2.0.0",
     "it-length-prefixed": "^8.0.2",
