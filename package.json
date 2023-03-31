@@ -199,7 +199,7 @@
     "datastore-level": "^10.0.0",
     "delay": "^5.0.0",
     "execa": "^7.0.0",
-    "it-filter": "^2.0.0",
+    "it-filter": "^3.0.0",
     "it-last": "^2.0.0",
     "lodash.random": "^3.2.0",
     "lodash.range": "^3.2.0",
