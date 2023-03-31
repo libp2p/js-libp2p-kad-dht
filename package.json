@@ -168,7 +168,7 @@
     "it-all": "^2.0.0",
     "it-drain": "^2.0.0",
     "it-first": "^2.0.0",
-    "it-length": "^2.0.0",
+    "it-length": "^3.0.1",
     "it-length-prefixed": "^8.0.2",
     "it-map": "^3.0.1",
     "it-merge": "^2.0.0",
