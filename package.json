@@ -165,7 +165,7 @@
     "datastore-core": "^9.0.1",
     "hashlru": "^2.3.0",
     "interface-datastore": "^8.0.0",
-    "it-all": "^2.0.0",
+    "it-all": "^3.0.1",
     "it-drain": "^2.0.0",
     "it-first": "^2.0.0",
     "it-length": "^2.0.0",
