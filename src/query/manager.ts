@@ -121,9 +121,7 @@ export class QueryManager implements Startable {
       if (setMaxListeners != null) {
         setMaxListeners(Infinity, signal)
       }
-    } catch (err) {
-      console.info('wat', err)
-    } // fails on node < 15.4
+    } catch {} // fails on node < 15.4
 
     const log = logger(`libp2p:kad-dht:${this.lan ? 'lan' : 'wan'}:query:` + uint8ArrayToString(key, 'base58btc'))
 

@@ -240,7 +240,7 @@ export class RoutingTable implements Startable {
                 this.kb.remove(oldContact.id)
               }
             } finally {
-               this.metrics?.routingTableSize.update(this.size)
+              this.metrics?.routingTableSize.update(this.size)
             }
           })
         )
