@@ -8,6 +8,7 @@ import type { PeerRouting } from './peer-routing/index.js'
 import type { Startable } from '@libp2p/interfaces/startable'
 import { pipe } from 'it-pipe'
 import type { KadDHTComponents } from './index.js'
+import type { DeferredPromise } from 'p-defer'
 
 export interface QuerySelfInit {
   lan: boolean
@@ -15,6 +16,7 @@ export interface QuerySelfInit {
   count?: number
   interval?: number
   queryTimeout?: number
+  initialQuerySelfHasRun: DeferredPromise<void>
 }
 
 /**
@@ -30,6 +32,7 @@ export class QuerySelf implements Startable {
   private running: boolean
   private timeoutId?: NodeJS.Timer
   private controller?: AbortController
+  private initialQuerySelfHasRun?: DeferredPromise<void>
 
   constructor (components: KadDHTComponents, init: QuerySelfInit) {
     const { peerRouting, lan, count, interval, queryTimeout } = init
@@ -41,6 +44,7 @@ export class QuerySelf implements Startable {
     this.count = count ?? K
     this.interval = interval ?? QUERY_SELF_INTERVAL
     this.queryTimeout = queryTimeout ?? QUERY_SELF_TIMEOUT
+    this.initialQuerySelfHasRun = init.initialQuerySelfHasRun
   }
 
   isStarted (): boolean {
@@ -83,13 +87,19 @@ export class QuerySelf implements Startable {
       try {
         const found = await pipe(
           this.peerRouting.getClosestPeers(this.components.peerId.toBytes(), {
-            signal
+            signal,
+            isSelfQuery: true
           }),
           (source) => take(source, this.count),
           async (source) => await length(source)
         )
 
         this.log('query ran successfully - found %d peers', found)
+
+        if (this.initialQuerySelfHasRun != null) {
+          this.initialQuerySelfHasRun.resolve()
+          this.initialQuerySelfHasRun = undefined
+        }
       } catch (err: any) {
         this.log('query error', err)
       } finally {

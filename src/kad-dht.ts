@@ -25,6 +25,7 @@ import { validators as recordValidators } from '@libp2p/record/validators'
 import { selectors as recordSelectors } from '@libp2p/record/selectors'
 import { symbol } from '@libp2p/interface-peer-discovery'
 import { PROTOCOL_DHT, PROTOCOL_PREFIX, LAN_PREFIX } from './constants.js'
+import pDefer from 'p-defer'
 
 export const DEFAULT_MAX_INBOUND_STREAMS = 32
 export const DEFAULT_MAX_OUTBOUND_STREAMS = 64
@@ -117,10 +118,16 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
       protocol: this.protocol,
       lan: this.lan
     })
+
+    // all queries should wait for the intial query-self query to run so we have
+    // some peers and don't force consumers to use arbitrary timeouts
+    const initialQuerySelfHasRun = pDefer<any>()
+
     this.queryManager = new QueryManager(components, {
       // Number of disjoint query paths to use - This is set to `kBucketSize/2` per the S/Kademlia paper
       disjointPaths: Math.ceil(this.kBucketSize / 2),
-      lan
+      lan,
+      initialQuerySelfHasRun
     })
 
     // DHT components
@@ -167,7 +174,8 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
     this.querySelf = new QuerySelf(components, {
       peerRouting: this.peerRouting,
       interval: querySelfInterval,
-      lan: this.lan
+      lan: this.lan,
+      initialQuerySelfHasRun
     })
 
     // handle peers being discovered during processing of DHT messages
