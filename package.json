@@ -190,7 +190,7 @@
     "@libp2p/interface-libp2p": "^2.0.0",
     "@libp2p/interface-mocks": "^11.0.0",
     "@libp2p/peer-id-factory": "^2.0.0",
-    "@libp2p/peer-store": "^7.0.0",
+    "@libp2p/peer-store": "^8.0.0",
     "@types/lodash.random": "^3.2.6",
     "@types/lodash.range": "^3.2.6",
     "@types/varint": "^6.0.0",
