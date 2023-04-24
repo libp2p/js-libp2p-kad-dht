@@ -73,8 +73,6 @@ export class GetProvidersHandler implements DHTMessageHandler {
   }
 
   async _getAddresses (peerId: PeerId): Promise<Multiaddr[]> {
-
-
     return []
   }
 

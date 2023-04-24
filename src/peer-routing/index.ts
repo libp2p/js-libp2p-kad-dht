@@ -320,7 +320,7 @@ export class PeerRouting {
         output.push({
           id: peerId,
           multiaddrs: peer.addresses.map(({ multiaddr }) => multiaddr),
-              protocols: peer.protocols
+          protocols: peer.protocols
         })
       } catch (err: any) {
         if (err.code !== 'ERR_NOT_FOUND') {

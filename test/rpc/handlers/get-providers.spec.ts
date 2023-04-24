@@ -43,7 +43,7 @@ describe('rpc - handlers - GetProviders', () => {
     peerStore = new PersistentPeerStore({
       peerId,
       datastore: new MemoryDatastore(),
-      events: new EventEmitter<Libp2pEvents>
+      events: new EventEmitter<Libp2pEvents>()
     })
 
     const components: GetProvidersHandlerComponents = {

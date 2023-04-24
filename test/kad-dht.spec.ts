@@ -629,7 +629,7 @@ describe('KadDHT', () => {
           addresses: [],
           protocols: [],
           tags: new Map(),
-          metadata: new Map(),
+          metadata: new Map()
         })
       sinon.stub(dht.lan.providers, 'getProviders').resolves([dht.components.peerId])
 
