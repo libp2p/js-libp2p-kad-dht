@@ -143,7 +143,7 @@
   },
   "dependencies": {
     "@libp2p/crypto": "^1.0.4",
-    "@libp2p/interface-address-manager": "^2.0.0",
+    "@libp2p/interface-address-manager": "^3.0.0",
     "@libp2p/interface-connection": "^5.0.1",
     "@libp2p/interface-connection-manager": "^2.0.0",
     "@libp2p/interface-dht": "^2.0.0",
