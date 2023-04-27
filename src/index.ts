@@ -2,13 +2,12 @@ import { KadDHT as SingleKadDHT } from './kad-dht.js'
 import { DualKadDHT } from './dual-kad-dht.js'
 import drain from 'it-drain'
 import { CodeError } from '@libp2p/interfaces/errors'
-import type { DHT, DualDHT } from '@libp2p/interface-dht'
+import type { DHT, DualDHT, Selectors, Validators } from '@libp2p/interface-dht'
 import { ContentRouting, contentRouting } from '@libp2p/interface-content-routing'
 import type { CID } from 'multiformats/cid'
 import type { AbortOptions } from '@libp2p/interfaces'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
 import type { ProvidersInit } from './providers.js'
-import type { Selectors, Validators } from '@libp2p/interface-dht'
 import type { Registrar } from '@libp2p/interface-registrar'
 import type { AddressManager } from '@libp2p/interface-address-manager'
 import type { PeerStore } from '@libp2p/interface-peer-store'
@@ -156,8 +155,8 @@ export class DHTPeerRouting implements PeerRouting {
 }
 
 class KadDHT extends DualKadDHT {
-  private contentRouting: ContentRouting
-  private peerRouting: PeerRouting
+  private readonly contentRouting: ContentRouting
+  private readonly peerRouting: PeerRouting
 
   constructor (components: KadDHTComponents, init?: KadDHTInit) {
     super(components, new SingleKadDHT(components, {
