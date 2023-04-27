@@ -1,3 +1,28 @@
+## [9.0.0](https://github.com/libp2p/js-libp2p-kad-dht/compare/v8.0.12...v9.0.0) (2023-04-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump @libp2p/interface-peer-store from 1.2.9 to 2.0.0 (#460)
+
+### Dependencies
+
+* bump @libp2p/interface-peer-store from 1.2.9 to 2.0.0 ([#460](https://github.com/libp2p/js-libp2p-kad-dht/issues/460)) ([e3f15f1](https://github.com/libp2p/js-libp2p-kad-dht/commit/e3f15f17a65d98940fcba4ba7a46fd17ab509785))
+
+## [8.0.12](https://github.com/libp2p/js-libp2p-kad-dht/compare/v8.0.11...v8.0.12) (2023-04-19)
+
+
+### Tests
+
+* enable skipped xor test ([#458](https://github.com/libp2p/js-libp2p-kad-dht/issues/458)) ([4acfd70](https://github.com/libp2p/js-libp2p-kad-dht/commit/4acfd7047154276ae70a2c1f07775abcacd82170))
+
+## [8.0.11](https://github.com/libp2p/js-libp2p-kad-dht/compare/v8.0.10...v8.0.11) (2023-04-19)
+
+
+### Dependencies
+
+* update it-stream-types ([#456](https://github.com/libp2p/js-libp2p-kad-dht/issues/456)) ([2dfccee](https://github.com/libp2p/js-libp2p-kad-dht/commit/2dfccee3614bbcde1bf0ff9b1c8dbded79f86d91))
+
 ## [8.0.10](https://github.com/libp2p/js-libp2p-kad-dht/compare/v8.0.9...v8.0.10) (2023-04-17)
 
 
