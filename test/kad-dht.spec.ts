@@ -686,7 +686,7 @@ describe('KadDHT', () => {
       this.timeout(240 * 1000)
 
       // Create 101 nodes
-      const nDHTs = 100
+      const nDHTs = 101
 
       const dhts = await Promise.all(
         new Array(nDHTs).fill(0).map(async () => await tdht.spawn())

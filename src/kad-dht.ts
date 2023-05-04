@@ -180,6 +180,7 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
     this.querySelf = new QuerySelf(components, {
       peerRouting: this.peerRouting,
       interval: querySelfInterval,
+      initialInterval: init.initialQuerySelfInterval,
       lan: this.lan,
       initialQuerySelfHasRun,
       routingTable: this.routingTable
@@ -242,11 +243,6 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
 
     try {
       await this.routingTable.add(peerData.id)
-
-      if (this.routingTable.size < this.kBucketSize) {
-        // not enough peers yet, run debounced self-query with new peer
-        this.querySelf.querySelf()
-      }
     } catch (err: any) {
       this.log.error('could not add %p to routing table', peerData.id, err)
     }

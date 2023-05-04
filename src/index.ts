@@ -46,6 +46,13 @@ export interface KadDHTInit {
   querySelfInterval?: number
 
   /**
+   * During startup we run the self-query at a shorter interval to ensure
+   * the containing node can respond to queries quickly. Set this interval
+   * here in ms (default: 1000)
+   */
+  initialQuerySelfInterval?: number
+
+  /**
    * After startup by default all queries will be paused until the initial
    * self-query has run and there are some peers in the routing table.
    *
