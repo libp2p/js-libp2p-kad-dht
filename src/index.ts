@@ -46,6 +46,14 @@ export interface KadDHTInit {
   querySelfInterval?: number
 
   /**
+   * After startup by default all queries will be paused until the initial
+   * self-query has run and there are some peers in the routing table.
+   *
+   * Pass true here to disable this behaviour. (default: false)
+   */
+  allowQueryWithZeroPeers?: boolean
+
+  /**
    * A custom protocol prefix to use (default: '/ipfs')
    */
   protocolPrefix?: string

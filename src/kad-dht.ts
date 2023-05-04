@@ -119,9 +119,15 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
       lan: this.lan
     })
 
-    // all queries should wait for the intial query-self query to run so we have
+    // all queries should wait for the initial query-self query to run so we have
     // some peers and don't force consumers to use arbitrary timeouts
     const initialQuerySelfHasRun = pDefer<any>()
+
+    // if the user doesn't want to wait for query peers, resolve the initial
+    // self-query promise immediately
+    if (init.allowQueryWithZeroPeers === true) {
+      initialQuerySelfHasRun.resolve()
+    }
 
     this.queryManager = new QueryManager(components, {
       // Number of disjoint query paths to use - This is set to `kBucketSize/2` per the S/Kademlia paper
@@ -175,7 +181,8 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
       peerRouting: this.peerRouting,
       interval: querySelfInterval,
       lan: this.lan,
-      initialQuerySelfHasRun
+      initialQuerySelfHasRun,
+      routingTable: this.routingTable
     })
 
     // handle peers being discovered during processing of DHT messages
@@ -220,7 +227,7 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
   }
 
   async onPeerConnect (peerData: PeerInfo): Promise<void> {
-    this.log('peer %p connected with protocols %s', peerData.id, peerData.protocols)
+    this.log('peer %p connected with protocols', peerData.id, peerData.protocols)
 
     if (this.lan) {
       peerData = removePublicAddresses(peerData)
@@ -235,6 +242,11 @@ export class KadDHT extends EventEmitter<PeerDiscoveryEvents> implements DHT {
 
     try {
       await this.routingTable.add(peerData.id)
+
+      if (this.routingTable.size < this.kBucketSize) {
+        // not enough peers yet, run debounced self-query with new peer
+        this.querySelf.querySelf()
+      }
     } catch (err: any) {
       this.log.error('could not add %p to routing table', peerData.id, err)
     }
