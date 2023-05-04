@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import { EventTypes, type QueryEvent } from '@libp2p/interface-dht'
+import { EventTypes, type QueryEvent } from '../src/index.js'
 import { expect } from 'aegir/chai'
 import delay from 'delay'
 import all from 'it-all'

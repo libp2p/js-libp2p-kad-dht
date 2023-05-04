@@ -11,7 +11,7 @@ import { PutValueHandler, type PutValueHandlerComponents } from './handlers/put-
 import type { PeerRouting } from '../peer-routing'
 import type { Providers } from '../providers'
 import type { RoutingTable } from '../routing-table'
-import type { Validators } from '@libp2p/interface-dht'
+import type { Validators } from '../index.js'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { IncomingStreamData } from '@libp2p/interface-registrar'
 

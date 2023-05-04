@@ -4,7 +4,7 @@ import { verifyRecord } from '@libp2p/record/validators'
 import { bufferToRecordKey } from '../../utils.js'
 import type { Message } from '../../message/index.js'
 import type { DHTMessageHandler } from '../index.js'
-import type { Validators } from '@libp2p/interface-dht'
+import type { Validators } from '../../index.js'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { Datastore } from 'interface-datastore'
 
