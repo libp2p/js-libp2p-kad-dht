@@ -1,7 +1,6 @@
 /* eslint-env mocha */
 /* eslint max-nested-callbacks: ["error", 8] */
 
-import { EventTypes, type FinalPeerEvent, MessageType, type QueryEvent, type ValueEvent } from '../src/index.js'
 import { CodeError } from '@libp2p/interfaces/errors'
 import { Libp2pRecord } from '@libp2p/record'
 import { expect } from 'aegir/chai'
@@ -16,6 +15,7 @@ import sinon from 'sinon'
 import { equals as uint8ArrayEquals } from 'uint8arrays/equals'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import * as c from '../src/constants.js'
+import { EventTypes, type FinalPeerEvent, MessageType, type QueryEvent, type ValueEvent } from '../src/index.js'
 import { MESSAGE_TYPE } from '../src/message/index.js'
 import { peerResponseEvent } from '../src/query/events.js'
 import * as kadUtils from '../src/utils.js'

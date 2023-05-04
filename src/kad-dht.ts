@@ -19,8 +19,7 @@ import {
   removePrivateAddresses,
   removePublicAddresses
 } from './utils.js'
-import type { KadDHTComponents, KadDHTInit } from './index.js'
-import type { QueryOptions, Validators, Selectors, KadDHT, QueryEvent } from './index.js'
+import type { KadDHTComponents, KadDHTInit, QueryOptions, Validators, Selectors, KadDHT, QueryEvent } from './index.js'
 import type { PeerDiscoveryEvents } from '@libp2p/interface-peer-discovery'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
