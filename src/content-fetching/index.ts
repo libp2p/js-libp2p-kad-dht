@@ -15,13 +15,12 @@ import {
   valueEvent,
   queryErrorEvent
 } from '../query/events.js'
-import { createPutRecord, convertBuffer, bufferToRecordKey } from '../utils.js'
+import { createPutRecord, bufferToRecordKey } from '../utils.js'
 import type { KadDHTComponents, Validators, Selectors, ValueEvent, QueryOptions, QueryEvent } from '../index.js'
 import type { Network } from '../network.js'
 import type { PeerRouting } from '../peer-routing/index.js'
 import type { QueryManager } from '../query/manager.js'
 import type { QueryFunc } from '../query/types.js'
-import type { RoutingTable } from '../routing-table/index.js'
 import type { AbortOptions } from '@libp2p/interfaces'
 import type { Logger } from '@libp2p/logger'
 
@@ -30,7 +29,6 @@ export interface ContentFetchingInit {
   selectors: Selectors
   peerRouting: PeerRouting
   queryManager: QueryManager
-  routingTable: RoutingTable
   network: Network
   lan: boolean
 }
