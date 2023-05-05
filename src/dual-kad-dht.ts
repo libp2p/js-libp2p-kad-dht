@@ -86,6 +86,13 @@ class DHTPeerRouting implements PeerRouting {
 function multiaddrIsPublic (multiaddr: Multiaddr): boolean {
   const tuples = multiaddr.stringTuples()
 
+  // p2p-circuit should not enable server mode
+  for (let tuple of tuples) {
+    if (tuple[0] === 290) {
+      return false
+    }
+  }
+
   // dns4 or dns6 or dnsaddr
   if (tuples[0][0] === 54 || tuples[0][0] === 55 || tuples[0][0] === 56) {
     log('%m is public %s', multiaddr, true)
