@@ -148,34 +148,6 @@ export class PeerRouting {
       return
     }
 
-    const key = await utils.convertPeerId(id)
-    const peers = this.routingTable.closestPeers(key)
-
-    // sanity check
-    const match = peers.find((p) => p.equals(id))
-
-    if (match != null) {
-      try {
-        const peer = await this.components.peerStore.get(id)
-
-        this.log('found in peerStore')
-        yield finalPeerEvent({
-          from: this.components.peerId,
-          peer: {
-            id: peer.id,
-            multiaddrs: peer.addresses.map((address) => address.multiaddr),
-            protocols: []
-          }
-        })
-
-        return
-      } catch (err: any) {
-        if (err.code !== 'ERR_NOT_FOUND') {
-          throw err
-        }
-      }
-    }
-
     const self = this // eslint-disable-line @typescript-eslint/no-this-alias
 
     const findPeerQuery: QueryFunc = async function * ({ peer, signal }) {
@@ -200,7 +172,7 @@ export class PeerRouting {
 
     let foundPeer = false
 
-    for await (const event of this.queryManager.run(id.toBytes(), peers, findPeerQuery, options)) {
+    for await (const event of this.queryManager.run(id.toBytes(), findPeerQuery, options)) {
       if (event.name === 'FINAL_PEER') {
         foundPeer = true
       }
@@ -236,7 +208,7 @@ export class PeerRouting {
       })
     }
 
-    for await (const event of this.queryManager.run(key, tablePeers, getCloserPeersQuery, options)) {
+    for await (const event of this.queryManager.run(key, getCloserPeersQuery, options)) {
       yield event
 
       if (event.name === 'PEER_RESPONSE') {
