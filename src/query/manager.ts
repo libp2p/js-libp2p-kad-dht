@@ -11,10 +11,9 @@ import {
 } from '../constants.js'
 import { queryPath } from './query-path.js'
 import type { QueryFunc } from './types.js'
-import type { QueryEvent } from '../index.js'
+import type { QueryEvent, QueryOptions as RootQueryOptions } from '../index.js'
 import type { Metric, Metrics } from '@libp2p/interface-metrics'
 import type { PeerId } from '@libp2p/interface-peer-id'
-import type { AbortOptions } from '@libp2p/interfaces'
 import type { Startable } from '@libp2p/interfaces/startable'
 import type { DeferredPromise } from 'p-defer'
 
@@ -34,7 +33,7 @@ export interface QueryManagerComponents {
   metrics?: Metrics
 }
 
-export interface QueryOptions extends AbortOptions {
+export interface QueryOptions extends RootQueryOptions {
   queryFuncTimeout?: number
   isSelfQuery?: boolean
 }
@@ -184,7 +183,8 @@ export class QueryManager implements Startable {
           cleanUp,
           queryFuncTimeout: options.queryFuncTimeout,
           log,
-          peersSeen
+          peersSeen,
+          onProgress: options.onProgress
         })
       })
 
