@@ -9,16 +9,16 @@ import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import {
   ALPHA, K, DEFAULT_QUERY_TIMEOUT
 } from '../constants.js'
+import { convertBuffer } from '../utils.js'
 import { queryPath } from './query-path.js'
 import type { QueryFunc } from './types.js'
 import type { QueryEvent } from '../index.js'
+import type { RoutingTable } from '../routing-table/index.js'
 import type { Metric, Metrics } from '@libp2p/interface-metrics'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { AbortOptions } from '@libp2p/interfaces'
 import type { Startable } from '@libp2p/interfaces/startable'
 import type { DeferredPromise } from 'p-defer'
-import type { RoutingTable } from '../routing-table/index.js'
-import { convertBuffer } from '../utils.js'
 
 export interface CleanUpEvents {
   'cleanup': CustomEvent
@@ -57,7 +57,8 @@ export class QueryManager implements Startable {
     runningQueries: Metric
     queryTime: Metric
   }
-  private routingTable: RoutingTable
+
+  private readonly routingTable: RoutingTable
   private initialQuerySelfHasRun?: DeferredPromise<void>
 
   constructor (components: QueryManagerComponents, init: QueryManagerInit) {
