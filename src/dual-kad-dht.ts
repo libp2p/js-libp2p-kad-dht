@@ -6,11 +6,13 @@ import { EventEmitter, CustomEvent } from '@libp2p/interfaces/events'
 import { logger } from '@libp2p/logger'
 import drain from 'it-drain'
 import merge from 'it-merge'
+import isPrivate from 'private-ip'
 import { DefaultKadDHT } from './kad-dht.js'
 import { queryErrorEvent } from './query/events.js'
 import type { DualKadDHT, KadDHT, KadDHTComponents, KadDHTInit, QueryEvent, QueryOptions } from './index.js'
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
+import type { Multiaddr } from '@multiformats/multiaddr'
 import type { CID } from 'multiformats/cid'
 
 const log = logger('libp2p:kad-dht')
@@ -81,6 +83,29 @@ class DHTPeerRouting implements PeerRouting {
   }
 }
 
+function multiaddrIsPublic (multiaddr: Multiaddr): boolean {
+  const tuples = multiaddr.stringTuples()
+
+  // dns4 or dns6 or dnsaddr
+  if (tuples[0][0] === 54 || tuples[0][0] === 55 || tuples[0][0] === 56) {
+    log('%m is public %s', multiaddr, true)
+
+    return true
+  }
+
+  // ip4 or ip6
+  if (tuples[0][0] === 4 || tuples[0][0] === 41) {
+    const result = isPrivate(`${tuples[0][1]}`)
+    const isPublic = result == null || !result
+
+    log('%m is public %s', multiaddr, isPublic)
+
+    return isPublic
+  }
+
+  return false
+}
+
 /**
  * A DHT implementation modelled after Kademlia with S/Kademlia modifications.
  * Original implementation in go: https://github.com/libp2p/go-libp2p-kad-dht.
@@ -122,6 +147,30 @@ export class DefaultDualKadDHT extends EventEmitter<PeerDiscoveryEvents> impleme
       this.dispatchEvent(new CustomEvent('peer', {
         detail: evt.detail
       }))
+    })
+
+    components.events.addEventListener('self:peer:update', (evt) => {
+      log('received update of self-peer info')
+      const hasPublicAddress = evt.detail.peer.addresses
+        .some(({ multiaddr }) => {
+          const isPublic = multiaddrIsPublic(multiaddr)
+
+          log('%m is public %s', multiaddr, isPublic)
+
+          return isPublic
+        })
+
+      this.getMode()
+        .then(async mode => {
+          if (hasPublicAddress && mode === 'client') {
+            await this.setMode('server')
+          } else if (mode === 'server' && !hasPublicAddress) {
+            await this.setMode('client')
+          }
+        })
+        .catch(err => {
+          log.error('error setting dht server mode', err)
+        })
     })
   }
 
