@@ -258,6 +258,6 @@ export class ContentFetching {
     }
 
     // we have peers, lets send the actual query to them
-    yield * this.queryManager.run(key, rtp, getValueQuery, options)
+    yield * this.queryManager.run(key, getValueQuery, options)
   }
 }
