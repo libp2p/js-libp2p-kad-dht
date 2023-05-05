@@ -40,11 +40,10 @@ export class ContentFetching {
   private readonly selectors: Selectors
   private readonly peerRouting: PeerRouting
   private readonly queryManager: QueryManager
-  private readonly routingTable: RoutingTable
   private readonly network: Network
 
   constructor (components: KadDHTComponents, init: ContentFetchingInit) {
-    const { validators, selectors, peerRouting, queryManager, routingTable, network, lan } = init
+    const { validators, selectors, peerRouting, queryManager, network, lan } = init
 
     this.components = components
     this.log = logger(`libp2p:kad-dht:${lan ? 'lan' : 'wan'}:content-fetching`)
@@ -52,7 +51,6 @@ export class ContentFetching {
     this.selectors = selectors
     this.peerRouting = peerRouting
     this.queryManager = queryManager
-    this.routingTable = routingTable
     this.network = network
   }
 
@@ -246,11 +244,6 @@ export class ContentFetching {
     } catch (err: any) {
       this.log('error getting local value for %b', key, err)
     }
-
-    const id = await convertBuffer(key)
-    const rtp = this.routingTable.closestPeers(id)
-
-    this.log('found %d peers in routing table', rtp.length)
 
     const self = this // eslint-disable-line @typescript-eslint/no-this-alias
 
