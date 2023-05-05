@@ -14,7 +14,7 @@ const testCases: Array<[string, string, string]> = [
   ['should enable server mode when DNSADDR addresses are found', '/dnsaddr/sv15.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN', 'server'],
   ['should not enable server mode when private IP4 addresses are found', '/ip4/127.0.0.1/udp/4001/quic', 'client'],
   ['should not enable server mode when private IP6 addresses are found', '/ip6/::1/udp/4001/quic', 'client'],
-  ['should not enable server mode when otherwise public circuit relay addresses are found', '/dns4/sv15.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN/p2p-circuit', 'client'],
+  ['should not enable server mode when otherwise public circuit relay addresses are found', '/dns4/sv15.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN/p2p-circuit', 'client']
 ]
 
 describe('enable server mode', () => {

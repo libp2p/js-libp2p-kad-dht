@@ -87,7 +87,7 @@ function multiaddrIsPublic (multiaddr: Multiaddr): boolean {
   const tuples = multiaddr.stringTuples()
 
   // p2p-circuit should not enable server mode
-  for (let tuple of tuples) {
+  for (const tuple of tuples) {
     if (tuple[0] === 290) {
       return false
     }
