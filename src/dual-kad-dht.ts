@@ -83,25 +83,33 @@ class DHTPeerRouting implements PeerRouting {
   }
 }
 
+// see https://github.com/multiformats/multiaddr/blob/master/protocols.csv
+const P2P_CIRCUIT_CODE = 290
+const DNS4_CODE = 54
+const DNS6_CODE = 55
+const DNSADDR_CODE = 56
+const IP4_CODE = 4
+const IP6_CODE = 41
+
 function multiaddrIsPublic (multiaddr: Multiaddr): boolean {
   const tuples = multiaddr.stringTuples()
 
   // p2p-circuit should not enable server mode
   for (const tuple of tuples) {
-    if (tuple[0] === 290) {
+    if (tuple[0] === P2P_CIRCUIT_CODE) {
       return false
     }
   }
 
   // dns4 or dns6 or dnsaddr
-  if (tuples[0][0] === 54 || tuples[0][0] === 55 || tuples[0][0] === 56) {
+  if (tuples[0][0] === DNS4_CODE || tuples[0][0] === DNS6_CODE || tuples[0][0] === DNSADDR_CODE) {
     log('%m is public %s', multiaddr, true)
 
     return true
   }
 
   // ip4 or ip6
-  if (tuples[0][0] === 4 || tuples[0][0] === 41) {
+  if (tuples[0][0] === IP4_CODE || tuples[0][0] === IP6_CODE) {
     const result = isPrivate(`${tuples[0][1]}`)
     const isPublic = result == null || !result
 
